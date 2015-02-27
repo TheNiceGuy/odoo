@@ -9,6 +9,7 @@
     'description': """
         Test
         """,
+    'author': 'Odoo SA',
     'depends': ['website'],
     'data': [
         'test.xml',
