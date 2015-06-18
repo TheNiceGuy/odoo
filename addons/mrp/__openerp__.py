@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-
 {
     'name': 'MRP',
     'version': '1.1',
@@ -25,7 +24,7 @@ Key Features
 * Multi-level bill of materials, no limit
 * Multi-level routing, no limit
 * Work Order Operations and work center integrated with analytic accounting
-* Periodical scheduler computation 
+* Periodical scheduler computation
 * Allows to browse bills of materials in a complete structure that includes child and phantom bills of materials
 
 Dashboard / Reports for MRP will include:
@@ -37,20 +36,22 @@ Dashboard / Reports for MRP will include:
     'data': [
         'security/mrp_security.xml',
         'security/ir.model.access.csv',
-        'mrp_workflow.xml',
-        'mrp_data.xml',
+        'views/mrp_workflow.xml',
         'wizard/mrp_product_produce_view.xml',
         'wizard/change_production_qty_view.xml',
         'wizard/stock_move_view.xml',
-        'mrp_view.xml',
-        'mrp_report.xml',
-        'company_view.xml',
+        'views/mrp_views.xml',
+        'views/res_company_views.xml',
+        'views/mrp_config_views.xml',
+        'views/mrp_templates.xml',
+        'views/mrp_bom_templates.xml',
+        'report/mrp_report.xml',
         'report/mrp_report_view.xml',
-        'res_config_view.xml',
-        'views/report_mrporder.xml',
-        'views/report_mrpbomstructure.xml',
     ],
-    'demo': ['mrp_demo.xml'],
+    'demo': [
+        'data/mrp_data.xml',
+        'data/mrp_demo.xml',
+        'data/mrp_demo.yml', ],
     'test': [
          'test/bom_with_service_type_product.yml',
          'test/mrp_users.yml',
