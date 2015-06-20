@@ -564,6 +564,12 @@ class mrp_production(osv.osv):
             help="Bill of Materials allow you to define the list of required raw materials to make a finished product."),
         'routing_id': fields.many2one('mrp.routing', string='Work Order Operations', on_delete='set null', readonly=True, states={'draft': [('readonly', False)]},
             help="The list of operations (list of work centers) to produce the finished product. The routing is mainly used to compute work center costs during operations and to plan future loads on work centers based on production plannification."),
+        'pack_operation_ids': fields.one2many('stock.pack.operation', 'raw_material_production_id', string='Pack operations'),
+        'picking_id': fields.many2one('stock.picking', string='Current Raw Material Picking'),
+        'picking_ids': fields.one2many('stock.picking', 'raw_material_production_id', string='Raw Material Product Pickings'),
+        'finished_picking_id': fields.many2one('stock.picking', 'Finished Picking'),
+        'finished_picking_ids': fields.one2many('stock.picking', 'production_id', 'Finished Pickings'),
+
         'move_prod_id': fields.many2one('stock.move', 'Product Move', readonly=True, copy=False),
         'move_lines': fields.one2many('stock.move', 'raw_material_production_id', 'Products to Consume',
             domain=[('state', 'not in', ('done', 'cancel'))], readonly=True, states={'draft': [('readonly', False)]}),
@@ -1085,16 +1091,21 @@ class mrp_production(osv.osv):
                 res = False
         return res
 
-    
-    
     def _make_production_produce_line(self, cr, uid, production, context=None):
         stock_move = self.pool.get('stock.move')
         proc_obj = self.pool.get('procurement.order')
+        picking_obj = self.pool['stock.picking']
         source_location_id = production.product_id.property_stock_production.id
         destination_location_id = production.location_dest_id.id
         procs = proc_obj.search(cr, uid, [('production_id', '=', production.id)], context=context)
         procurement = procs and\
             proc_obj.browse(cr, uid, procs[0], context=context) or False
+        picking_id = picking_obj.create(cr, uid, {'location_id': source_location_id,
+                                                  'location_dest_id': destination_location_id,
+                                                  'origin': production.name,
+                                                  'picking_type_id': self.pool['stock.picking.type'].search(cr, uid, [])[0],
+                                                  'production_id': production.id,
+                                                  }, context=context)
         data = {
             'name': production.name,
             'date': production.date_planned,
@@ -1111,11 +1122,14 @@ class mrp_production(osv.osv):
             'production_id': production.id,
             'origin': production.name,
             'group_id': procurement and procurement.group_id.id,
+            'picking_id': picking_id,
         }
+        #TODO: optimize as both can be created at once
         move_id = stock_move.create(cr, uid, data, context=context)
+        self.write(cr, uid, [production.id], {'finished_picking_id': picking_id}, context=context)
         #a phantom bom cannot be used in mrp order so it's ok to assume the list returned by action_confirm
         #is 1 element long, so we can take the first.
-        return stock_move.action_confirm(cr, uid, [move_id], context=context)[0]
+        return picking_obj.action_confirm(cr, uid, [picking_id], context=context)
 
     def _get_raw_material_procure_method(self, cr, uid, product, location_id=False, location_dest_id=False, context=None):
         '''This method returns the procure_method to use when creating the stock move for the production raw materials
@@ -1245,13 +1259,14 @@ class mrp_production(osv.osv):
         """ Confirms production order.
         @return: Newly generated Shipment Id.
         """
+        picking_obj = self.pool['stock.picking']
+        move_obj = self.pool['stock.move']
         user_lang = self.pool.get('res.users').browse(cr, uid, [uid]).partner_id.lang
         context = dict(context, lang=user_lang)
         uncompute_ids = filter(lambda x: x, [not x.product_lines and x.id or False for x in self.browse(cr, uid, ids, context=context)])
         self.action_compute(cr, uid, uncompute_ids, context=context)
         for production in self.browse(cr, uid, ids, context=context):
             self._make_production_produce_line(cr, uid, production, context=context)
-
             stock_moves = []
             for line in production.product_lines:
                 if line.product_id.type != 'service':
@@ -1259,9 +1274,18 @@ class mrp_production(osv.osv):
                     stock_moves.append(stock_move_id)
                 else:
                     self._make_service_procurement(cr, uid, line, context=context)
+            picking_id = False #In fact, should not it raise an error when there is nothing?
             if stock_moves:
-                self.pool.get('stock.move').action_confirm(cr, uid, stock_moves, context=context)
-            production.write({'state': 'confirmed'})
+                move0 = move_obj.browse(cr, uid, stock_moves[0], context=context)
+                picking_id = picking_obj.create(cr, uid, {'location_id': move0.location_id.id,
+                                                          'location_dest_id': move0.location_dest_id.id,
+                                                          'origin': production.name,
+                                                          'picking_type_id': self.pool['stock.picking.type'].search(cr, uid, [])[0],
+                                                          'raw_material_production_id': production.id,
+                                                          }, context=context)
+                move_obj.write(cr, uid, stock_moves, {'picking_id': picking_id}, context=context)
+                picking_obj.action_confirm(cr, uid, [picking_id], context=context)
+            production.write({'state': 'confirmed', 'picking_id': picking_id})
         return 0
 
     def action_assign(self, cr, uid, ids, context=None):
@@ -1270,11 +1294,11 @@ class mrp_production(osv.osv):
         """
         from openerp import workflow
         move_obj = self.pool.get("stock.move")
+        picking_obj = self.pool['stock.picking']
         for production in self.browse(cr, uid, ids, context=context):
-            move_obj.action_assign(cr, uid, [x.id for x in production.move_lines], context=context)
+            picking_obj.action_assign(cr, uid, [production.picking_id.id] , context=context)
             if self.pool.get('mrp.production').test_ready(cr, uid, [production.id]):
                 workflow.trg_validate(uid, 'mrp.production', production.id, 'moves_ready', cr)
-
 
     def force_production(self, cr, uid, ids, *args):
         """ Assigns products.

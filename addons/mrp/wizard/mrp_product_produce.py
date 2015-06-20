@@ -98,9 +98,36 @@ class mrp_product_produce(osv.osv_memory):
     }
 
     def do_produce(self, cr, uid, ids, context=None):
+        picking_obj = self.pool['stock.picking']
+        op_obj = self.pool['stock.pack.operation']
+        move_obj = self.pool['stock.move']
         production_id = context.get('active_id', False)
         assert production_id, "Production Id should be specified in context as a Active ID."
         data = self.browse(cr, uid, ids[0], context=context)
-        self.pool.get('mrp.production').action_produce(cr, uid, production_id,
-                            data.product_qty, data.mode, data, context=context)
+        production = self.pool['mrp.production'].browse(cr, uid, production_id, context=context)
+        op_obj = self.pool['stock.pack.operation']
+        if any(x.qty_done>0 for x in production.picking_id.pack_operation_ids):
+            for pack in production.picking_id.pack_operation_ids:
+                op_obj.write(cr, uid, [pack.id], {'product_qty': pack.qty_done},context=context)
+        else:
+            raise
+        picking_obj.do_transfer(cr, uid, [production.picking_id.id], context=context)
+
+        #picking_obj.write(cr, uid, [production.finished_picking_id.id], {'': },context=context)
+        pack_op = production.finished_picking_id.pack_operation_ids[0].id
+        op_obj.write(cr, uid, [pack_op], {'product_qty': data.product_qty,
+                                          'lot_id': data.lot_id.id})
+        picking_obj.do_transfer(cr, uid, [production.finished_picking_id.id], context=context)
+        move_obj.write(cr, uid, [x.id for x in production.picking_id.move_lines],
+                       {'consumed_for': production.finished_picking_id.move_lines[0].id}, context=context)
+        #Check backorder
+        backorder = picking_obj.search(cr, uid,[('backorder_id', '=', production.picking_id.id)], context=context)
+        if backorder:
+            self.write(cr, uid, [production.id], {'picking_id': backorder[0]}, context=context)
+        backorder = picking_obj.search(cr, uid,[('backorder_id', '=', production.finished_picking_id.id)], context=context)
+        if backorder:
+            self.write(cr, uid, [production.id], {'finished_picking_id': backorder[0]}, context=context)
+
+        #self.pool.get('mrp.production').action_produce(cr, uid, production_id,
+        #                    data.product_qty, data.mode, data, context=context)
         return {}

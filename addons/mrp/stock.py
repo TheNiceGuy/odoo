@@ -6,7 +6,7 @@ import time
 from openerp.osv import fields
 from openerp.osv import osv
 from openerp.tools.translate import _
-from openerp import SUPERUSER_ID
+from openerp import SUPERUSER_ID, api
 from openerp.tools import DEFAULT_SERVER_DATETIME_FORMAT, float_compare
 from openerp.exceptions import UserError
 
@@ -223,6 +223,32 @@ class StockMove(osv.osv):
                 if self.pool.get('mrp.production').test_ready(cr, uid, [order_id]):
                     workflow.trg_validate(uid, 'mrp.production', order_id, 'moves_ready', cr)
         return res
+
+
+class stock_pack_operation(osv.osv):
+    _inherit = 'stock.pack.operation'
+
+    _columns = {
+        'production_id': fields.many2one('mrp.production', string="Production Order"),
+        'raw_material_production_id': fields.many2one('mrp.production', string="Production Order")
+    }
+
+
+class stock_picking(osv.osv):
+    _inherit = 'stock.picking'
+
+    _columns = {
+        'production_id': fields.many2one('mrp.production', string="Production Order"),
+        'raw_material_production_id': fields.many2one('mrp.production', string="Production Order"),
+    }
+
+    def action_assign(self, cr, uid, ids, context=None):
+        res = super(stock_picking, self).action_assign(cr, uid, ids, context=context)
+        for pick in self.browse(cr, uid, ids, context=context):
+            self.pool['stock.pack.operation'].write(cr, uid, [x.id for x in pick.pack_operation_ids], {'production_id': pick.production_id.id,
+                                                                                                       'raw_material_production_id': pick.raw_material_production_id.id}, context=context)
+        return res
+
 
 class stock_warehouse(osv.osv):
     _inherit = 'stock.warehouse'
