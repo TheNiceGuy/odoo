@@ -564,7 +564,8 @@ class mrp_production(osv.osv):
             help="Bill of Materials allow you to define the list of required raw materials to make a finished product."),
         'routing_id': fields.many2one('mrp.routing', string='Work Order Operations', on_delete='set null', readonly=True, states={'draft': [('readonly', False)]},
             help="The list of operations (list of work centers) to produce the finished product. The routing is mainly used to compute work center costs during operations and to plan future loads on work centers based on production plannification."),
-        'pack_operation_ids': fields.one2many('stock.pack.operation', 'raw_material_production_id', string='Pack operations'),
+        'pack_operation_ids': fields.one2many('stock.pack.operation', 'raw_material_production_id',
+                                              domain=[('state','not in', ('done', 'cancel'))], string='Pack operations'),
         'picking_id': fields.many2one('stock.picking', string='Current Raw Material Picking'),
         'picking_ids': fields.one2many('stock.picking', 'raw_material_production_id', string='Raw Material Product Pickings'),
         'finished_picking_id': fields.many2one('stock.picking', 'Finished Picking'),
@@ -1294,9 +1295,13 @@ class mrp_production(osv.osv):
         """
         from openerp import workflow
         move_obj = self.pool.get("stock.move")
+        pack_obj = self.pool.get("stock.pack.operation")
         picking_obj = self.pool['stock.picking']
         for production in self.browse(cr, uid, ids, context=context):
             picking_obj.action_assign(cr, uid, [production.picking_id.id] , context=context)
+            pack_obj.write(cr, uid, [x.id for x in production.picking_id.pack_operation_ids],
+                           {'production_id': production.picking_id.production_id.id,
+                            'raw_material_production_id': production.picking_id.raw_material_production_id.id}, context=context)
             if self.pool.get('mrp.production').test_ready(cr, uid, [production.id]):
                 workflow.trg_validate(uid, 'mrp.production', production.id, 'moves_ready', cr)
 

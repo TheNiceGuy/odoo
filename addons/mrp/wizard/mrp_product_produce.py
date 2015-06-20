@@ -3,7 +3,8 @@
 
 from openerp.osv import fields, osv
 import openerp.addons.decimal_precision as dp
-
+from openerp.exceptions import UserError
+from openerp.tools.translate import _
 
 class mrp_product_produce_line(osv.osv_memory):
     _name="mrp.product.produce.line"
@@ -101,6 +102,7 @@ class mrp_product_produce(osv.osv_memory):
         picking_obj = self.pool['stock.picking']
         op_obj = self.pool['stock.pack.operation']
         move_obj = self.pool['stock.move']
+        production_obj = self.pool['mrp.production']
         production_id = context.get('active_id', False)
         assert production_id, "Production Id should be specified in context as a Active ID."
         data = self.browse(cr, uid, ids[0], context=context)
@@ -110,7 +112,7 @@ class mrp_product_produce(osv.osv_memory):
             for pack in production.picking_id.pack_operation_ids:
                 op_obj.write(cr, uid, [pack.id], {'product_qty': pack.qty_done},context=context)
         else:
-            raise
+            raise UserError(_('No qty_done'))
         picking_obj.do_transfer(cr, uid, [production.picking_id.id], context=context)
 
         #picking_obj.write(cr, uid, [production.finished_picking_id.id], {'': },context=context)
@@ -123,10 +125,10 @@ class mrp_product_produce(osv.osv_memory):
         #Check backorder
         backorder = picking_obj.search(cr, uid,[('backorder_id', '=', production.picking_id.id)], context=context)
         if backorder:
-            self.write(cr, uid, [production.id], {'picking_id': backorder[0]}, context=context)
+            production_obj.write(cr, uid, [production.id], {'picking_id': backorder[0]}, context=context)
         backorder = picking_obj.search(cr, uid,[('backorder_id', '=', production.finished_picking_id.id)], context=context)
         if backorder:
-            self.write(cr, uid, [production.id], {'finished_picking_id': backorder[0]}, context=context)
+            production_obj.write(cr, uid, [production.id], {'finished_picking_id': backorder[0]}, context=context)
 
         #self.pool.get('mrp.production').action_produce(cr, uid, production_id,
         #                    data.product_qty, data.mode, data, context=context)
