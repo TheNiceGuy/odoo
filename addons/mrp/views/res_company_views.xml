@@ -1,9 +1,9 @@
 <?xml version="1.0" ?>
-<openerp>
-    <data>
+<odoo>
+
 
         <record id="mrp_company" model="ir.ui.view">
-            <field name="name">res.company.mrp.config</field>
+            <field name="name">res.company.inherit</field>
             <field name="model">res.company</field>
             <field name="priority">22</field>
             <field name="inherit_id" ref="base.view_company_form"/>
@@ -14,5 +14,5 @@
             </field>
         </record>
 
-    </data>
-</openerp>
+
+</odoo>

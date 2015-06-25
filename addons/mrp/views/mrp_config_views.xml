@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<openerp>
+<odoo>
     <data noupdate="1">
         <!-- After installation of the module, open the related menu -->
         <record id="action_client_mrp_menu" model="ir.actions.client">
@@ -12,9 +12,9 @@
             <field name="state">open</field>
         </record>
     </data>
-    <data>
+
         <record id="view_mrp_config" model="ir.ui.view">
-            <field name="name">mrp settings</field>
+            <field name="name">mrp.config.settings.form</field>
             <field name="model">mrp.config.settings</field>
             <field name="arch" type="xml">
                 <form string="Configure Manufacturing" class= "oe_form_configuration">
@@ -83,5 +83,5 @@
         <menuitem id="base.menu_mrp_config" name="Settings" parent="menu_mrp_configuration"
             sequence="100" action="action_mrp_configuration" groups="base.group_configuration"/>
 
-    </data>
-</openerp>
+
+</odoo>
