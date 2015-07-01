@@ -242,7 +242,7 @@ class stock_picking(osv.osv):
         'raw_material_production_id': fields.many2one('mrp.production', string="Production Order"),
     }
 
-    def action_assign(self, cr, uid, ids, context=None):
+    def do_prepare_partial(self, cr, uid, ids, context=None):
         res = super(stock_picking, self).action_assign(cr, uid, ids, context=context)
         for pick in self.browse(cr, uid, ids, context=context):
             self.pool['stock.pack.operation'].write(cr, uid, [x.id for x in pick.pack_operation_ids], {'production_id': pick.production_id.id,

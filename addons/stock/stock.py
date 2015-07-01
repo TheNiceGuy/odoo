@@ -1169,8 +1169,7 @@ class stock_picking(models.Model):
                 processed_products.add(move.product_id.id)
         return vals
 
-    @api.cr_uid_ids_context
-    def do_prepare_partial(self, cr, uid, picking_ids, context=None):
+    def do_prepare_partial(self, cr, uid, ids, context=None):
         context = context or {}
         pack_operation_obj = self.pool.get('stock.pack.operation')
         #used to avoid recomputing the remaining quantities at each new pack operation created
@@ -1178,10 +1177,10 @@ class stock_picking(models.Model):
         ctx['no_recompute'] = True
 
         #get list of existing operations and delete them
-        existing_package_ids = pack_operation_obj.search(cr, uid, [('picking_id', 'in', picking_ids)], context=context)
+        existing_package_ids = pack_operation_obj.search(cr, uid, [('picking_id', 'in', ids)], context=context)
         if existing_package_ids:
             pack_operation_obj.unlink(cr, uid, existing_package_ids, context)
-        for picking in self.browse(cr, uid, picking_ids, context=context):
+        for picking in self.browse(cr, uid, ids, context=context):
             forced_qties = {}  # Quantity remaining after calculating reserved quants
             picking_quants = []
             #Calculate packages, reserved quants, qtys of this picking's moves
@@ -1201,8 +1200,8 @@ class stock_picking(models.Model):
                 vals['fresh_record'] = False
                 pack_operation_obj.create(cr, uid, vals, context=ctx)
         #recompute the remaining quantities all at once
-        self.do_recompute_remaining_quantities(cr, uid, picking_ids, context=context)
-        self.write(cr, uid, picking_ids, {'recompute_pack_op': False}, context=context)
+        self.do_recompute_remaining_quantities(cr, uid, ids, context=context)
+        self.write(cr, uid, ids, {'recompute_pack_op': False}, context=context)
 
     @api.cr_uid_ids_context
     def do_unreserve(self, cr, uid, picking_ids, context=None):
