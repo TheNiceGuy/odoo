@@ -243,7 +243,7 @@ class stock_picking(osv.osv):
     }
 
     def do_prepare_partial(self, cr, uid, ids, context=None):
-        res = super(stock_picking, self).action_assign(cr, uid, ids, context=context)
+        res = super(stock_picking, self).do_prepare_partial(cr, uid, ids, context=context)
         for pick in self.browse(cr, uid, ids, context=context):
             self.pool['stock.pack.operation'].write(cr, uid, [x.id for x in pick.pack_operation_ids], {'production_id': pick.production_id.id,
                                                                                                        'raw_material_production_id': pick.raw_material_production_id.id}, context=context)
