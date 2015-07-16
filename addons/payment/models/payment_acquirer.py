@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
+# Part of Odoo. See LICENSE file for full copyright and licensing details.
 import logging
 
-from openerp import _, api, fields, models
+from openerp import api, fields, models, _
 from openerp.tools import float_round, float_repr
 
 _logger = logging.getLogger(__name__)
@@ -16,13 +17,11 @@ def _partner_split_name(partner_name):
 
 
 class ValidationError(ValueError):
-
     """ Used for value error when validating transaction data coming from acquirers. """
     pass
 
 
 class PaymentAcquirer(models.Model):
-
     """ Acquirer Model. Each specific acquirer can extend the model by adding
     its own fields, using the acquirer_name as a prefix for the new fields.
     Using the required_if_provider='<name>' attribute on fields it is possible
@@ -63,9 +62,9 @@ class PaymentAcquirer(models.Model):
     name = fields.Char(required=True, translate=True)
     provider = fields.Selection(_provider_selection, required=True)
     company_id = fields.Many2one('res.company', string='Company', required=True, default=lambda self: self.env.user.company_id.id)
-    pre_msg = fields.Html(string='Message', translate=True,
+    pre_msg = fields.Html('Message', translate=True,
                           help='Message displayed to explain and help the payment process.')
-    post_msg = fields.Html(string='Thanks Message', help='Message displayed after having done the payment process.')
+    post_msg = fields.Html('Thanks Message', help='Message displayed after having done the payment process.')
     validation = fields.Selection(
         [('manual', 'Manual'), ('automatic', 'Automatic')],
         string='Process Method',
@@ -78,23 +77,23 @@ class PaymentAcquirer(models.Model):
         [('test', 'Test'), ('prod', 'Production')],
         string='Environment', oldname='env', default='test')
     website_published = fields.Boolean(
-        string='Visible in Portal / Website', copy=False,
+        'Visible in Portal / Website', copy=False,
         help="Make this payment acquirer available (Customer invoices, etc.)", default=True)
     auto_confirm = fields.Selection(
         [('none', 'No automatic confirmation'),
          ('at_pay_confirm', 'At payment confirmation'),
          ('at_pay_now', 'At payment')],
         string='Order Confirmation', required=True, default='at_pay_confirm')
-    pending_msg = fields.Html(string='Pending Message', translate=True, help='Message displayed, if order is in pending state after having done the payment process.', default='<i>Pending,</i> Your online payment has been successfully processed. But your order is not validated yet.')
-    done_msg = fields.Html(string='Done Message', translate=True, help='Message displayed, if order is done successfully after having done the payment process.', default='<i>Done,</i> Your online payment has been successfully processed. Thank you for your order.')
-    cancel_msg = fields.Html(string='Cancel Message', translate=True, help='Message displayed, if order is cancel during the payment process.', default='<i>Cancel,</i> Your payment has been cancelled.')
-    error_msg = fields.Html(string='Error Message', translate=True, help='Message displayed, if error is occur during the payment process.', default='<i>Error,</i> An error occurred. We cannot process your payment for the moment, please try again later.')
+    pending_msg = fields.Html('Pending Message', translate=True, help='Message displayed, if order is in pending state after having done the payment process.', default='<i>Pending,</i> Your online payment has been successfully processed. But your order is not validated yet.')
+    done_msg = fields.Html('Done Message', translate=True, help='Message displayed, if order is done successfully after having done the payment process.', default='<i>Done,</i> Your online payment has been successfully processed. Thank you for your order.')
+    cancel_msg = fields.Html('Cancel Message', translate=True, help='Message displayed, if order is cancel during the payment process.', default='<i>Cancel,</i> Your payment has been cancelled.')
+    error_msg = fields.Html('Error Message', translate=True, help='Message displayed, if error is occur during the payment process.', default='<i>Error,</i> An error occurred. We cannot process your payment for the moment, please try again later.')
     # Fees
-    fees_active = fields.Boolean(string='Compute fees')
-    fees_dom_fixed = fields.Float(string='Fixed domestic fees')
-    fees_dom_var = fields.Float(string='Variable domestic fees (in percents)')
-    fees_int_fixed = fields.Float(string='Fixed international fees')
-    fees_int_var = fields.Float(string='Variable international fees (in percents)')
+    fees_active = fields.Boolean('Compute fees')
+    fees_dom_fixed = fields.Float('Fixed domestic fees')
+    fees_dom_var = fields.Float('Variable domestic fees (in percents)')
+    fees_int_fixed = fields.Float('Fixed international fees')
+    fees_int_var = fields.Float('Variable international fees (in percents)')
     sequence = fields.Integer(help="Determine the display order")
 
     @api.multi
@@ -329,9 +328,7 @@ class PaymentAcquirer(models.Model):
             domain.append(('company_id', '=', company_id))
         acquirers = self.search(domain)
         for acquirer in acquirers:
-            button = acquirer.render(
-                reference, amount, currency_id,
-                tx_id, partner_id, partner_values, tx_values)
+            button = acquirer.render(reference, amount, currency_id, tx_id, partner_id, partner_values, tx_values)
             html_forms.append(button)
         if not html_forms:
             return ''
@@ -340,7 +337,6 @@ class PaymentAcquirer(models.Model):
 
 
 class PaymentTransaction(models.Model):
-
     """ Transaction Model. Each specific acquirer can extend the model by adding
     its own fields.
 
@@ -362,8 +358,8 @@ class PaymentTransaction(models.Model):
     _order = 'id desc'
     _rec_name = 'reference'
 
-    date_create = fields.Datetime(string='Creation Date', readonly=True, required=True, default=fields.Datetime.now)
-    date_validate = fields.Datetime(string='Validation Date')
+    date_create = fields.Datetime('Creation Date', readonly=True, required=True, default=fields.Datetime.now)
+    date_validate = fields.Datetime('Validation Date')
     acquirer_id = fields.Many2one('payment.acquirer', string='Acquirer', required=True)
     type = fields.Selection(
         [('server2server', 'Server To Server'), ('form', 'Form'), ('form_save', 'Form with credentials storage')],
@@ -374,9 +370,7 @@ class PaymentTransaction(models.Model):
          ('cancel', 'Canceled')
          ], string='Status', required=True,
         track_visiblity='onchange', copy=False, default='draft')
-    state_message = fields.Text(string='Message',
-                                help='Field used to store error and/or validation messages for information')
-    # payment
+    state_message = fields.Text('Message', help='Field used to store error and/or validation messages for information')
     amount = fields.Float(required=True,
                           digits=(16, 2),
                           track_visibility='always',
@@ -385,24 +379,24 @@ class PaymentTransaction(models.Model):
                         track_visibility='always',
                         help='Fees amount; set by the system because depends on the acquirer')
     currency_id = fields.Many2one('res.currency', string='Currency', required=True)
-    reference = fields.Char(string='Order Reference', required=True)
-    acquirer_reference = fields.Char(string='Acquirer Order Reference',
+    reference = fields.Char('Order Reference', required=True)
+    acquirer_reference = fields.Char('Acquirer Order Reference',
                                      help='Reference of the TX as stored in the acquirer database')
     # duplicate partner / transaction data to store the values at transaction time
     partner_id = fields.Many2one('res.partner', string='Partner', track_visibility='onchange',)
-    partner_name = fields.Char(string='Partner Name')
-    partner_lang = fields.Char(string='Lang', default='en_US')
-    partner_email = fields.Char(string='Email')
-    partner_zip = fields.Char(string='Zip')
-    partner_address = fields.Char(string='Address')
-    partner_city = fields.Char(string='City')
+    partner_name = fields.Char('Partner Name')
+    partner_lang = fields.Char('Lang', default='en_US')
+    partner_email = fields.Char('Email')
+    partner_zip = fields.Char('Zip')
+    partner_address = fields.Char('Address')
+    partner_city = fields.Char('City')
     partner_country_id = fields.Many2one('res.country', string='Country', required=True)
-    partner_phone = fields.Char(string='Phone')
-    partner_reference = fields.Char(string='Partner Reference',
+    partner_phone = fields.Char('Phone')
+    partner_reference = fields.Char('Partner Reference',
                                     help='Reference of the customer in the acquirer database')
-    html_3ds = fields.Char(string='3D Secure HTML')
+    html_3ds = fields.Char('3D Secure HTML')
 
-    s2s_cb_eval = fields.Char(string='S2S Callback', help="""\
+    s2s_cb_eval = fields.Char('S2S Callback', help="""\
         Will be safe_eval with `self` being the current transaction. i.e.:
             self.env['my.model'].payment_validated(self)""")
 
