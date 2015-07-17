@@ -400,7 +400,7 @@ class PaymentTransaction(models.Model):
         Will be safe_eval with `self` being the current transaction. i.e.:
             self.env['my.model'].payment_validated(self)""")
 
-    @api.one
+    @api.multi
     @api.constrains('reference', 'state')
     def _check_reference(self):
         if self.state not in ['cancel', 'error']:
