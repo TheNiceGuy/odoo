@@ -6,15 +6,16 @@ import time
 import urlparse
 from lxml import objectify
 
-import openerp
-from openerp.addons.payment.models.payment_acquirer import ValidationError
-from openerp.addons.payment.tests.common import PaymentAcquirerCommon
-from openerp.addons.payment_authorize.controllers.main import AuthorizeController
-from openerp.tools import mute_logger
+import odoo
+from odoo import fields
+from odoo.addons.payment.models.payment_acquirer import ValidationError
+from odoo.addons.payment.tests.common import PaymentAcquirerCommon
+from odoo.addons.payment_authorize.controllers.main import AuthorizeController
+from odoo.tools import mute_logger
 
 
-@openerp.tests.common.at_install(True)
-@openerp.tests.common.post_install(True)
+@odoo.tests.common.at_install(True)
+@odoo.tests.common.post_install(True)
 class AuthorizeCommon(PaymentAcquirerCommon):
 
     def setUp(self):
@@ -26,8 +27,8 @@ class AuthorizeCommon(PaymentAcquirerCommon):
         model, self.authorize_id = self.env['ir.model.data'].get_object_reference('payment_authorize', 'payment_acquirer_authorize')
 
 
-@openerp.tests.common.at_install(True)
-@openerp.tests.common.post_install(True)
+@odoo.tests.common.at_install(True)
+@odoo.tests.common.post_install(True)
 class AuthorizeForm(AuthorizeCommon):
 
     def _authorize_generate_hashing(self, values):
@@ -92,7 +93,7 @@ class AuthorizeForm(AuthorizeCommon):
                 'Authorize: wrong value for input %s: received %s instead of %s' % (form_input.get('name'), form_input.get('value'), form_values[form_input.get('name')])
             )
 
-    @mute_logger('openerp.addons.payment_authorize.models.authorize', 'ValidationError')
+    @mute_logger('odoo.addons.payment_authorize.models.authorize', 'ValidationError')
     def test_20_authorize_form_management(self):
         cr, uid, context = self.env.cr, self.env.uid, {}
         # be sure not to do stupid thing
@@ -171,3 +172,39 @@ class AuthorizeForm(AuthorizeCommon):
         self.payment_transaction.form_feedback(cr, uid, authorize_post_data, 'authorize', context=context)
         # check state
         self.assertEqual(tx.state, 'error', 'Authorize: erroneous validation did not put tx into error state')
+
+    def test_30_authorize_s2s(self):
+        # be sure not to do stupid thing
+        authorize = self.env['payment.acquirer'].browse(self.authorize_id)
+        self.assertEqual(authorize.environment, 'test', 'test without test environment')
+
+        #add credential
+        authorize.write({
+            'authorize_transaction_key': '893C5t67v78yuXDV',
+            'authorize_login': '7ssPCZc57ZQ6',
+        })
+
+        #create payment meethod
+        payment_method = self.env['payment.method'].create({
+            'acquirer_id': authorize.id,
+            'partner_id': self.buyer_id,
+            'cc_number': '4111 1111 1111 1111',
+            'cc_expiry': '02 / 26',
+            'cc_brand': 'visa',
+            'cc_cvc': '111',
+            'cc_holder_name': 'test',
+        })
+
+        #create transaction
+        transaction = self.env['payment.transaction'].create({
+            'amount': 500,
+            'acquirer_id': authorize.id,
+            'type': 'server2server',
+            'currency_id': self.currency_usd.id,
+            'reference': 'test_ref_%s' % fields.date.today(),
+            'payment_method_id': payment_method.id,
+            'partner_id': self.buyer_id,
+
+        })
+        transaction.authorize_s2s_do_transaction()
+        self.assertEqual(transaction.state, 'done', 'Authorize: Transcation has been discarded.')
