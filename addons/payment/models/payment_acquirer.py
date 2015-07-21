@@ -108,6 +108,7 @@ class PaymentAcquirer(models.Model):
 
     @api.multi
     def get_form_action_url(self):
+        self.ensure_one()
         """ Returns the form action URL, for form-based acquirer implementations. """
         if hasattr(self, '%s_get_form_action_url' % self.provider):
             return ''.join(getattr(self, '%s_get_form_action_url' % self.provider)())
