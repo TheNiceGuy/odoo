@@ -175,6 +175,7 @@ class stock_location(osv.osv):
             loc = loc.location_id
         return self._default_removal_strategy(cr, uid, context=context)
 
+    @api.cr_uid_records_context
     def get_warehouse(self, cr, uid, location, context=None):
         """
             Returns warehouse id of warehouse that contains location
@@ -2423,6 +2424,7 @@ class stock_move(osv.osv):
         if not no_prepare:
             self.check_recompute_pack_op(cr, uid, ids, context=context)
 
+    @api.cr_uid_ids_context
     def action_cancel(self, cr, uid, ids, context=None):
         """ Cancels the moves and if all moves are cancelled it cancels the picking.
         @return: True
@@ -2809,7 +2811,7 @@ class stock_move(osv.osv):
         #thus the result of action_confirm should always be a list of 1 element length)
         return self.action_confirm(cr, uid, [new_move], context=context)[0]
 
-
+    @api.cr_uid_records_context
     def get_code_from_locs(self, cr, uid, move, location_id=False, location_dest_id=False, context=None):
         """
         Returns the code the picking type should have.  This can easily be used
