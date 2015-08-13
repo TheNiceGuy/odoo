@@ -4,7 +4,6 @@
 
 {
     'name': 'Membership Management',
-    'version': '0.1',
     'category': 'Association',
     'description': """
 This module allows you to manage all operations for managing memberships.
@@ -24,18 +23,19 @@ invoice and send propositions for membership renewal.
     'data': [
         'security/ir.model.access.csv',
         'wizard/membership_invoice_view.xml',
-        'membership_data.xml',
-        'membership_view.xml',
+        'data/membership_data.xml',
+        'views/membership_view.xml',
         'report/report_membership_view.xml',
     ],
     'demo': [
-        'membership_demo.xml',
+        'data/membership_demo.xml',
+    
     ],
     'website': 'https://www.odoo.com/page/community-builder',
     'test': [
         '../account/test/account_minimal_test.xml',
-        'test/test_membership.yml'
+        'test/test_membership.yml',
+        'test/membership_demo.yml'
     ],
     'installable': True,
-    'auto_install': False,
 }
