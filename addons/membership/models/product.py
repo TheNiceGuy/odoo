@@ -1,31 +1,16 @@
 # -*- coding: utf-8 -*-
-from openerp.osv import fields, osv 
-import openerp.addons.decimal_precision as dp
-from openerp.tools.translate import _
-from openerp.exceptions import UserError
+# Part of Odoo. See LICENSE file for full copyright and licensing details.
+
+from odoo import api, fields, models, _
+from odoo.exceptions import UserError
 
 
-class Product(osv.osv):
+class Product(models.Model):
     _inherit = 'product.template'
+    membership = fields.Boolean(help='Check if the product is eligible for membership.')
+    membership_date_from = fields.Date(string='Membership Start Date', help='Date from which membership becomes active.')
+    membership_date_to = fields.Date(string='Membership End Date', help='Date until which membership remains active.')
 
-    def fields_view_get(self, cr, user, view_id=None, view_type='form', context=None, toolbar=False, submenu=False):
-        ModelData = self.pool['ir.model.data']
-        if context is None:
-            context = {}
+    # Removed this function because this should be take default form_view and tree_view of membership_product.
 
-        if ('product' in context) and (context['product']=='membership_product'):
-            if view_type == 'form':
-                view_id = ModelData.xmlid_to_res_id(
-                    cr, user, 'membership.membership_products_form', context=context)
-            else:
-                view_id = ModelData.xmlid_to_res_id(
-                    cr, user, 'membership.membership_products_tree', context=context)
-        return super(Product,self).fields_view_get(cr, user, view_id=view_id, view_type=view_type, context=context, toolbar=toolbar, submenu=submenu)
-
-    _columns = {
-        'membership': fields.boolean('Membership', help='Check if the product is eligible for membership.'),
-        'membership_date_from': fields.date('Membership Start Date', help='Date from which membership becomes active.'),
-        'membership_date_to': fields.date('Membership End Date', help='Date until which membership remains active.'),
-    }
-
-    _sql_constraints = [('membership_date_greater','check(membership_date_to >= membership_date_from)','Error ! Ending Date cannot be set before Beginning Date.')]
+    _sql_constraints = [('membership_date_greater', 'check(membership_date_to >= membership_date_from)', 'Error ! Ending Date cannot be set before Beginning Date.')]
