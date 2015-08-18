@@ -288,7 +288,7 @@ class MrpProduction(models.Model):
         return res
 
     @api.model
-    def _get_subproduct_factor(self, production_id, move_id=None):
+    def _get_subproduct_factor(self, move=None):
         """ Compute the factor to compute the qty of procucts to produce for the given production_id. By default,
             it's always equal to the quantity encoded in the production order or the production wizard, but if the
             module mrp_subproduct is installed, then we must use the move_id to identify the product to produce
@@ -426,7 +426,7 @@ class MrpProduction(models.Model):
                     produced_products[produced_product.product_id.id] = 0
                 produced_products[produced_product.product_id.id] += produced_product.product_qty
             for produce_product in self.move_created_ids:
-                subproduct_factor = self._get_subproduct_factor(self.id, produce_product.id)
+                subproduct_factor = self._get_subproduct_factor(produce_product)
                 lot_id = False
                 if wizard:
                     lot_id = wizard.lot_id.id
