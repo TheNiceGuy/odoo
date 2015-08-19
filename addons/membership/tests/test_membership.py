@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
+# Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 import datetime
 from dateutil.relativedelta import relativedelta
 
-from openerp.addons.membership.tests.common import TestMembershipCommon
+from odoo.addons.membership.tests.common import TestMembershipCommon
 
 
 class TestMembership(TestMembershipCommon):
@@ -28,7 +29,7 @@ class TestMembership(TestMembershipCommon):
         self.partner_1.create_membership_invoice(product_id=self.membership_1.id, datas={'amount': 75.0})
 
         # checks for invoices
-        invoice = self.env['account.invoice'].search([('partner_id', '=', self.partner_1.id)], limit=1)[0]
+        invoice = self.env['account.invoice'].search([('partner_id', '=', self.partner_1.id)], limit=1)
         self.assertEqual(
             invoice.state, 'draft',
             'membership: new subscription should create a draft invoice')
