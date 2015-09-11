@@ -133,13 +133,14 @@ web_editor.Class.include({
     start: function () {
         var self = this;
         if (location.search.indexOf("enable_editor") !== -1) {
+            var $editable = $("#editable_area");
             this.on('rte:start', this, function () {
                 $("#choose_template").off("click").on("click", _.bind(self.on_choose_template, self));
                 $(".theme_thumbnail [data-snippet-theme]").off("click").on("click", _.bind(self.on_set_snippet_theme, self));
-                var $editable = $("#editable_area");
                 $editable.html($editable.prop("innerHTML").replace(/^<p[^>]*>\s*<\/p>$/, ''));
             });
             this.on("snippets:ready", this, _.bind(self.display_theme_from_html, self));
+            this.set_snippet_theme($("[data-snippet-theme]:first").data("snippet-theme"));
         }
         return this._super.apply(this, arguments);
     },
@@ -190,8 +191,9 @@ web_editor.Class.include({
         event.preventDefault();
     },
     set_snippet_theme: function (theme) {
-        $("#o_left_bar .o_panel_body > div").addClass("hidden");
-        $("#o_left_bar .o_panel_body > div."+theme).removeClass("hidden");
+        var $editable = $("#editable_area");
+        $editable.attr('class', ($editable.attr('class') || "").replace(/\s+o_theme_\w*/, '')).addClass('o_theme_' + theme);
+        $("#o_left_bar .o_panel_body > div").addClass("hidden").filter('.'+theme).removeClass("hidden");
     },
     get_snippet_template: function (mailing_model) {
         var self = this;
@@ -223,9 +225,11 @@ snippets_editor.Class.include({
     clean_for_save: function () {
         this._super();
         var $editable = $("#editable_area");
-        var theme = ($("#o_left_bar .o_panel_body > div:not(.hidden)").attr("class") || "").replace(/^\s*|\s*o_mail_block[^\s]+\s*|\s*oe_snippet\s*|\s*ui-draggable\s*|\s*$/g, '');
-        var $theme = $("#editable_area [data-snippet-theme]").removeAttr("data-snippet-theme").removeData("snippet-theme");
-        $editable.children().first().attr("data-snippet-theme", theme);
+        var theme = $editable.attr("class").match(/o_theme_(\w+)/);
+        $editable.find("[data-snippet-theme]").removeAttr("data-snippet-theme").removeData("snippet-theme");
+        if (theme) {
+            $editable.children().first().attr("data-snippet-theme", theme[1]);
+        }
         $editable.find(":not(br):hidden").remove();
     },
 });
