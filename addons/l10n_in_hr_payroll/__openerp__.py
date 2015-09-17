@@ -40,6 +40,7 @@ Indian Payroll Salary Rules.
          'views/report_payrolladvice.xml',
      ],
     'test': [
+        '../account/test/account_minimal_test.xml',
         'test/payment_advice.yml',
         'test/payment_advice_batch.yml'
     ],
