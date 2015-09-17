@@ -43,6 +43,7 @@ Generic Payroll system.
         'views/report_payslipdetails.xml',
     ],
     'test': [
+        '../account/test/account_minimal_test.xml',
         'test/payslip.yml',
     ],
     'demo': ['hr_payroll_demo.xml'],
