@@ -15,7 +15,7 @@ Accounting Data for Belgian Payroll Rules.
     'demo': [],
     'data':[
         'l10n_be_hr_payroll_account_data.xml',
-        'data/hr.salary.rule.csv',
     ],
+    'post_init_hook': '_set_accounts',
     'installable': True
 }
