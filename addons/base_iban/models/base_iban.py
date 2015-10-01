@@ -13,13 +13,6 @@ def pretty_iban(iban):
     """ return iban in groups of four characters separated by a single space """
     return ' '.join([iban[i:i + 4] for i in range(0, len(iban), 4)])
 
-def get_bban_from_iban(iban):
-    """ Returns the basic bank account number corresponding to an IBAN.
-        Note : the BBAN is not the same as the domestic bank account number !
-        The relation between IBAN, BBAN and domestic can be found here : http://www.ecbs.org/iban.htm
-    """
-    return normalize_iban(iban)[4:]
-
 def validate_iban(iban):
     iban = normalize_iban(iban)
     if not iban:
@@ -43,38 +36,21 @@ def validate_iban(iban):
 class ResPartnerBank(models.Model):
     _inherit = "res.partner.bank"
 
-    @api.one
     @api.depends('acc_number')
     def _compute_acc_type(self):
-        try:
-            validate_iban(self.acc_number)
-            self.acc_type = 'iban'
-        except ValidationError:
-            super(ResPartnerBank, self)._compute_acc_type()
+        banks = self.env['res.partner.bank']
+        for bank in self:
+            try:
+                validate_iban(bank.acc_number)
+                bank.acc_type = 'iban'
+            except ValidationError:
+                banks |= bank
+        super(ResPartnerBank, banks)._compute_acc_type()
 
-    def get_bban(self):
-        if self.acc_type != 'iban':
-            raise UserError(_("Cannot compute the BBAN because the account number is not an IBAN."))
-        return get_bban_from_iban(self.acc_number)
-
-    @api.model
-    def create(self, vals):
-        if (vals.get('acc_type') == 'iban') and vals.get('acc_number'):
-            vals['acc_number'] = pretty_iban(normalize_iban(vals['acc_number']))
-        return super(ResPartnerBank, self).create(vals)
-
-    @api.multi
-    def write(self, vals):
-        if (vals.get('acc_type') == 'iban') and vals.get('acc_number'):
-            vals['acc_number'] = pretty_iban(normalize_iban(vals['acc_number']))
-        return super(ResPartnerBank, self).write(vals)
-
-    @api.one
-    @api.constrains('acc_number')
-    def _check_iban(self):
+    @api.onchange('acc_number')
+    def _onchnage_acc_nummber(self):
         if self.acc_type == 'iban':
-            validate_iban(self.acc_number)
-
+            self.acc_number = pretty_iban(normalize_iban(self.acc_number))
 
 # Map ISO 3166-1 -> IBAN template, as described here :
 # http://en.wikipedia.org/wiki/International_Bank_Account_Number#IBAN_formats_by_country

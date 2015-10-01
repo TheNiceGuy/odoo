@@ -55,7 +55,7 @@ class ResPartnerBank(models.Model):
     _description = 'Bank Accounts'
     _order = 'sequence'
 
-    acc_type = fields.Char(compute='_compute_acc_type', help='Bank account type, inferred from account number')
+    acc_type = fields.Char(compute='_compute_acc_type', help='Bank account type, inferred from account number', store=True)
     acc_number = fields.Char('Account Number', required=True)
     sanitized_acc_number = fields.Char(compute='_compute_sanitized_acc_number', string='Sanitized Account Number', readonly=True, store=True)
     partner_id = fields.Many2one('res.partner', 'Account Holder', ondelete='cascade', select=True, domain=['|', ('is_company', '=', True), ('parent_id', '=', False)])
@@ -75,10 +75,10 @@ class ResPartnerBank(models.Model):
     def _compute_sanitized_acc_number(self):
         self.sanitized_acc_number = sanitize_account_number(self.acc_number)
 
-    @api.one
-    @api.depends('acc_type')
+    @api.depends('acc_number')
     def _compute_acc_type(self):
-        self.acc_type = 'bank'
+        for bank in self:
+            bank.acc_type = 'bank'
 
     @api.model
     def search(self, args, offset=0, limit=None, order=None, count=False):
