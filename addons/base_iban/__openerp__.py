@@ -12,7 +12,7 @@ The ability to extract the correctly represented local accounts from IBAN accoun
 with a single statement.
     """,
     'depends': ['account'],
-    'demo': ['demo/iban_demo.xml'],
+    'demo': ['demo/base_iban_demo.xml'],
     'installable': True,
     'auto_install': False,
 }
