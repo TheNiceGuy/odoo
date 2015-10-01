@@ -2,8 +2,8 @@
 
 import re
 
-from openerp import api, fields, models, _
-from openerp.exceptions import UserError, ValidationError
+from odoo import api, models, _
+from odoo.exceptions import ValidationError
 
 
 def normalize_iban(iban):

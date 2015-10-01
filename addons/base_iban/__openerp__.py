@@ -13,6 +13,4 @@ with a single statement.
     """,
     'depends': ['account'],
     'demo': ['demo/base_iban_demo.xml'],
-    'installable': True,
-    'auto_install': False,
 }
