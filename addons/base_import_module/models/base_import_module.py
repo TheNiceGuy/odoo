@@ -30,7 +30,7 @@ class BaseImportModule(models.TransientModel):
             'view_type': 'form',
             'view_mode': 'form',
             'target': 'new',
-            'res_id': self.ids,
+            'res_id': self.id,
             'res_model': 'base.import.module',
             'type': 'ir.actions.act_window',
             'context': context,
