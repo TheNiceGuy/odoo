@@ -37,7 +37,7 @@ class ImportModule(Controller):
             'X-CSRF-TOKEN': request.csrf_token(),
         })
 
-    @route('/base_import_module/upload', type='http', auth='user', methods=['POST'])
+    @route('/base_import_module/upload', type='http', auth='user', methods=['POST'], csrf=False)
     @webservice
     def upload(self, mod_file=None, force='', **kw):
         self.check_user()
