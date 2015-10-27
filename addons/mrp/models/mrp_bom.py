@@ -5,6 +5,7 @@ import openerp.addons.decimal_precision as dp
 from openerp import api, fields, models
 from openerp.tools.translate import _
 from openerp.exceptions import UserError
+from openerp.tools import float_round
 
 
 class MrpBom(models.Model):
@@ -98,7 +99,7 @@ class MrpBom(models.Model):
             'name': bom_line.product_id.name,
             'product_id': bom_line.product_id.id,
             'product_qty': quantity,
-            'product_uom': bom_line.product_uom.id
+            'product_uom_id': bom_line.product_uom_id.id
         }
 
     @api.model
@@ -106,7 +107,7 @@ class MrpBom(models.Model):
         """ Finds Products and Work Centers for related BoM for manufacturing order.
         :param product: Select a particular variant of the BoM. If False use BoM without variants.
         :param factor: Factor represents the quantity, but in UoM of the BoM, taking into account the numbers produced by the BoM
-        :param properties: A List of properties Ids.
+        :param properties: A List of properties.
         :param level: Depth level to find BoM lines starts from 10.
         :param previous_products: List of product previously use by bom explore to avoid recursion
         :param master_bom: When recursion, used to display the name of the master bom
@@ -115,13 +116,12 @@ class MrpBom(models.Model):
         """
         master_bom = master_bom or self
 
-
         def _factor(factor, product_efficiency, product_rounding):
             factor = factor / (product_efficiency or 1.0)
             if product_rounding:
-                factor = tools.float_round(factor,
-                                           precision_rounding=product_rounding,
-                                           rounding_method='UP')
+                factor = float_round(factor,
+                                     precision_rounding=product_rounding,
+                                     rounding_method='UP')
             if factor < product_rounding:
                 factor = product_rounding
             return factor
@@ -133,13 +133,13 @@ class MrpBom(models.Model):
 
         routing = (routing_id and self.env['mrp.routing'].browse(routing_id)) or self.routing_id or False
         if routing:
-            for wc_use in routing.workcenter_lines:
+            for wc_use in routing.workcenter_line_ids:
                 result2.append(self._prepare_wc_line(wc_use, level=level, factor=factor))
 
         for bom_line in self.bom_line_ids:
             if bom_line._skip_bom_line(product):
                 continue
-            if set(map(int, bom_line.property_ids or [])) - set(properties or []):
+            if bom_line.property_ids - properties:
                 continue
 
             if previous_products and bom_line.product_id.product_tmpl_id.id in previous_products:
@@ -213,11 +213,10 @@ class MrpBomLine(models.Model):
     def _get_child_bom_lines(self):
         """If the BOM line refers to a BOM, return the ids of the child BOM lines"""
         for bom_line in self:
-            bom_id = self.env['mrp.bom']._bom_find(
+            child_bom = self.env['mrp.bom']._bom_find(
                 product_tmpl_id=bom_line.product_id.product_tmpl_id.id,
                 product_id=bom_line.product_id.id)
-            if bom_id:
-                child_bom = self.env['mrp.bom'].browse(bom_id)
+            if child_bom:
                 self.child_line_ids = [bom.id for bom in child_bom.bom_line_ids]
             else:
                 self.child_line_ids = False

@@ -31,9 +31,8 @@ class StockMove(models.Model):
         ProcurementOrder = self.env['procurement.order']
         to_explode_again_ids = []
         property_ids = self.env.context.get('property_ids') or []
-        bis = MrpBom.sudo()._bom_find(product_id=move.product_id.id, properties=property_ids)
-        bom_point = MrpBom.sudo().browse(bis)
-        if bis and bom_point.bom_type == 'phantom':
+        bom_point = MrpBom.sudo()._bom_find(product_id=move.product_id.id, properties=property_ids)
+        if bom_point and bom_point.bom_type == 'phantom':
             processed_ids = []
             factor = self.env['product.uom'].sudo()._compute_qty(move.product_uom.id, move.product_uom_qty, bom_point.product_uom_id.id) / bom_point.product_qty
             res = bom_point.sudo().explode(move.product_id, factor, property_ids)

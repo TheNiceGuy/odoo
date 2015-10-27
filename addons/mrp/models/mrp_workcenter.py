@@ -27,7 +27,6 @@ class MrpWorkcenter(models.Model):
     costs_cycle = fields.Float(string='Cost per cycle', help="Specify Cost of Work Center per cycle.")
     costs_cycle_account_id = fields.Many2one('account.analytic.account', string='Cycle Account',
             help="Fill this only if you want automatic analytic accounting entries on production orders.")
-    costs_journal_id = fields.Many2one('account.analytic.journal', string='Analytic Journal')
     costs_general_account_id = fields.Many2one('account.account', string='General Account', domain=[('deprecated', '=', False)])
     resource_id = fields.Many2one('resource.resource', string='Resource', ondelete='cascade', required=True)
     product_id = fields.Many2one('product.product', string='Work Center Product', help="Fill this product to easily track your production costs in the analytic accounting.")

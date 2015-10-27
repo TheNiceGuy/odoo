@@ -139,7 +139,7 @@ class TestOrderProcess(TestOrderDemo):
             accounts = [workcenter.costs_hour_account_id, workcenter.costs_cycle_account_id]
             cost_per_cyle = workcenter_line.cycle * workcenter.costs_cycle
             cost_per_hours = workcenter_line.hour * workcenter.costs_hour
-            if accounts and workcenter.costs_journal_id and workcenter.costs_general_account_id and (cost_per_cyle or cost_per_hours):
+            if accounts and workcenter.costs_general_account_id and (cost_per_cyle or cost_per_hours):
                 line_ids = account_analytic_line.search([('name', 'ilike', workcenter_line.name)])
                 self.assertTrue(line_ids, 'Costs lines are not generated.')
                 for line in account_analytic_line.browse(line_ids):

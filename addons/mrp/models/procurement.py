@@ -45,8 +45,8 @@ class ProcurementOrder(models.Model):
         """
         for procurement in self:
             properties = [x.id for x in procurement.property_ids]
-            bom_id = self.env['mrp.bom']._bom_find(product_id=procurement.product_id.id, properties=properties)
-            if not bom_id:
+            bom = self.env['mrp.bom']._bom_find(product_id=procurement.product_id.id, properties=properties)
+            if not bom:
                 return False
         return True
 
@@ -63,12 +63,11 @@ class ProcurementOrder(models.Model):
         newdate = self._get_date_planned(procurement)
         MrpBom = self.env['mrp.bom']
         if procurement.bom_id:
-            bom_id = procurement.bom_id.id
+            bom = procurement.bom_id
             routing_id = procurement.bom_id.routing_id.id
         else:
             properties = [x.id for x in procurement.property_ids]
-            bom_id = MrpBom.with_context(dict(force_company=procurement.company_id.id))._bom_find(product_id=procurement.product_id.id, properties=properties)
-            bom = MrpBom.browse(bom_id)
+            bom = MrpBom.with_context(dict(force_company=procurement.company_id.id))._bom_find(product_id=procurement.product_id.id, properties=properties)
             routing_id = bom.routing_id.id
         return {
             'origin': procurement.origin,
@@ -77,7 +76,7 @@ class ProcurementOrder(models.Model):
             'product_uom': procurement.product_uom.id,
             'location_src_id': procurement.rule_id.location_src_id.id or procurement.location_id.id,
             'location_dest_id': procurement.location_id.id,
-            'bom_id': bom_id,
+            'bom_id': bom.id,
             'routing_id': routing_id,
             'date_planned': fields.Datetime.to_string(newdate),
             'move_prod_id': res_id,

@@ -54,15 +54,13 @@ class ChangeProductionQty(models.TransientModel):
 
             for move in production.move_line_ids:
                 bom_point = production.bom_id
-                bom_id = production.bom_id.id
                 if not bom_point:
-                    bom_id = MrpBom._bom_find(product_id=production.product_id.id)
-                    if not bom_id:
+                    bom_point = MrpBom._bom_find(product_id=production.product_id.id)
+                    if not bom_point:
                         raise UserError(_("Cannot find bill of material for this production."))
-                    production.write({'bom_id': bom_id})
-                    bom_point = MrpBom.browse([bom_id])[0]
+                    production.write({'bom_id': bom_point.id})
 
-                if not bom_id:
+                if not bom_point:
                     raise UserError(_("Cannot find bill of material for this production."))
 
                 factor = production.product_qty * production.product_uom_id.factor / bom_point.product_uom_id.factor

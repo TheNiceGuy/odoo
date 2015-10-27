@@ -46,7 +46,6 @@ class TestSaleMrpFlow(common.TransactionCase):
             self.MrpBomLine.create({
                 'product_id': product_id,
                 'product_qty': qty,
-                'bom_type': bom_type,
                 'bom_id': bom_id,
                 'product_uom_id': uom_id})
 

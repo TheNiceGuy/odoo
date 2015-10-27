@@ -160,14 +160,13 @@ class MrpProduction(models.Model):
             self.routing_id = False
             self.product_tmpl_id = False
         else:
-            bom_id = self.env['mrp.bom']._bom_find(product_id=self.product_id.id, properties=[])
+            bom_point = self.env['mrp.bom']._bom_find(product_id=self.product_id.id, properties=[])
             routing_id = False
-            if bom_id:
-                bom_point = self.env['mrp.bom'].browse(bom_id)
+            if bom_point:
                 routing_id = bom_point.routing_id.id or False
             product_uom = self.product_id.uom_id and self.product_id.uom_id.id or False
             self.product_uom_id = product_uom
-            self.bom_id = bom_id
+            self.bom_id = bom_point.id
             self.routing_id = routing_id
             self.product_tmpl_id = self.product_id.product_tmpl_id
 
@@ -182,15 +181,13 @@ class MrpProduction(models.Model):
         # search BoM structure and route
         MrpBom = self.env['mrp.bom']
         bom_point = self.bom_id
-        bom_id = self.bom_id.id
         if not bom_point:
-            bom_id = MrpBom._bom_find(product_id=self.product_id.id, properties=properties)
-            if bom_id:
-                bom_point = MrpBom.browse(bom_id)
+            bom_point = MrpBom._bom_find(product_id=self.product_id.id, properties=properties)
+            if bom_point:
                 routing_id = bom_point.routing_id.id or False
-                self.write({'bom_id': bom_id, 'routing_id': routing_id})
+                self.write({'bom_id': bom_point, 'routing_id': routing_id})
 
-        if not bom_id:
+        if not bom_point:
             raise UserError(_("Cannot find a bill of material for this product."))
 
         # get components and workcenter_line_ids from BoM structure
