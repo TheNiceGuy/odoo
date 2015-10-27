@@ -410,7 +410,6 @@
                                 <tree string="Components" editable="bottom">
                                     <field name="sequence" widget="handle"/>
                                     <field name="product_id"/>
-                                    <field name="bom_type"/>
                                     <field name="product_qty"/>
                                     <field name="product_uom_id" options="{'no_open':True,'no_create':True}" groups="product.group_uom"/>
                                     <field name="product_rounding" groups="mrp.group_rounding_efficiency"/>
