@@ -4,7 +4,6 @@
 import openerp.addons.decimal_precision as dp
 from openerp import api, fields, models
 from openerp.tools.translate import _
-from openerp.addons.product import _common
 from openerp.exceptions import UserError
 
 
