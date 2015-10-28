@@ -96,7 +96,7 @@ class ProcurementOrder(models.Model):
                 res[procurement.id] = produce_id
                 procurement.write({'production_id': produce_id.id})
                 self.production_order_create_note(procurement)
-                produce_id.action_compute(properties=[x.id for x in procurement.property_ids])
+                produce_id.action_compute(properties=procurement.property_ids)
                 produce_id.signal_workflow('button_confirm')
             else:
                 res[procurement.id] = False

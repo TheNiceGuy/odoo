@@ -25,8 +25,9 @@
 -
   I compute the data of production order.
 -
-  !python {model: mrp.production}: |
-    self.action_compute(cr, uid, [ref("mrp_production_mo0")], {"active_ids": [ref("mrp_production_mo0")],"active_id": ref("mrp_production_mo0")})
+  # Will be changed in byproduct
+  # !python {model: mrp.production}: | 
+  #   self.action_compute(cr, uid, [ref("mrp_production_mo0")], {"active_ids": [ref("mrp_production_mo0")],"active_id": ref("mrp_production_mo0")})
 -
   I confirm the production order.
 -

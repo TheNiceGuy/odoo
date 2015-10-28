@@ -53,8 +53,8 @@ class MrpBom(models.Model):
         :return: False or BoM id.
         """
         today_date = fields.date.today()
-        if properties is None:
-            properties = []
+        if not properties:
+            properties = self.env['mrp.property']
         if product_id:
             if not product_tmpl_id:
                 product_tmpl_id = self.env['product.product'].browse(product_id).product_tmpl_id.id
@@ -74,7 +74,7 @@ class MrpBom(models.Model):
         # pass a BoM without any properties with the smallest sequence
         bom_empty_prop = False
         for bom in boms:
-            if not set(map(int, bom.property_ids or [])) - set(properties or []):
+            if not bom.property_ids - properties:
                 if not properties or bom.property_ids:
                     return bom
                 elif not bom_empty_prop:
@@ -114,6 +114,8 @@ class MrpBom(models.Model):
         :return: result: List of dictionaries containing product details.
                  result2: List of dictionaries containing Work Center details.
         """
+        if not properties:
+            properties = self.env['mrp.property']
         master_bom = master_bom or self
 
         def _factor(factor, product_efficiency, product_rounding):
