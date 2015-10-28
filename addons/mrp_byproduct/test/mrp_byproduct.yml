@@ -22,9 +22,9 @@
     product_uom_id: product.product_uom_unit
     bom_id: mrp.mrp_bom_9
     location_src_id: stock.stock_location_stock
--
-  I compute the data of production order.
--
+#-
+#  I compute the data of production order.
+#-
   # Will be changed in byproduct
   # !python {model: mrp.production}: | 
   #   self.action_compute(cr, uid, [ref("mrp_production_mo0")], {"active_ids": [ref("mrp_production_mo0")],"active_id": ref("mrp_production_mo0")})

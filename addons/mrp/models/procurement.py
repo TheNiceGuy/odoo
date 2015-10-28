@@ -73,7 +73,7 @@ class ProcurementOrder(models.Model):
             'origin': procurement.origin,
             'product_id': procurement.product_id.id,
             'product_qty': procurement.product_qty,
-            'product_uom': procurement.product_uom.id,
+            'product_uom_id': procurement.product_uom.id,
             'location_src_id': procurement.rule_id.location_src_id.id or procurement.location_id.id,
             'location_dest_id': procurement.location_id.id,
             'bom_id': bom.id,

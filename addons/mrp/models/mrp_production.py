@@ -485,7 +485,7 @@ class MrpProduction(models.Model):
                 if not float_is_zero(remaining_qty, precision_digits=precision):
                     #consumed more in wizard than previously planned
                     product = ProductProduct.browse(consume['product_id'])
-                    extra_move_id = self._make_consume_line_from_data(production, product, product.uom_id.id, remaining_qty, False, 0)
+                    extra_move_id = self._make_consume_line_from_data(production, product, product.uom_id.id, remaining_qty)
                     extra_move_id.write({'restrict_lot_id': consume['lot_id'], 'consumed_for_id': main_production_move})
                     extra_move_id.action_done()
 

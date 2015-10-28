@@ -54,7 +54,7 @@ class StockMoveConsume(models.TransientModel):
                 #consumed more in wizard than previously planned
                 extra_more_qty = qty - consumed_qty
                 #create new line for a remaining qty of the product
-                extra_move_id = MrpProduction._make_consume_line_from_data(production, data.product_id, data.product_id.uom_id.id, extra_more_qty, False, 0)
+                extra_move_id = MrpProduction._make_consume_line_from_data(production, data.product_id, data.product_id.uom_id.id, extra_more_qty)
                 extra_move_id.write({'restrict_lot_id': data.restrict_lot_id.id})
                 extra_move_id.action_done()
         return {'type': 'ir.actions.act_window_close'}
