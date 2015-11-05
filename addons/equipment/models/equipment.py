@@ -1,25 +1,25 @@
 # -*- coding: utf-8 -*-
 
-from openerp import api, fields, models, fields
-from openerp import _, tools
+from openerp import api, fields, models
+from openerp import _
 from openerp.exceptions import UserError
 
 
-class HrEquipmentStage(models.Model):
+class EquipmentStage(models.Model):
     """ Model for case stages. This models the main stages of a Maintenance Request management flow. """
 
-    _name = 'hr.equipment.stage'
+    _name = 'equipment.stage'
     _description = 'Maintenance Stage'
     _order = 'sequence, id'
 
     name = fields.Char('Name', required=True, translate=True)
     sequence = fields.Integer('Sequence', default=20)
-    fold = fields.Boolean('Folded in Recruitment Pipe')
+    fold = fields.Boolean('Folded in Maintenance Pipe')
     done = fields.Boolean('Request Done')
 
 
-class HrEquipmentCategory(models.Model):
-    _name = 'hr.equipment.category'
+class EquipmentCategory(models.Model):
+    _name = 'equipment.category'
     _inherits = {"mail.alias": "alias_id"}
     _inherit = ['mail.thread']
     _description = 'Asset Category'
@@ -30,12 +30,12 @@ class HrEquipmentCategory(models.Model):
         self.fold = False if self.equipment_count else True
 
     name = fields.Char('Category Name', required=True, translate=True)
-    user_id = fields.Many2one('res.users', 'Responsible', track_visibility='onchange', default=lambda self: self.env.uid)
+    technician_user_id = fields.Many2one('res.users', 'Responsible', track_visibility='onchange', default=lambda self: self.env.uid, oldname='user_id')
     color = fields.Integer('Color Index')
     note = fields.Text('Comments', translate=True)
-    equipment_ids = fields.One2many('hr.equipment', 'category_id', string='Equipments', copy=False)
+    equipment_ids = fields.One2many('equipment', 'category_id', string='Equipments', copy=False)
     equipment_count = fields.Integer(string="Equipment", compute='_compute_equipment_count')
-    maintenance_ids = fields.One2many('hr.equipment.request', 'category_id', copy=False)
+    maintenance_ids = fields.One2many('equipment.request', 'category_id', copy=False)
     maintenance_count = fields.Integer(string="Maintenance", compute='_compute_maintenance_count')
     alias_id = fields.Many2one(
         'mail.alias', 'Alias', ondelete='cascade', required=True,
@@ -45,22 +45,22 @@ class HrEquipmentCategory(models.Model):
 
     @api.multi
     def _compute_equipment_count(self):
-        equipment_data = self.env['hr.equipment'].read_group([('category_id', 'in', self.ids)], ['category_id'], ['category_id'])
+        equipment_data = self.env['equipment'].read_group([('category_id', 'in', self.ids)], ['category_id'], ['category_id'])
         mapped_data = dict([(m['category_id'][0], m['category_id_count']) for m in equipment_data])
         for category in self:
             category.equipment_count = mapped_data.get(category.id, 0)
 
     @api.multi
     def _compute_maintenance_count(self):
-        maintenance_data = self.env['hr.equipment.request'].read_group([('category_id', 'in', self.ids)], ['category_id'], ['category_id'])
+        maintenance_data = self.env['equipment.request'].read_group([('category_id', 'in', self.ids)], ['category_id'], ['category_id'])
         mapped_data = dict([(m['category_id'][0], m['category_id_count']) for m in maintenance_data])
         for category in self:
             category.maintenance_count = mapped_data.get(category.id, 0)
 
     @api.model
     def create(self, vals):
-        self = self.with_context(alias_model_name='hr.equipment.request', alias_parent_model_name=self._name)
-        category_id = super(HrEquipmentCategory, self).create(vals)
+        self = self.with_context(alias_model_name='equipment.request', alias_parent_model_name=self._name)
+        category_id = super(EquipmentCategory, self).create(vals)
         category_id.alias_id.write({'alias_parent_thread_id': category_id.id, 'alias_defaults': {'category_id': category_id.id}})
         return category_id
 
@@ -69,21 +69,21 @@ class HrEquipmentCategory(models.Model):
         for category in self:
             if category.equipment_ids or category.maintenance_ids:
                 raise UserError(_("You cannot delete an equipment category containing equipments or maintenance requests."))
-        res = super(HrEquipmentCategory, self).unlink()
+        res = super(EquipmentCategory, self).unlink()
         return res
 
 
-class HrEquipment(models.Model):
-    _name = 'hr.equipment'
+class Equipment(models.Model):
+    _name = 'equipment'
     _inherit = ['mail.thread']
     _description = 'Equipment'
 
     @api.multi
     def _track_subtype(self, init_values):
         self.ensure_one()
-        if ('employee_id' in init_values and self.employee_id) or ('department_id' in init_values and self.department_id):
-            return 'hr_equipment.mt_mat_assign'
-        return super(HrEquipment, self)._track_subtype(init_values)
+        if 'owner_user_id' in init_values and self.owner_user_id:
+            return 'equipment.mt_mat_assign'
+        return super(Equipment, self)._track_subtype(init_values)
 
     @api.multi
     def name_get(self):
@@ -106,10 +106,9 @@ class HrEquipment(models.Model):
         return recs.name_get()
 
     name = fields.Char('Asset Name', required=True, translate=True)
-    user_id = fields.Many2one('res.users', string='Technician', track_visibility='onchange')
-    employee_id = fields.Many2one('hr.employee', string='Assigned to Employee', track_visibility='onchange')
-    department_id = fields.Many2one('hr.department', string='Assigned to Department', track_visibility='onchange')
-    category_id = fields.Many2one('hr.equipment.category', string='Asset Category', track_visibility='onchange')
+    technician_user_id = fields.Many2one('res.users', string='Technician', track_visibility='onchange', oldname='user_id')
+    owner_user_id = fields.Many2one('res.users', string='Assigned to', track_visibility='onchange')
+    category_id = fields.Many2one('equipment.category', string='Asset Category', track_visibility='onchange')
     partner_id = fields.Many2one('res.partner', string='Vendor', domain="[('supplier', '=', 1)]")
     partner_ref = fields.Char('Vendor Reference')
     location = fields.Char('Location')
@@ -121,12 +120,7 @@ class HrEquipment(models.Model):
     warranty = fields.Date('Warranty')
     color = fields.Integer('Color Index')
     scrap_date = fields.Date('Scrap Date')
-    equipment_assign_to = fields.Selection(
-        [('department', 'Department'), ('employee', 'Employee')],
-        string='Used By',
-        required=True,
-        default='employee')
-    maintenance_ids = fields.One2many('hr.equipment.request', 'equipment_id')
+    maintenance_ids = fields.One2many('equipment.request', 'equipment_id')
     maintenance_count = fields.Integer(compute='_compute_maintenance_count', string="Maintenance", store=True)
     maintenance_open_count = fields.Integer(compute='_compute_maintenance_count', string="Current Maintenance", store=True)
 
@@ -136,18 +130,9 @@ class HrEquipment(models.Model):
         self.maintenance_count = len(self.maintenance_ids)
         self.maintenance_open_count = len(self.maintenance_ids.filtered(lambda x: not x.stage_id.done))
 
-
-    @api.onchange('equipment_assign_to')
-    def _onchange_equipment_assign_to(self):
-        if self.equipment_assign_to == 'employee':
-            self.department_id = False
-        if self.equipment_assign_to == 'department':
-            self.employee_id = False
-        self.assign_date = fields.Date.context_today(self)
-
     @api.onchange('category_id')
     def _onchange_category_id(self):
-        self.user_id = self.category_id.user_id
+        self.technician_user_id = self.category_id.technician_user_id
 
     _sql_constraints = [
         ('serial_no', 'unique(serial_no)', "Another asset already exists with this serial number!"),
@@ -155,39 +140,24 @@ class HrEquipment(models.Model):
 
     @api.model
     def create(self, vals):
-        equipment = super(HrEquipment, self).create(vals)
+        equipment = super(Equipment, self).create(vals)
         # subscribe employee or department manager when equipment assign to him.
-        user_ids = []
-        if equipment.employee_id and equipment.employee_id.user_id:
-            user_ids.append(equipment.employee_id.user_id.id)
-        if equipment.department_id and equipment.department_id.manager_id and equipment.department_id.manager_id.user_id:
-            user_ids.append(equipment.department_id.manager_id.user_id.id)
-        if user_ids:
-            equipment.message_subscribe_users(user_ids=user_ids)
+        if equipment.owner_user_id:
+            equipment.message_subscribe_users(user_ids=equipment.owner_user_id.ids)
         return equipment
 
     @api.multi
     def write(self, vals):
-        user_ids = []
-        # subscribe employee or department manager when equipment assign to employee or department.
-        if vals.get('employee_id'):
-            user_id = self.env['hr.employee'].browse(vals['employee_id'])['user_id']
-            if user_id:
-                user_ids.append(user_id.id)
-        if vals.get('department_id'):
-            department = self.env['hr.department'].browse(vals['department_id'])
-            if department and department.manager_id and department.manager_id.user_id:
-                user_ids.append(department.manager_id.user_id.id)
-        if user_ids:
-            self.message_subscribe_users(user_ids=user_ids)
-        return super(HrEquipment, self).write(vals)
+        if vals.get('owner_user_id'):
+            self.message_subscribe_users(user_ids=[vals['owner_user_id']])
+        return super(Equipment, self).write(vals)
 
     @api.multi
     def _read_group_category_ids(self, domain, read_group_order=None, access_rights_uid=None):
         """ Read group customization in order to display all the category in the
             kanban view, even if they are empty
         """
-        category_obj = self.env['hr.equipment.category']
+        category_obj = self.env['equipment.category']
         order = category_obj._order
         access_rights_uid = access_rights_uid or self._uid
         if read_group_order == 'category_id desc':
@@ -208,44 +178,38 @@ class HrEquipment(models.Model):
     }
 
 
-class HrEquipmentRequest(models.Model):
-    _name = 'hr.equipment.request'
+class EquipmentRequest(models.Model):
+    _name = 'equipment.request'
     _inherit = ['mail.thread']
     _description = 'Maintenance Requests'
 
     @api.returns('self')
-    def _default_employee_get(self):
-        return self.env['hr.employee'].search([('user_id', '=', self.env.uid)], limit=1)
-
-    @api.returns('self')
     def _default_stage(self):
-        return self.env['hr.equipment.stage'].search([], limit=1)
+        return self.env['equipment.stage'].search([], limit=1)
 
     @api.multi
     def _track_subtype(self, init_values):
         self.ensure_one()
         if 'stage_id' in init_values and self.stage_id.sequence <= 1:
-            return 'hr_equipment.mt_req_created'
+            return 'equipment.mt_req_created'
         elif 'stage_id' in init_values and self.stage_id.sequence > 1:
-            return 'hr_equipment.mt_req_status'
-        return super(HrEquipmentRequest, self)._track_subtype(init_values)
+            return 'equipment.mt_req_status'
+        return super(EquipmentRequest, self)._track_subtype(init_values)
 
     name = fields.Char('Subjects', required=True)
     description = fields.Text('Description')
     request_date = fields.Date('Request Date', track_visibility='onchange', default=fields.Date.context_today)
-    employee_id = fields.Many2one('hr.employee', string='Employee', default=_default_employee_get)
-    department_id = fields.Many2one('hr.department', string='Department')
-    category_id = fields.Many2one('hr.equipment.category', string='Category')
-    equipment_id = fields.Many2one('hr.equipment', string='Asset', select=True)
-    user_id = fields.Many2one('res.users', string='Assigned to', track_visibility='onchange')
-    stage_id = fields.Many2one('hr.equipment.stage', string='Stage', track_visibility='onchange', default=_default_stage)
+    category_id = fields.Many2one('equipment.category', string='Category')
+    equipment_id = fields.Many2one('equipment', string='Asset', select=True)
+    from_user_id = fields.Many2one('res.users', string='Created by', default=lambda s: s.env.uid)
+    technician_user_id = fields.Many2one('res.users', string='Assigned to', track_visibility='onchange', oldname='user_id')
+    stage_id = fields.Many2one('equipment.stage', string='Stage', track_visibility='onchange', default=_default_stage)
     priority = fields.Selection([('0', 'Very Low'), ('1', 'Low'), ('2', 'Normal'), ('3', 'High')], string='Priority')
     color = fields.Integer('Color Index')
     close_date = fields.Date('Close Date')
     kanban_state = fields.Selection([('normal', 'In Progress'), ('blocked', 'Blocked'), ('done', 'Ready for next stage')],
                                     string='Kanban State', required=True, default='normal', track_visibility='onchange')
     active = fields.Boolean(default=True, help="Set active to false to hide the maintenance request without deleting it.")
-
 
     @api.multi
     def archive_equipment_request(self):
@@ -254,18 +218,12 @@ class HrEquipmentRequest(models.Model):
     @api.multi
     def reset_equipment_request(self):
         """ Reinsert the equipment request into the maintenance pipe in the first stage"""
-        first_stage_obj = self.env['hr.equipment.stage'].search([], order="sequence asc", limit=1)
+        first_stage_obj = self.env['equipment.stage'].search([], order="sequence asc", limit=1)
         self.write({'active': True, 'stage_id': first_stage_obj.id})
 
-    @api.onchange('employee_id', 'department_id')
+    @api.onchange('from_user_id')
     def onchange_department_or_employee_id(self):
-        domain = []
-        if self.department_id:
-            domain = [('department_id', '=', self.department_id.id)]
-        if self.employee_id and self.department_id:
-            domain = ['|'] + domain
-        if self.employee_id:
-            domain = domain + ['|', ('employee_id', '=', self.employee_id.id), ('employee_id', '=', None)]
+        domain = [('owner_user_id', '=', self.from_user_id.id)]
         equipment = self.env['hr.equipment'].search(domain, limit=2)
         if len(equipment) == 1:
             self.equipment_id = equipment
@@ -273,21 +231,21 @@ class HrEquipmentRequest(models.Model):
 
     @api.onchange('equipment_id')
     def onchange_equipment_id(self):
-        self.user_id = self.equipment_id.user_id if self.equipment_id.user_id else self.equipment_id.category_id.user_id
+        self.technician_user_id = self.equipment_id.technician_user_id if self.equipment_id.technician_user_id else self.equipment_id.category_id.technician_user_id
         self.category_id = self.equipment_id.category_id
 
     @api.onchange('category_id')
     def onchange_category_id(self):
-        if not self.user_id or not self.equipment_id or (self.user_id and not self.equipment_id.user_id):
-            self.user_id = self.category_id.user_id
+        if not self.technician_user_id or not self.equipment_id or (self.technician_user_id and not self.equipment_id.technician_user_id):
+            self.technician_user_id = self.category_id.technician_user_id
 
     @api.model
     def create(self, vals):
         # context: no_log, because subtype already handle this
         self = self.with_context(mail_create_nolog=True)
-        result = super(HrEquipmentRequest, self).create(vals)
-        if result.employee_id.user_id:
-            result.message_subscribe_users(user_ids=[result.employee_id.user_id.id])
+        result = super(EquipmentRequest, self).create(vals)
+        if result.from_user_id:
+            result.message_subscribe_users(user_ids=[result.from_user_id.id])
         return result
 
     @api.multi
@@ -296,18 +254,16 @@ class HrEquipmentRequest(models.Model):
         # the stage (stage_id) of the Maintenance Request changes.
         if vals and 'kanban_state' not in vals and 'stage_id' in vals:
             vals['kanban_state'] = 'normal'
-        if vals.get('employee_id'):
-            employee = self.env['hr.employee'].browse(vals['employee_id'])
-            if employee and employee.user_id:
-                self.message_subscribe_users(user_ids=[employee.user_id.id])
-        return super(HrEquipmentRequest, self).write(vals)
+        if 'from_user_id' in vals:
+            self.message_subscribe_users(user_ids=[vals['from_user_id']])
+        return super(EquipmentRequest, self).write(vals)
 
     @api.multi
     def _read_group_stage_ids(self, domain, read_group_order=None, access_rights_uid=None):
         """ Read group customization in order to display all the stages in the
             kanban view, even if they are empty
         """
-        stage_obj = self.env['hr.equipment.stage']
+        stage_obj = self.env['equipment.stage']
         order = stage_obj._order
         access_rights_uid = access_rights_uid or self._uid
 
@@ -328,19 +284,3 @@ class HrEquipmentRequest(models.Model):
     _group_by_full = {
         'stage_id': _read_group_stage_ids
     }
-
-    @api.model
-    def message_new(self, msg, custom_values=None):
-        """ Overrides mail_thread message_new that is called by the mailgateway
-            through message_process.
-            This override updates the document according to the email.
-        """
-        if custom_values is None:
-            custom_values = {}
-        email = tools.email_split(msg.get('from')) and tools.email_split(msg.get('from'))[0] or False
-        user = self.env['res.users'].search([('login', '=', email)], limit=1)
-        if user:
-            employee = self.env['hr.employee'].search([('user_id', '=', user.id)], limit=1)
-            if employee:
-                custom_values['employee_id'] = employee and employee[0].id
-        return super(HrEquipmentRequest, self).message_new(msg, custom_values=custom_values)

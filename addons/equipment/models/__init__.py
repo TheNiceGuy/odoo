@@ -1,4 +1,4 @@
 # -*- coding: utf-8 -*-
 
-import hr_equipment
+import equipment
 import res_config
