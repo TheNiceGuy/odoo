@@ -557,5 +557,7 @@ class PaymentMethod(osv.Model):
             custom_method_name = '%s_create' % acquirer.provider
             if hasattr(self, custom_method_name):
                 values.update(getattr(self, custom_method_name)(cr, uid, values, context=context))
-
+                card_data = ['cc_brand', 'cc_cvc', 'cc_expiry', 'cc_holder_name', 'cc_number']
+                for key in card_data:
+                    values.pop(key)
         return super(PaymentMethod, self).create(cr, uid, values, context=context)
