@@ -44,6 +44,7 @@ class MrpBom(models.Model):
     property_ids = fields.Many2many('mrp.property', string='Properties')
     company_id = fields.Many2one('res.company', string='Company', required=True, default=lambda self: self.env['res.company']._company_default_get('mrp.bom'))
 
+
     @api.model
     def _bom_find(self, product_tmpl=None, product=None, properties=None):
         """ Finds BoM for particular product and product uom.
@@ -188,6 +189,11 @@ class MrpBom(models.Model):
     def onchange_product_tmpl_id(self):
         if self.product_tmpl_id:
             self.product_uom_id = self.product_tmpl_id.uom_id.id
+
+    @api.onchange('routing_id')
+    def onchange_routing_id(self):
+        if self.routing_id:
+            self.operation_ids = self.routing_id.workcenter_line_ids
 
     def name_get(self, cr, uid, ids, context=None):
         res = []
