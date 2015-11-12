@@ -390,6 +390,7 @@
                             </div>
                             <field name="ready_to_produce"/>
                             <field name="picking_type_id"/>
+                            <field name="routing_id" class="oe_inline"/>
                             <!-- TODO: put in a separate module
                             <label for="routing_id" class="oe_inline" groups="mrp.group_mrp_routings"/>
                             <div groups="mrp.group_mrp_routings">
@@ -425,7 +426,7 @@
                             </field>
                         </page>
                         <page string="Routing" groups="mrp.group_mrp_routings">
-                            <field name="operation_ids">
+                            <field name="operation_ids" widget="one2many_list">
                                 <tree string="Operations" editable="bottom">
                                     <field name="sequence" widget="handle"/>
                                     <field name="name"/>
