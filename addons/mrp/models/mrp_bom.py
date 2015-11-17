@@ -37,7 +37,6 @@ class MrpBom(models.Model):
     routing_id = fields.Many2one('mrp.routing', string='Routing', help="The list of operations (list of work centers) to produce the finished product. "
                                  "The routing is mainly used to compute work center costs during operations and to plan future loads on work centers based on production planning.")
     ready_to_produce = fields.Selection([('all_available', 'All components'), ('asap', 'The components of 1st operation')], string='Ready when are available', required=True, default='asap',)
-    operation_ids = fields.Many2many('mrp.routing.workcenter', string='Operations', help="The list of operations (list of work centers) to produce the finished product.")
     product_rounding = fields.Float(string='Product Rounding', help="Rounding applied on the product quantity.")
     picking_type_id = fields.Many2one('stock.picking.type', string='Picking Type', domain=[('code', '=', 'manufacturing')], help="When a procurement has a ‘produce’ route with a picking type set, it will try to create a Manufacturing Order for that product using a BOM of the same picking type. That allows to define pull rules for products with different routing (different BOMs)")
     product_efficiency = fields.Float(string='Manufacturing Efficiency', default=1.0, required=True, help="A factor of 0.9 means a loss of 10% during the production process.")
@@ -189,11 +188,6 @@ class MrpBom(models.Model):
     def onchange_product_tmpl_id(self):
         if self.product_tmpl_id:
             self.product_uom_id = self.product_tmpl_id.uom_id.id
-
-    @api.onchange('routing_id')
-    def onchange_routing_id(self):
-        if self.routing_id:
-            self.operation_ids = self.routing_id.workcenter_line_ids
 
     def name_get(self, cr, uid, ids, context=None):
         res = []
