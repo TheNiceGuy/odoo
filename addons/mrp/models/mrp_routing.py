@@ -37,7 +37,7 @@ class MrpRoutingWorkcenter(models.Model):
     sequence = fields.Integer(default=100, help="Gives the sequence order when displaying a list of routing Work Centers.")
     cycle_nbr = fields.Float(string='Number of Cycles', required=True, default=1.0, help="Number of iterations this work center has to do in the specified operation of the routing.")
     hour_nbr = fields.Float(string='Number of Hours', required=True, help="Time in hours for this Work Center to achieve the operation of the specified routing.")
-    routing_id = fields.Many2one('mrp.routing', string='Parent Routing', index=True, ondelete='cascade',
+    routing_id = fields.Many2one('mrp.routing', string='Parent Routing', index=True, ondelete='cascade', required=True,
                                  help="Routings indicates all the Work Centers used, for how long and/or cycles."
                                  "If Routings is indicated then,the third tab of a production order (Work Centers) will be automatically pre-completed.")
     note = fields.Text(string='Description')

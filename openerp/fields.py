@@ -1810,7 +1810,7 @@ class _RelationalMulti(_Relational):
             vals = {name: field.convert_to_onchange(record[name]) for name, field in fields}
             if not record.id:
                 result.append((0, 0, vals))
-            elif record._is_dirty() and vals:
+            elif vals:
                 result.append((1, record.id, vals))
             else:
                 result.append((4, record.id))
