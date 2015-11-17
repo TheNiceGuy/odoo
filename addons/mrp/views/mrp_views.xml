@@ -397,7 +397,7 @@
                             </div>
                             <field name="ready_to_produce"/>
                             <field name="picking_type_id"/>
-                            <field name="routing_id" groups="mrp.group_mrp_routings_shared"/>
+                            <field name="routing_id" groups="mrp.group_mrp_routings"/>
                         </group>
                         <group>
                             <field name="name"/>
@@ -422,19 +422,7 @@
                                     <field name="product_efficiency" groups="mrp.group_rounding_efficiency"/>
                                     <field name="attribute_value_ids" widget="many2many_tags" domain="[('product_ids.product_tmpl_id', '=', parent.product_tmpl_id)]" groups="product.group_product_variant"/>
                                     <field name="property_ids" widget="many2many_tags" groups="product.group_mrp_properties"/>
-                                    <field name="operation_id" groups="mrp.group_mrp_routings" domain="[('id', 'in', operation_ids)]"/>
-                                </tree>
-                            </field>
-                        </page>
-                        <page string="Routing" groups="mrp.group_mrp_routings">
-                            <field name="operation_ids" widget="one2many_list">
-                                <tree string="Operations" editable="bottom">
-                                    <field name="sequence" widget="handle"/>
-                                    <field name="name"/>
-                                    <field name="workcenter_id"/>
-                                    <field name="cycle_nbr"/>
-                                    <field name="hour_nbr"/>
-                                    <field name="note"/>
+                                    <field name="operation_id" groups="mrp.group_mrp_routings" domain="[('routing_id', '=', routing_id)]"/>
                                 </tree>
                             </field>
                         </page>
