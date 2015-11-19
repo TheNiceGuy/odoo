@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-from openerp.addons.web.http import Controller, route, request
-from openerp.addons.web.controllers.main import _serialize_exception, content_disposition
-from openerp.tools import html_escape
-
 import json
 from werkzeug import exceptions, url_decode
+from werkzeug.datastructures import Headers
 from werkzeug.test import Client
 from werkzeug.wrappers import BaseResponse
-from werkzeug.datastructures import Headers
-from reportlab.graphics.barcode import createBarcodeDrawing
+
+from odoo.http import Controller, route, request
+from odoo.tools import html_escape
+from odoo.addons.web.controllers.main import _serialize_exception, content_disposition
 
 
 class ReportController(Controller):
@@ -24,7 +23,7 @@ class ReportController(Controller):
     ], type='http', auth='user', website=True)
     def report_routes(self, reportname, docids=None, converter=None, **data):
         report_obj = request.registry['report']
-        cr, uid, context = request.cr, request.uid, request.context
+        context = dict(request.env.context)
 
         if docids:
             docids = [int(i) for i in docids.split(',')]
@@ -39,10 +38,10 @@ class ReportController(Controller):
             context.update(data['context'])
 
         if converter == 'html':
-            html = report_obj.get_html(cr, uid, docids, reportname, data=data, context=context)
+            html = report_obj.get_html(request.env.cr, request.env.uid, docids, reportname, data=data, context=context)
             return request.make_response(html)
         elif converter == 'pdf':
-            pdf = report_obj.get_pdf(cr, uid, docids, reportname, data=data, context=context)
+            pdf = report_obj.get_pdf(request.env.cr, request.env.uid, docids, reportname, data=data, context=context)
             pdfhttpheaders = [('Content-Type', 'application/pdf'), ('Content-Length', len(pdf))]
             return request.make_response(pdf, headers=pdfhttpheaders)
         else:
@@ -66,7 +65,7 @@ class ReportController(Controller):
         at the bottom of the output image
         """
         try:
-            barcode = request.registry['report'].barcode(type, value, width=width, height=height, humanreadable=humanreadable)
+            barcode = request.env['report'].barcode(type, value, width=width, height=height, humanreadable=humanreadable)
         except (ValueError, AttributeError):
             raise exceptions.HTTPException(description='Cannot convert into barcode.')
 
@@ -99,9 +98,8 @@ class ReportController(Controller):
                     data = url_decode(url.split('?')[1]).items()  # decoding the args represented in JSON
                     response = self.report_routes(reportname, converter='pdf', **dict(data))
 
-                cr, uid = request.cr, request.uid
-                report = request.registry['report']._get_report_from_name(cr, uid, reportname)
-                filename = "%s.%s" % (report.name, "pdf")
+                IrActionReport = request.env['report']._get_report_from_name(reportname)
+                filename = "%s.%s" % (IrActionReport.name, "pdf")
                 response.headers.add('Content-Disposition', content_disposition(filename))
                 response.set_cookie('fileToken', token)
                 return response
@@ -123,4 +121,4 @@ class ReportController(Controller):
 
     @route(['/report/check_wkhtmltopdf'], type='json', auth="user")
     def check_wkhtmltopdf(self):
-        return request.registry['report']._check_wkhtmltopdf()
+        return request.env['report']._check_wkhtmltopdf()
