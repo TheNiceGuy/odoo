@@ -16,6 +16,11 @@ class MrpWorkcenter(models.Model):
     _description = 'Work Center'
     _inherits = {'resource.resource': "resource_id"}
 
+    @api.one
+    @api.depends('order_ids')
+    def _compute_orders(self):
+        self.nb_orders = self.env['mrp.production.workcenter.line'].search_count([('workcenter_id', '=', self.id), ('state', '!=', 'done')]) #('state', 'in', ['pending', 'startworking'])
+
     note = fields.Text(string='Description', help="Description of the Work Center. Explain here what's a cycle according to this Work Center.")
     capacity_per_cycle = fields.Float(string='Capacity per Cycle', default=1.0, help="Number of operations this Work Center can do in parallel. If this Work Center represents a team of 5 workers, the capacity per cycle is 5.")
     time_cycle = fields.Float(string='Time for 1 cycle (hour)', help="Time in hours for doing one cycle.")
@@ -30,7 +35,12 @@ class MrpWorkcenter(models.Model):
     costs_general_account_id = fields.Many2one('account.account', string='General Account', domain=[('deprecated', '=', False)])
     resource_id = fields.Many2one('resource.resource', string='Resource', ondelete='cascade', required=True)
     product_id = fields.Many2one('product.product', string='Work Center Product', help="Fill this product to easily track your production costs in the analytic accounting.")
-    resource_type = fields.Selection([('user', 'Human'), ('material', 'Material')], string='Resource Type', required=True, default='material')
+    resource_type = fields.Selection([('user', 'Human'), ('material', 'Material')], string='Resource Type', required=True, default='material') #TODO: to be removed
+    order_ids = fields.One2many('mrp.production.workcenter.line', 'workcenter_id', string="Orders")
+    routing_line_ids = fields.One2many('mrp.routing.workcenter', 'workcenter_id', "Routing Lines")
+    nb_orders = fields.Integer('Computed Orders', compute='_compute_orders')
+    color = fields.Integer('Color')
+
 
     @api.onchange('product_id')
     def on_change_product_cost(self):

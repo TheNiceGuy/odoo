@@ -4,8 +4,10 @@
 from collections import OrderedDict
 from openerp import api, fields, models, _
 from openerp.exceptions import AccessError, UserError
-from openerp.tools import float_compare, float_is_zero
+from openerp.tools import float_compare, float_is_zero, DEFAULT_SERVER_DATETIME_FORMAT
 import openerp.addons.decimal_precision as dp
+from datetime import datetime
+import time
 
 
 class MrpProduction(models.Model):
@@ -55,7 +57,8 @@ class MrpProduction(models.Model):
     date_finished = fields.Datetime(string='End Date', index=True, readonly=True, copy=False)
     bom_id = fields.Many2one('mrp.bom', string='Bill of Material', readonly=True, states={'draft': [('readonly', False)]},
                              help="Bill of Materials allow you to define the list of required raw materials to make a finished product.")
-    routing_id = fields.Many2one('mrp.routing', string='Routing', on_delete='set null', readonly=True, states={'draft': [('readonly', False)]},
+    routing_id = fields.Many2one('mrp.routing', string='Routing', related = 'bom_id.routing_id', store=True,
+                                 on_delete='set null', readonly=True,
                                  help="The list of operations (list of work centers) to produce the finished product. The routing is mainly used "
                                       "to compute work center costs during operations and to plan future loads on work centers based on production plannification.")
     move_prod_id = fields.Many2one('stock.move', string='Product Move', readonly=True, copy=False)
@@ -222,8 +225,55 @@ class MrpProduction(models.Model):
                 WorkcenterLine.create(line)
         return results
 
+
+    @api.multi
+    def _compute_planned_workcenter(self, mini=False):
+        """ Computes planned and finished dates for work order.
+        @return: Calculated date
+        """
+        dt_end = datetime.now()
+        context = self.env.context or {}
+        for po in self: #Maybe need to make difference between different pos
+            dt_end = datetime.strptime(po.date_planned, '%Y-%m-%d %H:%M:%S')
+            if not po.date_start:
+                po.write({
+                    'date_start': po.date_planned
+                })
+            old = None
+            for wci in range(len(po.workcenter_line_ids)):
+                wc  = po.workcenter_line_ids[wci]
+                if (old is None) or (wc.sequence>old):
+                    dt = dt_end
+                if context.get('__last_update'):
+                    del context['__last_update']
+                if (wc.date_planned_start < dt.strftime('%Y-%m-%d %H:%M:%S')) or mini:
+                    wc.write({
+                        'date_planned_start': dt.strftime('%Y-%m-%d %H:%M:%S')
+                    })
+                    i = wc.workcenter_id.calendar_id.interval_get(dt, wc.hour)
+                    if i:
+                        i = i[0]
+                        dt_end = max(dt_end, i[-1][1])
+                else:
+                    dt_end = datetime.strptime(wc.date_planned_end, '%Y-%m-%d %H:%M:%S')
+
+                old = wc.sequence or 0
+            po.write({
+                'date_finished': dt_end
+            })
+        return dt_end
+
+    @api.multi
+    def write(self, vals):
+        res = super(MrpProduction, self).write(vals)
+        # Recompute workcenters when workcenterlines changed or date_start
+        if (vals.get('workcenter_line_ids', False) or vals.get('date_start', False) or vals.get('date_planned', False)):
+            self._compute_planned_workcenter()
+        return res
+
     @api.multi
     def action_button_compute(self):
+        res = self._compute_planned_workcenter()
         return self.action_compute()
 
     @api.multi
@@ -714,7 +764,45 @@ class MrpProductionWorkcenterLine(models.Model):
     hour = fields.Float(string='Number of Hours', digits=(16, 2))
     sequence = fields.Integer(required=True, default=1, help="Gives the sequence order when displaying a list of work orders.")
     production_id = fields.Many2one('mrp.production', string='Manufacturing Order', track_visibility='onchange', index=True, ondelete='cascade', required=True)
+    state = fields.Selection([('draft', 'Draft'), ('cancel', 'Cancelled'), ('pause', 'Pending'), ('startworking', 'In Progress'), ('done', 'Finished')], default='draft')
+    date_planned_start = fields.Datetime('Scheduled Date Start')
+    date_planned_end = fields.Datetime('Scheduled Date Finished')
+    date_start = fields.Datetime('Effective Start Date')
+    date_finished = fields.Datetime('Effective End Date')
+    delay = fields.Float('Working Hours', readonly=True)
+    production_state = fields.Selection(related='production_id.state', readonly=True)
+    product = fields.Many2one('product.product', related='production_id.product_id', string="Product", readonly=True)
+    qty = fields.Float(related='production_id.product_qty', string='Qty', readonly=True, store=True) #store really needed?
+    uom = fields.Many2one('product.uom', related='production_id.product_uom_id', string='Unit of Measure')
 
+    @api.multi
+    def button_draft(self):
+        return self.write({'state': 'draft'})
+
+    @api.multi
+    def button_start_working(self):
+        self.write({'state': 'startworking',
+                    'date_start': time.strftime(DEFAULT_SERVER_DATETIME_FORMAT)})
+
+    @api.multi
+    def button_resume(self):
+        self.write({'state':'startworking'})
+
+    @api.multi
+    def button_pause(self):
+        self.write({'state': 'pause'})
+
+    @api.multi
+    def button_cancel(self):
+        self.write({'state': 'cancel'})
+
+    @api.multi
+    def button_done(self):
+        self.write({'state': 'done',
+                    'date_finished': time.strftime(DEFAULT_SERVER_DATETIME_FORMAT)})
+        #for workorder in self:
+        #    workorder.state='done'
+        # Put date_finished
 
 class MrpProductionProductLine(models.Model):
     _name = 'mrp.production.product.line'

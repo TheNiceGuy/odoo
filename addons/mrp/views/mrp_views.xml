@@ -10,19 +10,25 @@
             sequence="35"/>
 
         <menuitem id="menu_mrp_manufacturing"
-            name="Manufacturing"
+            name="To Dos"
             parent="base.menu_mrp_root"
-            sequence="1"/>
+            sequence="10"/>
 
         <menuitem id="menu_mrp_planning"
             name="Planning"
             parent="base.menu_mrp_root"
-            sequence="2"/>
+            sequence="15"/>
 
         <menuitem id="menu_mrp_bom"
-            name="Products"
+            name="Master Data"
             parent="base.menu_mrp_root"
-            sequence="5"/>
+            sequence="20"/>
+
+        <menuitem id="menu_mrp_reporting"
+              name="Reporting"
+              parent="base.menu_mrp_root"
+              sequence="25"/>
+
 
         <menuitem id="menu_mrp_configuration"
             name="Configuration"
@@ -285,11 +291,177 @@
               </p>
             </field>
         </record>
+
+        <record id="view_mrp_production_workcenter_line_search" model="ir.ui.view">
+            <field name="name">mrp.production.workcenter.line.search</field>
+            <field name="model">mrp.production.workcenter.line</field>
+            <field name="arch" type="xml">
+                <search>
+                    <field name="workcenter_id"/>
+                </search>
+            </field>
+
+        </record>
+
+        <record id="action_work_orders" model="ir.actions.act_window">
+            <field name="name">Work Orders</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">mrp.production.workcenter.line</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+            <!--<field name="context">{'default_workcenter_id': }</field>-->
+            <field name="domain">[('workcenter_id', '=', active_id), ('state', '!=', 'done')]</field>
+            <field name="help" type="html">
+              <p class="oe_view_nocontent_create">
+                Click to add a work center.
+              </p><p>
+                Work Centers allow you to create and manage manufacturing
+                units. They consist of workers and/or machines, which are
+                considered as units for task assignation as well as capacity
+                and planning forecast.
+              </p>
+            </field>
+        </record>
+
+
+        <!-- Workcenter Kanban view-->
+        <record model="ir.ui.view" id="mrp_workcenter_kanban">
+            <field name="name">mrp.workcenter.kanban</field>
+            <field name="model">mrp.workcenter</field>
+            <field name="arch" type="xml">
+                <kanban class="oe_background_grey o_kanban_dashboard o_stock_kanban" create="0">
+                    <field name="name"/>
+                    <field name="capacity_per_cycle"/>
+                    <field name="time_cycle"/>
+                    <field name="time_start"/>
+                    <field name="time_stop"/>
+                    <field name="color"/>
+                    <templates>
+                        <t t-name="kanban-box">
+                            <div t-attf-class="#{kanban_color(record.color.raw_value)}">
+                                <div class="o_kanban_card_header">
+                                    <div class="o_kanban_card_header_title">
+                                        <div class="o_primary"><field name="name"/></div>
+                                    </div>
+                                    <div class="o_kanban_manage_button_section">
+                                        <a class="o_kanban_manage_toggle_button" href="#">More <i class="fa fa-caret-down"/></a>
+                                    </div>
+                                </div>
+                                <div class="container o_kanban_card_content o_visible">
+                                    <div class="row">
+                                        <div class="col-xs-6 o_kanban_primary_left">
+                                            <button class="btn btn-primary" name="%(action_work_orders)d" type="action">
+                                                <span><t t-esc="record.nb_orders.value"/> Work Orders</span>
+                                            </button>
+                                        </div>
+                                        <div class="col-xs-6 o_kanban_primary_right">
+                                            <div class="row"><!--t-if="record.nb_alerts.raw_value > 0"-->
+                                                <div class="col-xs-9">
+                                                    <a name="%(action_work_orders)d" type="action">
+                                                        Work Orders
+                                                    </a>
+                                                </div>
+                                                <div class="col-xs-3">
+                                                    <field name="nb_orders"/>
+                                                </div>
+                                            </div>
+                                            <div class="row"><!--t-if="record.nb_alerts.raw_value > 0"-->
+                                                <div class="col-xs-9">
+                                                    <a name="%(action_work_orders)d" type="action">
+                                                        Ready
+                                                    </a>
+                                                </div>
+                                                <div class="col-xs-3">
+                                                    0
+                                                </div>
+                                            </div>
+                                            <div class="row"><!--t-if="record.nb_alerts.raw_value > 0"-->
+                                                <div class="col-xs-9">
+                                                    <a name="%(action_work_orders)d" type="action">
+                                                        Todo Today
+                                                    </a>
+                                                </div>
+                                                <div class="col-xs-3">
+                                                    0
+                                                </div>
+                                            </div>
+                                            <div class="row"><!--t-if="record.nb_alerts.raw_value > 0"-->
+                                                <div class="col-xs-9">
+                                                    <a name="%(action_work_orders)d" type="action">
+                                                        Late
+                                                    </a>
+                                                </div>
+                                                <div class="col-xs-3">
+                                                    0
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div><div class="container o_kanban_card_manage_pane o_invisible">
+                                    <div class="row">
+                                        <div class="col-xs-6 o_kanban_card_manage_section o_kanban_manage_view">
+                                            <div class="o_kanban_card_manage_title">
+                                                <span>View</span>
+                                            </div>
+                                            <div>
+                                                <a name="%(action_work_orders)" type="action">All</a>
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-6 o_kanban_card_manage_section o_kanban_manage_new">
+                                            <div class="o_kanban_card_manage_title">
+                                                <span>Report</span>
+                                            </div>
+                                            <div>
+                                                <a name="%(action_work_orders)" type="action">Work Center Efficiency</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div t-if="widget.editable" class="o_kanban_card_manage_settings row">
+                                        <div class="col-xs-8">
+                                            <ul class="oe_kanban_colorpicker" data-field="color"/>
+                                        </div>
+                                        <div class="col-xs-4 text-right">
+                                            <a type="edit">Settings</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </t>
+                    </templates>
+                </kanban>
+            </field>
+        </record>
+
+
+        <record id="mrp_workcenter_kanban_action" model="ir.actions.act_window">
+            <field name="name">Work Centers</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">mrp.workcenter</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">kanban,tree,form</field>
+            <field name="search_view_id" ref="view_mrp_workcenter_search"/>
+            <field name="help" type="html">
+              <p class="oe_view_nocontent_create">
+                Click to add a work center.
+              </p><p>
+                Work Centers allow you to create and manage manufacturing
+                units. They consist of workers and/or machines, which are
+                considered as units for task assignation as well as capacity
+                and planning forecast.
+              </p>
+            </field>
+        </record>
+
         <menuitem id="menu_view_resource_search_mrp"
             action="mrp_workcenter_action"
             groups="group_mrp_routings"
             parent="menu_mrp_configuration"
             sequence="40"/>
+        <menuitem id="menu_mrp_dashboard"
+            name="Dashboard"
+            action="mrp_workcenter_kanban_action"
+            parent="base.menu_mrp_root"
+            sequence="5"/>
 
         <!-- Routings -->
         <record id="mrp_routing_form_view" model="ir.ui.view">
@@ -368,7 +540,7 @@
         </record>
         <menuitem id="menu_mrp_routing_action"
           action="mrp_routing_action"
-          parent="menu_mrp_configuration"
+          parent="menu_mrp_bom"
           groups="group_mrp_routings"
           sequence="50"/>
 
@@ -570,6 +742,27 @@
             <field eval="'ir.actions.act_window,'+str(action2)" name="value"/>
         </record>
 
+        <record model="ir.actions.act_window" id="action_mrp_workorder_production_specific">
+            <field name="name">Work Orders</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">mrp.production.workcenter.line</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form,gantt,calendar,graph</field>
+            <field name="domain">[('production_id', '=', active_id)]</field>
+            <field name="help" type="html">
+              <p class="oe_view_nocontent_create">
+                Click to start a new work order.
+              </p><p>
+                Work Orders is the list of operations to be performed for each
+                manufacturing order. Once you start the first work order of a
+                manufacturing order, the manufacturing order is automatically
+                marked as started. Once you finish the latest operation of a
+                manufacturing order, the MO is automatically done and the related
+                products are produced.
+              </p>
+            </field>
+        </record>
+
         <!-- Production Order -->
         <record id="mrp_production_form_view" model="ir.ui.view">
             <field name="name">mrp.production.form</field>
@@ -584,9 +777,16 @@
                     <button name="button_produce" states="ready" string="Mark as Started"/>
                     <button name="button_cancel" states="draft,ready,in_production" string="Cancel Production"/>
                     <button name="action_cancel" type="object" states="confirmed" string="Cancel Production"/>
+                    <button name="action_button_compute" states="draft"
+                                string="Compute Data" type="object"
+                                icon="terp-stock_format-scientific"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,ready,in_production,done" statusbar_colors='{"confirmed":"blue"}'/>
                 </header>
                 <sheet>
+                    <div class="oe_button_box">
+                        <button name="%(action_mrp_workorder_production_specific)d" type="action" string="Work Orders" attrs="{'invisible': [('workcenter_line_ids', '=', [])]}"/>
+                        <field name="workcenter_line_ids" invisible="1"/>
+                    </div>
                     <div class="oe_title">
                         <label for="name" class="oe_edit_only"/>
                         <h1><field name="name" placeholder="Manufacturing Reference"/></h1>
@@ -616,121 +816,15 @@
                             <field name="routing_id" groups="mrp.group_mrp_routings"/>
                             <field name="user_id"/>
                             <field name="origin"/>
+                            <field name="priority"/>
+                            <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
+                            <field name="move_prod_id" groups="base.group_no_one"/>
                         </group>
                         <group groups="stock.group_locations">
                             <field name="location_src_id" domain="[('usage','=','internal')]"/>
                             <field name="location_dest_id" domain="[('usage','=','internal')]"/>
                         </group>
                     </group>
-                    <notebook>
-                        <page string="Consumed Products">
-                            <group>
-                                <group string="Products to Consume">
-                                    <field name="move_line_ids" nolabel="1" options="{'reload_on_button': true}">
-                                        <tree decoration-info="state == 'draft'" decoration-muted="state in ('cancel','done')" decoration-danger="state in ('confirmed','waiting')" string="Products to Consume">
-                                            <field name="product_id"/>
-                                            <field name="product_uom_qty"  string="Quantity"/>
-                                            <field name="product_uom" options="{'no_open':True,'no_create':True}" string="Unit of Measure" groups="product.group_uom"/>
-                                            <field name="state" invisible="1"/>
-                                            <button name="%(mrp.move_consume)d"
-                                                string="Consume Products" type="action"
-                                                icon="gtk-go-forward" context="{'consume': True}"
-                                                states="assigned"
-                                                 />
-                                            <button name="%(stock.move_scrap)d"
-                                                string="Scrap Products" type="action"
-                                                icon="terp-gtk-jump-to-ltr" context="{'scrap': True}"
-                                                states="draft,waiting,confirmed,assigned"/>
-                                        </tree>
-                                    </field>
-                                </group>
-                                <group string="Consumed Products">
-                                    <field name="move_line_ids2" nolabel="1" options="{'reload_on_button': true}">
-                                       <tree decoration-danger="scrapped==True" decoration-info="state == 'draft'" decoration-muted="state == 'cancel'" string="Consumed Products" editable="bottom">
-                                           <field name="product_id" readonly="1"/>
-                                           <field name="restrict_lot_id" context="{'product_id': product_id}" groups="stock.group_production_lot"/>
-                                           <field name="product_uom_qty" readonly="1"/>
-                                           <field name="product_uom" options="{'no_open':True,'no_create':True}" readonly="1" string="Unit of Measure" groups="product.group_uom"/>
-                                           <field name="state" invisible="1"/>
-                                           <field name="scrapped" invisible="1"/>
-                                       </tree>
-                                    </field>
-                                </group>
-                            </group>
-                        </page>
-                        <page string="Finished Products">
-                            <group>
-                                <group string="Products to Produce">
-                                    <field name="move_created_ids" nolabel="1" options="{'reload_on_button': true}">
-                                        <tree string="Products to Finish">
-                                            <field name="product_id"/>
-                                            <field name="product_uom_qty"/>
-                                            <field name="product_uom" options="{'no_open':True,'no_create':True}"  string="Unit of Measure" groups="product.group_uom"/>
-                                            <field name="state" invisible="1"/>
-                                        </tree>
-                                    </field>
-                                </group>
-                                <group string="Produced Products">
-                                    <field name="move_created_ids2" nolabel="1" options="{'reload_on_button': true}">
-                                        <tree decoration-danger="scrapped==True" decoration-info="state == 'draft'" decoration-muted="state == 'cancel'" string="Finished Products">
-                                            <field name="product_id" readonly="1"/>
-                                            <field name="product_uom_qty" readonly="1"/>
-                                            <field name="restrict_lot_id" groups="stock.group_production_lot"/>
-                                            <field name="product_uom" options="{'no_open':True,'no_create':True}" readonly="1" string="Unit of Measure" groups="product.group_uom"/>
-                                            <field name="location_dest_id"  readonly="1" string="Destination Loc." widget="selection" groups="stock.group_locations"/>
-                                            <field name="scrapped" invisible="1"/>
-                                            <field name="state" invisible="1"/>
-                                            <button name="%(stock.move_scrap)d"
-                                                string="Scrap Products" type="action" icon="terp-gtk-jump-to-ltr"
-                                                states="done,cancel"/>
-                                        </tree>
-                                    </field>
-                                </group>
-                            </group>
-                        </page>
-                        <page string="Work Orders" groups="mrp.group_mrp_routings">
-                            <button name="action_button_compute" states="draft"
-                                string="Compute Data" type="object"
-                                icon="terp-stock_format-scientific"/>
-                            <field name="workcenter_line_ids" options="{'reload_on_button': true}">
-                                <form string="Production Work Centers">
-                                    <group col="4">
-                                        <field colspan="4" name="name"/>
-                                        <field name="workcenter_id"/>
-                                        <field name="sequence"/>
-                                        <field name="cycle"/>
-                                        <field name="hour" widget="float_time"/>
-                                    </group>
-                                </form>
-                                <tree string="Production Work Centers">
-                                    <field name="sequence"/>
-                                    <field name="name"/>
-                                    <field name="workcenter_id"/>
-                                    <field name="cycle"/>
-                                    <field name="hour" widget="float_time"/>
-                                </tree>
-                            </field>
-                        </page>
-                        <page string="Scheduled Products">
-                            <button name="action_button_compute" states="draft"
-                                string="Compute Data" type="object"
-                                icon="terp-stock_format-scientific"/>
-                            <field name="product_line_ids"/>
-                        </page>
-                        <page string="Extra Information">
-                            <group>
-                                <group>
-                                    <field name="priority"/>
-                                    <field name="date_start" invisible="1"/>
-                                    <field name="date_finished" invisible="1"/>
-                                </group>
-                                <group>
-                                    <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
-                                    <field name="move_prod_id" groups="base.group_no_one"/>
-                                </group>
-                            </group>
-                        </page>
-                    </notebook>
                 </sheet>
                 <div class="oe_chatter">
                     <field name="message_follower_ids" widget="mail_followers"/>
@@ -745,6 +839,7 @@
             <field name="arch" type="xml">
                 <tree decoration-bf="message_needaction==True" decoration-info="state in ('draft','confirmed')" decoration-danger="date_planned&lt;current_date and state not in ('done','cancel')" decoration-muted="state in ('done','cancel')" string="Manufacturing Orders">
                     <field name="message_needaction" invisible="1"/>
+                    <field name="priority" widget="handle"/> <!-- TODO: Need to convert to integer or use sequence in order too -->
                     <field name="name"/>
                     <field name="date_planned"/>
                     <field name="product_id"/>
@@ -890,7 +985,10 @@
             parent="menu_mrp_manufacturing"
             sequence="1"/>
 
-        <record id="mrp_production_action_planning" model="ir.actions.act_window">
+
+    <!-- Where to put production order planning??? -->
+
+        <!--<record id="mrp_production_action_planning" model="ir.actions.act_window">
             <field name="name">Manufacturing Orders</field>
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">mrp.production</field>
@@ -912,7 +1010,7 @@
         </record>
         <menuitem action="mrp.mrp_production_action_planning"
                 id="menu_mrp_production_order_action" name="Order Planning"
-                parent="menu_mrp_planning" sequence="1"/>
+                parent="menu_mrp_planning" sequence="1"/>-->
 
         <!-- Production Order Line -->
         <record id="mrp_production_product_form_view" model="ir.ui.view">
@@ -1046,6 +1144,7 @@
             <field name="res_model">mrp.production</field>
             <field name="view_id" ref="mrp_production_tree_view"/>
         </record>
+
         <record id="product_product_form_view_bom_button" model="ir.ui.view">
             <field name="name">product.product.procurement</field>
             <field name="model">product.product</field>
@@ -1076,5 +1175,268 @@
                 </xpath>
             </field>
         </record>
+
+
+        <!-- Coming from mrp_operations -->
+
+    <record model="ir.ui.view" id="mrp_production_workcenter_tree_view_inherit">
+        <field name="name">mrp.production.workcenter.line.tree</field>
+        <field name="model">mrp.production.workcenter.line</field>
+        <field name="arch" type="xml">
+            <tree string="Work Orders" decoration-muted="state in ('done','cancel')" decoration-danger="date_planned_start&lt;current_date and state in ('draft', 'confirmed', 'ready')">
+                <field name="production_id"/>
+                <field name="date_planned_start"/>
+                <field name="product"/>
+                <field name="qty"/>
+                <field name="uom"/>
+                <field name="name"/>
+                <field name="workcenter_id" widget="selection"/>
+                <field name="cycle"/>
+                <field name="hour" widget="float_time"/>
+                <field name="state"/>
+            </tree>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="mrp_production_workcenter_form_view_inherit">
+        <field name="name">mrp.production.workcenter.line.form</field>
+        <field name="model">mrp.production.workcenter.line</field>
+        <field name="arch" type="xml">
+            <form string="Production Workcenter">
+            <header>
+                <button name="button_start_working" string="Start" states="draft" class="oe_highlight"/>
+                <button name="button_resume" string="Resume" states="pause" class="oe_highlight"/>
+                <button name="button_done" string="Finished" states="startworking" class="oe_highlight"/>
+                <button name="button_pause" string="Pending" states="startworking"/>
+                <button name="button_draft" string="Set Draft" states="cancel"/>
+                <button name="button_cancel" string="Cancel" states="draft,startworking"/>
+                <field name="state" widget="statusbar" statusbar_visible="draft,startworking"/>
+            </header>
+            <sheet string="Work Orders">
+                <group col="4">
+                    <field colspan="2" name="name"/>
+                    <field name="workcenter_id"/>
+                    <field name="production_id"/>
+                    <field name="production_state"/>
+                    <field name="sequence"/>
+                </group>
+                <notebook>
+                <page string="Information">
+                    <group>
+                        <group string="Planned Date">
+                            <field name="date_planned_start"/>
+                            <field name="date_planned_end"/>
+                        </group>
+
+                        <group string="Duration">
+                            <field name="cycle"/>
+                            <field name="hour" widget="float_time"/>
+                        </group>
+                        <group string="Actual Production Date" >
+                            <field name="date_start" readonly="1"/>
+                            <field name="date_finished" readonly="1"/>
+                            <field name="delay" widget="float_time"/>
+                        </group>
+                        <group string="Product to Produce">
+                            <field name="product"/>
+                            <field name="qty"/>
+                            <field name="uom" widget="selection"/>
+                        </group>
+                    </group>
+                </page>
+                </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_mrp_production_workcenter_form_view_filter" model="ir.ui.view">
+        <field name="name">mrp.production.workcenter.line.select</field>
+        <field name="model">mrp.production.workcenter.line</field>
+        <field name="arch" type="xml">
+            <search string="Search Work Orders">
+                <field name="name" string="Work Orders"/>
+                <field name="date_planned_start"/>
+                <field name="state"/>
+                <filter string="Draft" domain="[('state','=','draft')]"/>
+                <filter string="In Progress" name="Current" domain="[('state','=','startworking')]"/>
+                <filter string="Pending" domain="[('state','=','pause')]"/>
+                <separator/>
+                <filter string="Late" domain="['&amp;', ('date_planned_start','&lt;', current_date), ('state', 'in', ('draft', 'confirmed', 'ready'))]"
+                    help="Production started late"/>
+                <field name="workcenter_id"/>
+                <field name="production_id"/>
+                <group expand="0" string="Group By">
+                    <filter string="Work Center" domain="[]" context="{'group_by':'workcenter_id'}"/>
+                    <filter string="Production" domain="[]" context="{'group_by':'production_id'}"/>
+                    <filter string="Status" domain="[]" context="{'group_by':'state'}"/>
+                    <filter string="Scheduled Month" domain="[]" context="{'group_by':'date_planned_start'}" help="Scheduled Date by Month"/>
+                </group>
+             </search>
+        </field>
+    </record>
+
+    <record id="workcenter_line_calendar" model="ir.ui.view">
+        <field name="name">mrp.production.workcenter.line.calendar</field>
+        <field name="model">mrp.production.workcenter.line</field>
+        <field name="arch" type="xml">
+            <calendar color="product" date_stop="date_finished" date_start="date_start" string="Operations">
+                <field name="workcenter_id"/>
+                <field name="production_id"/>
+            </calendar>
+        </field>
+    </record>
+
+
+    <record id="workcenter_line_gantt_production" model="ir.ui.view">
+        <field name="name">mrp.production.workcenter.line.gantt.production</field>
+        <field name="model">mrp.production.workcenter.line</field>
+        <field name="arch" type="xml">
+            <gantt date_delay="hour" date_start="date_planned_start" string="Operations" default_group_by="production_id">
+            </gantt>
+        </field>
+    </record>
+
+    <record id="workcenter_line_gantt_workcenter" model="ir.ui.view">
+        <field name="name">mrp.production.workcenter.line.gantt.workcenter</field>
+        <field name="model">mrp.production.workcenter.line</field>
+        <field name="arch" type="xml">
+            <gantt date_delay="hour" date_start="date_planned_start" string="Operations" default_group_by="workcenter_id">
+
+            </gantt>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="workcenter_line_kanban">
+        <field name="name">mrp.production.workcenter.line.kanban</field>
+        <field name="model">mrp.production.workcenter.line</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="workcenter_id" class="o_kanban_small_column">
+                <field name="name"/>
+                <field name="production_id"/>
+                <field name="state"/>
+                <field name="workcenter_id"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div t-attf-class="oe_kanban_card oe_kanban_global_click">
+                            <div class="row">
+                                <div class="col-xs-4">
+                                    <strong><span><t t-esc="record.name.value"/></span></strong>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-xs-4 text-muted">
+                                    <span><t t-esc="record.production_id.value"/></span>
+                                    <field name="state"/>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+
+
+    <!-- Action for All Operations   -->
+
+
+    <record model="ir.actions.act_window" id="action_mrp_workorder_workcenter">
+        <field name="name">Work Orders</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">mrp.production.workcenter.line</field>
+        <field name="view_type">form</field>
+        <field name="view_mode">gantt,tree,form,calendar,graph</field>
+        <field name="search_view_id" ref="view_mrp_production_workcenter_form_view_filter"/>
+        <field name="view_id" ref="workcenter_line_gantt_workcenter"/>
+        <field name="help" type="html">
+          <p class="oe_view_nocontent_create">
+            Click to start a new work order.
+          </p><p>
+            Work Orders is the list of operations to be performed for each
+            manufacturing order. Once you start the first work order of a
+            manufacturing order, the manufacturing order is automatically
+            marked as started. Once you finish the latest operation of a
+            manufacturing order, the MO is automatically done and the related
+            products are produced.
+          </p>
+        </field>
+    </record>
+
+    <record model="ir.actions.act_window" id="action_mrp_workorder_production">
+        <field name="name">Work Orders Planning</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">mrp.production.workcenter.line</field>
+        <field name="view_type">form</field>
+        <!--<field name="domain">[('production_state','in',('ready','confirmed','in_production'))]</field>-->
+        <field name="view_mode">gantt,tree,form,graph,calendar</field>
+        <field name="view_id" ref="workcenter_line_gantt_production"/>
+        <field name="help" type="html">
+          <p class="oe_view_nocontent_create">
+            Click to start a new work order.
+          </p><p>
+            To manufacture or assemble products, and use raw materials and
+            finished products you must also handle manufacturing operations.
+            Manufacturing operations are often called Work Orders. The various
+            operations will have different impacts on the costs of
+            manufacturing and planning depending on the available workload.
+          </p>
+        </field>
+    </record>
+
+    <record model="ir.actions.act_window" id="mrp_workorder_todo">
+        <field name="name">Work Orders</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">mrp.production.workcenter.line</field>
+        <field name="view_type">form</field>
+        <field name="view_mode">kanban,tree,form</field>
+        <field name="search_view_id" ref="view_mrp_production_workcenter_form_view_filter"/>
+        <field name="domain">[('state', 'in', ('draft', 'startworking', 'pending'))]</field>
+        <field name="help" type="html">
+          <p class="oe_view_nocontent_create">
+            Click to start a new work order.
+          </p><p>
+            Work Orders is the list of operations to be performed for each
+            manufacturing order. Once you start the first work order of a
+            manufacturing order, the manufacturing order is automatically
+            marked as started. Once you finish the latest operation of a
+            manufacturing order, the MO is automatically done and the related
+            products are produced.
+          </p>
+        </field>
+    </record>
+
+    <menuitem id="menu_mrp_workorder_todo"
+            name="Work Orders Todo"
+            action="mrp_workorder_todo"
+            parent="menu_mrp_manufacturing"/>
+
+    <menuitem id="menu_mrp_workorder_production"
+              name="Work Orders by Production Order"
+              action="action_mrp_workorder_production"
+              parent="menu_mrp_planning"/>
+
+    <menuitem id="menu_mrp_workorder_workcenter"
+              name="Work Orders by Workcenter"
+              action="action_mrp_workorder_workcenter"
+              parent="menu_mrp_planning"/>
+
+
+    <menuitem id="menu_mrp_mps"
+          name="MPS"
+          parent="menu_mrp_reporting"
+          action="mrp_workorder_todo"
+          sequence="5"/>
+
+    <menuitem id="menu_mrp_traceability"
+          name="Traceability"
+          parent="menu_mrp_reporting"
+          action="mrp_workorder_todo"
+          sequence="10"/>
 
 </odoo>
