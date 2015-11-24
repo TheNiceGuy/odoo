@@ -714,6 +714,11 @@ class MrpProductionWorkcenterLine(models.Model):
     hour = fields.Float(string='Number of Hours', digits=(16, 2))
     sequence = fields.Integer(required=True, default=1, help="Gives the sequence order when displaying a list of work orders.")
     production_id = fields.Many2one('mrp.production', string='Manufacturing Order', track_visibility='onchange', index=True, ondelete='cascade', required=True)
+    state = fields.Selection([('draft', 'Draft'), ('cancel', 'Cancelled'), ('pause', 'Pending'), ('startworking', 'In Progress'), ('done', 'Finished')], default='startworking')
+    date_planned_start = fields.Datetime('Scheduled Date Start')
+    date_planned_end = fields.Datetime('Scheduled Date Finished')
+    date_start = fields.Datetime('Effective Start Date')
+    date_finished = fields.Datetime('Effective End Date')
 
 
 class MrpProductionProductLine(models.Model):
