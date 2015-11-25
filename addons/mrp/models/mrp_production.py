@@ -4,8 +4,10 @@
 from collections import OrderedDict
 from openerp import api, fields, models, _
 from openerp.exceptions import AccessError, UserError
-from openerp.tools import float_compare, float_is_zero
+from openerp.tools import float_compare, float_is_zero, DEFAULT_SERVER_DATETIME_FORMAT
 import openerp.addons.decimal_precision as dp
+from datetime import datetime
+import time
 
 
 class MrpProduction(models.Model):
@@ -714,12 +716,45 @@ class MrpProductionWorkcenterLine(models.Model):
     hour = fields.Float(string='Number of Hours', digits=(16, 2))
     sequence = fields.Integer(required=True, default=1, help="Gives the sequence order when displaying a list of work orders.")
     production_id = fields.Many2one('mrp.production', string='Manufacturing Order', track_visibility='onchange', index=True, ondelete='cascade', required=True)
-    state = fields.Selection([('draft', 'Draft'), ('cancel', 'Cancelled'), ('pause', 'Pending'), ('startworking', 'In Progress'), ('done', 'Finished')], default='startworking')
+    state = fields.Selection([('draft', 'Draft'), ('cancel', 'Cancelled'), ('pause', 'Pending'), ('startworking', 'In Progress'), ('done', 'Finished')], default='draft')
     date_planned_start = fields.Datetime('Scheduled Date Start')
     date_planned_end = fields.Datetime('Scheduled Date Finished')
     date_start = fields.Datetime('Effective Start Date')
     date_finished = fields.Datetime('Effective End Date')
+    delay = fields.Float('Working Hours', readonly=True)
+    production_state = fields.Selection(related='production_id.state', readonly=True)
+    product = fields.Many2one('product.product', related='production_id.product_id', string="Product", readonly=True)
+    qty = fields.Float(related='production_id.product_qty', string='Qty', readonly=True, store=True) #store really needed?
+    uom = fields.Many2one('product.uom', related='production_id.product_uom_id', string='Unit of Measure')
 
+    @api.multi
+    def button_draft(self):
+        return self.write({'state': 'draft'})
+
+    @api.multi
+    def button_start_working(self):
+        self.write({'state': 'startworking',
+                    'date_start': time.strftime(DEFAULT_SERVER_DATETIME_FORMAT)})
+
+    @api.multi
+    def button_resume(self):
+        self.write({'state':'startworking'})
+
+    @api.multi
+    def button_pause(self):
+        self.write({'state': 'pause'})
+
+    @api.multi
+    def button_cancel(self):
+        self.write({'state': 'cancel'})
+
+    @api.multi
+    def button_done(self):
+        self.write({'state': 'done',
+                    'date_finished': time.strftime(DEFAULT_SERVER_DATETIME_FORMAT)})
+        #for workorder in self:
+        #    workorder.state='done'
+        # Put date_finished
 
 class MrpProductionProductLine(models.Model):
     _name = 'mrp.production.product.line'

@@ -19,7 +19,7 @@ class MrpWorkcenter(models.Model):
     @api.one
     @api.depends('order_ids')
     def _compute_orders(self):
-        self.nb_orders = self.env['mrp.production.workcenter.line'].search_count([('workcenter_id', '=', self.id), ('state', 'in', ['pending', 'startworking'])])
+        self.nb_orders = self.env['mrp.production.workcenter.line'].search_count([('workcenter_id', '=', self.id), ('state', '!=', 'done')]) #('state', 'in', ['pending', 'startworking'])
 
     note = fields.Text(string='Description', help="Description of the Work Center. Explain here what's a cycle according to this Work Center.")
     capacity_per_cycle = fields.Float(string='Capacity per Cycle', default=1.0, help="Number of operations this Work Center can do in parallel. If this Work Center represents a team of 5 workers, the capacity per cycle is 5.")
