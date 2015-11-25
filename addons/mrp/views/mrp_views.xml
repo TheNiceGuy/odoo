@@ -304,7 +304,7 @@
             <field name="view_type">form</field>
             <field name="view_mode">tree,form</field>
             <!--<field name="context">{'default_workcenter_id': }</field>-->
-            <field name="domain">[('workcenter_id', '=', active_id), ('state', 'in', ('startworking', 'pending'))]</field>
+            <field name="domain">[('workcenter_id', '=', active_id), ('state', '!=', 'done')]</field>
             <field name="help" type="html">
               <p class="oe_view_nocontent_create">
                 Click to add a work center.
@@ -872,6 +872,7 @@
             <field name="arch" type="xml">
                 <tree decoration-bf="message_needaction==True" decoration-info="state in ('draft','confirmed')" decoration-danger="date_planned&lt;current_date and state not in ('done','cancel')" decoration-muted="state in ('done','cancel')" string="Manufacturing Orders">
                     <field name="message_needaction" invisible="1"/>
+                    <field name="priority" widget="handle"/> <!-- TODO: Need to convert to integer or use sequence in order too -->
                     <field name="name"/>
                     <field name="date_planned"/>
                     <field name="product_id"/>
@@ -1017,7 +1018,10 @@
             parent="menu_mrp_manufacturing"
             sequence="1"/>
 
-        <record id="mrp_production_action_planning" model="ir.actions.act_window">
+
+    <!-- Where to put production order planning??? -->
+
+        <!--<record id="mrp_production_action_planning" model="ir.actions.act_window">
             <field name="name">Manufacturing Orders</field>
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">mrp.production</field>
@@ -1039,7 +1043,7 @@
         </record>
         <menuitem action="mrp.mrp_production_action_planning"
                 id="menu_mrp_production_order_action" name="Order Planning"
-                parent="menu_mrp_planning" sequence="1"/>
+                parent="menu_mrp_planning" sequence="1"/>-->
 
         <!-- Production Order Line -->
         <record id="mrp_production_product_form_view" model="ir.ui.view">
@@ -1245,7 +1249,7 @@
                 <group col="4">
                     <field colspan="2" name="name"/>
                     <field name="workcenter_id"/>
-                    <field name="production_id" on_change="onchange_production_id(production_id)"/>
+                    <field name="production_id"/>
                     <field name="production_state"/>
                     <field name="sequence"/>
                 </group>
@@ -1321,8 +1325,8 @@
     </record>
 
 
-    <record id="workcenter_line_gantt" model="ir.ui.view">
-        <field name="name">mrp.production.workcenter.line.gantt</field>
+    <record id="workcenter_line_gantt_production" model="ir.ui.view">
+        <field name="name">mrp.production.workcenter.line.gantt.production</field>
         <field name="model">mrp.production.workcenter.line</field>
         <field name="arch" type="xml">
             <gantt date_delay="hour" date_start="date_planned_start" string="Operations" default_group_by="production_id">
@@ -1330,16 +1334,59 @@
         </field>
     </record>
 
+    <record id="workcenter_line_gantt_workcenter" model="ir.ui.view">
+        <field name="name">mrp.production.workcenter.line.gantt.workcenter</field>
+        <field name="model">mrp.production.workcenter.line</field>
+        <field name="arch" type="xml">
+            <gantt date_delay="hour" date_start="date_planned_start" string="Operations" default_group_by="workcenter_id">
+
+            </gantt>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="workcenter_line_kanban">
+        <field name="name">mrp.production.workcenter.line.kanban</field>
+        <field name="model">mrp.production.workcenter.line</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="workcenter_id" class="o_kanban_small_column">
+                <field name="name"/>
+                <field name="production_id"/>
+                <field name="state"/>
+                <field name="workcenter_id"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div t-attf-class="oe_kanban_card oe_kanban_global_click">
+                            <div class="row">
+                                <div class="col-xs-4">
+                                    <strong><span><t t-esc="record.name.value"/></span></strong>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-xs-4 text-muted">
+                                    <span><t t-esc="record.production_id.value"/></span>
+                                    <field name="state"/>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+
 
     <!-- Action for All Operations   -->
 
-    <record model="ir.actions.act_window" id="mrp_production_wc_action_form">
+
+    <record model="ir.actions.act_window" id="action_mrp_workorder_workcenter">
         <field name="name">Work Orders</field>
         <field name="type">ir.actions.act_window</field>
         <field name="res_model">mrp.production.workcenter.line</field>
         <field name="view_type">form</field>
-        <field name="view_mode">tree,form,gantt,calendar,graph</field>
+        <field name="view_mode">gantt,tree,form,calendar,graph</field>
         <field name="search_view_id" ref="view_mrp_production_workcenter_form_view_filter"/>
+        <field name="view_id" ref="workcenter_line_gantt_workcenter"/>
         <field name="help" type="html">
           <p class="oe_view_nocontent_create">
             Click to start a new work order.
@@ -1354,13 +1401,14 @@
         </field>
     </record>
 
-    <record model="ir.actions.act_window" id="mrp_production_wc_action_planning">
+    <record model="ir.actions.act_window" id="action_mrp_workorder_production">
         <field name="name">Work Orders Planning</field>
         <field name="type">ir.actions.act_window</field>
         <field name="res_model">mrp.production.workcenter.line</field>
         <field name="view_type">form</field>
-        <field name="domain">[('production_state','in',('ready','confirmed','in_production'))]</field>
+        <!--<field name="domain">[('production_state','in',('ready','confirmed','in_production'))]</field>-->
         <field name="view_mode">gantt,tree,form,graph,calendar</field>
+        <field name="view_id" ref="workcenter_line_gantt_production"/>
         <field name="help" type="html">
           <p class="oe_view_nocontent_create">
             Click to start a new work order.
@@ -1374,28 +1422,40 @@
         </field>
     </record>
 
-
-    <record id="workcenter_line_resource_gantt" model="ir.ui.view">
-        <field name="name">mrp.production.workcenter.line.resource.gantt</field>
-        <field name="model">mrp.production.workcenter.line</field>
-        <field name="arch" type="xml">
-            <gantt date_delay="hour" date_start="date_planned_start" default_group_by="workcenter_id">
-            </gantt>
-        </field>
-    </record>
-
-    <record model="ir.actions.act_window" id="mrp_production_wc_resource_planning">
-        <field name="name">Work Centers</field>
+    <record model="ir.actions.act_window" id="mrp_workorder_todo">
+        <field name="name">Work Orders</field>
         <field name="type">ir.actions.act_window</field>
         <field name="res_model">mrp.production.workcenter.line</field>
         <field name="view_type">form</field>
-        <field name="domain">[('production_state','in',('ready','confirmed','in_production'))]</field>
-        <field name="view_mode">gantt,tree,form,calendar,graph</field>
-        <field name="view_id" ref="workcenter_line_resource_gantt"/>
+        <field name="view_mode">kanban,tree,form</field>
+        <field name="search_view_id" ref="view_mrp_production_workcenter_form_view_filter"/>
+        <field name="domain">[('state', 'in', ('draft', 'startworking', 'pending'))]</field>
+        <field name="help" type="html">
+          <p class="oe_view_nocontent_create">
+            Click to start a new work order.
+          </p><p>
+            Work Orders is the list of operations to be performed for each
+            manufacturing order. Once you start the first work order of a
+            manufacturing order, the manufacturing order is automatically
+            marked as started. Once you finish the latest operation of a
+            manufacturing order, the MO is automatically done and the related
+            products are produced.
+          </p>
+        </field>
     </record>
 
+    <menuitem id="menu_mrp_workorder_todo"
+            name="Work Orders Todo"
+            action="mrp_workorder_todo"
+            parent="menu_mrp_manufacturing"/>
 
+    <menuitem id="menu_mrp_workorder_production"
+              name="Work Orders by Production Order"
+              action="action_mrp_workorder_production"
+              parent="menu_mrp_planning"/>
 
-
-
+    <menuitem id="menu_mrp_workorder_workcenter"
+              name="Work Orders by Workcenter"
+              action="action_mrp_workorder_workcenter"
+              parent="menu_mrp_planning"/>
 </odoo>
