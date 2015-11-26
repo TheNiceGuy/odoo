@@ -3,18 +3,18 @@
 <data noupdate="1">
 
     <!-- Equipment categories -->
-    <record id="equipment_monitor" model="equipment.category">
+    <record id="equipment_monitor" model="maintenance.equipment.category">
         <field name="name">Monitors</field>
         <field name="technician_user_id" ref="base.user_root"/>
         <field name="color">3</field>
     </record>
-    <record id="equipment_phone" model="equipment.category">
+    <record id="equipment_phone" model="maintenance.equipment.category">
         <field name="name">Phones</field>
         <field name="technician_user_id" ref="base.user_root"/>
     </record>
 
     <!-- Equipments -->
-    <record id="equipment_monitor1" model="equipment">
+    <record id="equipment_monitor1" model="maintenance.equipment">
         <field name="name">Samsung Monitor 15"</field>
         <field name="category_id" ref="equipment_monitor"/>
         <field name="technician_user_id" ref="base.user_root"/>
@@ -22,7 +22,7 @@
         <field name="serial_no">MT/122/11112222</field>
         <field name="model">NP300E5X</field>
     </record>
-    <record id="equipment_monitor4" model="equipment">
+    <record id="equipment_monitor4" model="maintenance.equipment">
         <field name="name">Samsung Monitor 15"</field>
         <field name="category_id" ref="equipment_monitor"/>
         <field name="technician_user_id" ref="base.user_root"/>
@@ -30,7 +30,7 @@
         <field name="serial_no">MT/125/22778837</field>
         <field name="model">NP355E5X</field>
     </record>
-    <record id="equipment_monitor6" model="equipment">
+    <record id="equipment_monitor6" model="maintenance.equipment">
         <field name="name">Samsung Monitor 15"</field>
         <field name="category_id" ref="equipment_monitor"/>
         <field name="technician_user_id" ref="base.user_demo"/>
@@ -39,7 +39,7 @@
         <field name="model">NP355E5X</field>
         <field name="color">3</field>
     </record>
-     <record id="equipment_computer3" model="equipment">
+     <record id="equipment_computer3" model="maintenance.equipment">
         <field name="name">Acer Laptop</field>
         <field name="category_id" ref="equipment_computer"/>
         <field name="technician_user_id" ref="base.user_root"/>
@@ -47,7 +47,7 @@
         <field name="serial_no">LP/203/19281928</field>
         <field name="model">NE56R</field>
      </record>
-     <record id="equipment_computer5" model="equipment">
+     <record id="equipment_computer5" model="maintenance.equipment">
         <field name="name">Acer Laptop</field>
         <field name="category_id" ref="equipment_computer"/>
         <field name="technician_user_id" ref="base.user_demo"/>
@@ -55,7 +55,7 @@
         <field name="serial_no">LP/205/12928291</field>
         <field name="model">V5131</field>
      </record>
-     <record id="equipment_computer9" model="equipment">
+     <record id="equipment_computer9" model="maintenance.equipment">
         <field name="name">HP Laptop</field>
         <field name="category_id" ref="equipment_computer"/>
         <field name="technician_user_id" ref="base.user_demo"/>
@@ -63,14 +63,14 @@
         <field name="serial_no">LP/303/28292090</field>
         <field name="model">17-j059nr</field>
      </record>
-     <record id="equipment_computer11" model="equipment">
+     <record id="equipment_computer11" model="maintenance.equipment">
         <field name="name">HP Laptop</field>
         <field name="category_id" ref="equipment_computer"/>
         <field name="technician_user_id" ref="base.user_demo"/>
         <field name="assign_date" eval="time.strftime('%Y-05-01')"/>
         <field name="serial_no">LP/305/17281718</field>
      </record>
-     <record id="equipment_printer1" model="equipment">
+     <record id="equipment_printer1" model="maintenance.equipment">
         <field name="name">HP Inkjet printer</field>
         <field name="category_id" ref="equipment_printer"/>
         <field name="technician_user_id" ref="base.user_demo"/>

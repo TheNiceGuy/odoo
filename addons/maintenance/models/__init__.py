@@ -1,4 +1,4 @@
 # -*- coding: utf-8 -*-
 
-import equipment
+import maintenanceequipment
 import res_config

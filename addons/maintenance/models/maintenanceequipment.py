@@ -8,7 +8,7 @@ from openerp.exceptions import UserError
 class EquipmentStage(models.Model):
     """ Model for case stages. This models the main stages of a Maintenance Request management flow. """
 
-    _name = 'equipment.stage'
+    _name = 'maintenance.stage'
     _description = 'Maintenance Stage'
     _order = 'sequence, id'
 
@@ -18,8 +18,8 @@ class EquipmentStage(models.Model):
     done = fields.Boolean('Request Done')
 
 
-class EquipmentCategory(models.Model):
-    _name = 'equipment.category'
+class MaintenanceEquipmentCategory(models.Model):
+    _name = 'maintenance.equipment.category'
     _inherits = {"mail.alias": "alias_id"}
     _inherit = ['mail.thread']
     _description = 'Asset Category'
@@ -33,9 +33,9 @@ class EquipmentCategory(models.Model):
     technician_user_id = fields.Many2one('res.users', 'Responsible', track_visibility='onchange', default=lambda self: self.env.uid, oldname='user_id')
     color = fields.Integer('Color Index')
     note = fields.Text('Comments', translate=True)
-    equipment_ids = fields.One2many('equipment', 'category_id', string='Equipments', copy=False)
+    equipment_ids = fields.One2many('maintenance.equipment', 'category_id', string='Equipments', copy=False)
     equipment_count = fields.Integer(string="Equipment", compute='_compute_equipment_count')
-    maintenance_ids = fields.One2many('equipment.request', 'category_id', copy=False)
+    maintenance_ids = fields.One2many('maintenance.request', 'category_id', copy=False)
     maintenance_count = fields.Integer(string="Maintenance", compute='_compute_maintenance_count')
     alias_id = fields.Many2one(
         'mail.alias', 'Alias', ondelete='cascade', required=True,
@@ -45,14 +45,14 @@ class EquipmentCategory(models.Model):
 
     @api.multi
     def _compute_equipment_count(self):
-        equipment_data = self.env['equipment'].read_group([('category_id', 'in', self.ids)], ['category_id'], ['category_id'])
+        equipment_data = self.env['maintenance.equipment'].read_group([('category_id', 'in', self.ids)], ['category_id'], ['category_id'])
         mapped_data = dict([(m['category_id'][0], m['category_id_count']) for m in equipment_data])
         for category in self:
             category.equipment_count = mapped_data.get(category.id, 0)
 
     @api.multi
     def _compute_maintenance_count(self):
-        maintenance_data = self.env['equipment.request'].read_group([('category_id', 'in', self.ids)], ['category_id'], ['category_id'])
+        maintenance_data = self.env['maintenance.request'].read_group([('category_id', 'in', self.ids)], ['category_id'], ['category_id'])
         mapped_data = dict([(m['category_id'][0], m['category_id_count']) for m in maintenance_data])
         for category in self:
             category.maintenance_count = mapped_data.get(category.id, 0)
@@ -60,7 +60,7 @@ class EquipmentCategory(models.Model):
     @api.model
     def create(self, vals):
         self = self.with_context(alias_model_name='equipment.request', alias_parent_model_name=self._name)
-        category_id = super(EquipmentCategory, self).create(vals)
+        category_id = super(MaintenanceEquipmentCategory, self).create(vals)
         category_id.alias_id.write({'alias_parent_thread_id': category_id.id, 'alias_defaults': {'category_id': category_id.id}})
         return category_id
 
@@ -69,12 +69,12 @@ class EquipmentCategory(models.Model):
         for category in self:
             if category.equipment_ids or category.maintenance_ids:
                 raise UserError(_("You cannot delete an equipment category containing equipments or maintenance requests."))
-        res = super(EquipmentCategory, self).unlink()
+        res = super(MaintenanceEquipmentCategory, self).unlink()
         return res
 
 
-class Equipment(models.Model):
-    _name = 'equipment'
+class MaintenanceEquipment(models.Model):
+    _name = 'maintenance.equipment'
     _inherit = ['mail.thread']
     _description = 'Equipment'
 
@@ -83,7 +83,7 @@ class Equipment(models.Model):
         self.ensure_one()
         if 'owner_user_id' in init_values and self.owner_user_id:
             return 'equipment.mt_mat_assign'
-        return super(Equipment, self)._track_subtype(init_values)
+        return super(MaintenanceEquipment, self)._track_subtype(init_values)
 
     @api.multi
     def name_get(self):
@@ -108,7 +108,7 @@ class Equipment(models.Model):
     name = fields.Char('Asset Name', required=True, translate=True)
     technician_user_id = fields.Many2one('res.users', string='Technician', track_visibility='onchange', oldname='user_id')
     owner_user_id = fields.Many2one('res.users', string='Assigned to', track_visibility='onchange')
-    category_id = fields.Many2one('equipment.category', string='Asset Category', track_visibility='onchange')
+    category_id = fields.Many2one('maintenance.equipment.category', string='Asset Category', track_visibility='onchange')
     partner_id = fields.Many2one('res.partner', string='Vendor', domain="[('supplier', '=', 1)]")
     partner_ref = fields.Char('Vendor Reference')
     location = fields.Char('Location')
@@ -120,7 +120,7 @@ class Equipment(models.Model):
     warranty = fields.Date('Warranty')
     color = fields.Integer('Color Index')
     scrap_date = fields.Date('Scrap Date')
-    maintenance_ids = fields.One2many('equipment.request', 'equipment_id')
+    maintenance_ids = fields.One2many('maintenance.request', 'equipment_id')
     maintenance_count = fields.Integer(compute='_compute_maintenance_count', string="Maintenance", store=True)
     maintenance_open_count = fields.Integer(compute='_compute_maintenance_count', string="Current Maintenance", store=True)
 
@@ -140,7 +140,7 @@ class Equipment(models.Model):
 
     @api.model
     def create(self, vals):
-        equipment = super(Equipment, self).create(vals)
+        equipment = super(MaintenanceEquipment, self).create(vals)
         # subscribe employee or department manager when equipment assign to him.
         if equipment.owner_user_id:
             equipment.message_subscribe_users(user_ids=equipment.owner_user_id.ids)
@@ -150,14 +150,14 @@ class Equipment(models.Model):
     def write(self, vals):
         if vals.get('owner_user_id'):
             self.message_subscribe_users(user_ids=[vals['owner_user_id']])
-        return super(Equipment, self).write(vals)
+        return super(MaintenanceEquipment, self).write(vals)
 
     @api.multi
     def _read_group_category_ids(self, domain, read_group_order=None, access_rights_uid=None):
         """ Read group customization in order to display all the category in the
             kanban view, even if they are empty
         """
-        category_obj = self.env['equipment.category']
+        category_obj = self.env['maintenance.equipment.category']
         order = category_obj._order
         access_rights_uid = access_rights_uid or self._uid
         if read_group_order == 'category_id desc':
@@ -178,14 +178,14 @@ class Equipment(models.Model):
     }
 
 
-class EquipmentRequest(models.Model):
-    _name = 'equipment.request'
+class MaintenanceRequest(models.Model):
+    _name = 'maintenance.request'
     _inherit = ['mail.thread']
     _description = 'Maintenance Requests'
 
     @api.returns('self')
     def _default_stage(self):
-        return self.env['equipment.stage'].search([], limit=1)
+        return self.env['maintenance.stage'].search([], limit=1)
 
     @api.multi
     def _track_subtype(self, init_values):
@@ -194,16 +194,16 @@ class EquipmentRequest(models.Model):
             return 'equipment.mt_req_created'
         elif 'stage_id' in init_values and self.stage_id.sequence > 1:
             return 'equipment.mt_req_status'
-        return super(EquipmentRequest, self)._track_subtype(init_values)
+        return super(MaintenanceRequest, self)._track_subtype(init_values)
 
     name = fields.Char('Subjects', required=True)
     description = fields.Text('Description')
     request_date = fields.Date('Request Date', track_visibility='onchange', default=fields.Date.context_today)
-    category_id = fields.Many2one('equipment.category', string='Category')
-    equipment_id = fields.Many2one('equipment', string='Asset', select=True)
+    category_id = fields.Many2one('maintenance.equipment.category', string='Category')
+    equipment_id = fields.Many2one('maintenance.equipment', string='Asset', select=True)
     from_user_id = fields.Many2one('res.users', string='Created by', default=lambda s: s.env.uid)
     technician_user_id = fields.Many2one('res.users', string='Assigned to', track_visibility='onchange', oldname='user_id')
-    stage_id = fields.Many2one('equipment.stage', string='Stage', track_visibility='onchange', default=_default_stage)
+    stage_id = fields.Many2one('maintenance.stage', string='Stage', track_visibility='onchange', default=_default_stage)
     priority = fields.Selection([('0', 'Very Low'), ('1', 'Low'), ('2', 'Normal'), ('3', 'High')], string='Priority')
     color = fields.Integer('Color Index')
     close_date = fields.Date('Close Date')
@@ -243,7 +243,7 @@ class EquipmentRequest(models.Model):
     def create(self, vals):
         # context: no_log, because subtype already handle this
         self = self.with_context(mail_create_nolog=True)
-        result = super(EquipmentRequest, self).create(vals)
+        result = super(MaintenanceRequest, self).create(vals)
         if result.from_user_id:
             result.message_subscribe_users(user_ids=[result.from_user_id.id])
         return result
@@ -256,14 +256,14 @@ class EquipmentRequest(models.Model):
             vals['kanban_state'] = 'normal'
         if 'from_user_id' in vals:
             self.message_subscribe_users(user_ids=[vals['from_user_id']])
-        return super(EquipmentRequest, self).write(vals)
+        return super(MaintenanceRequest, self).write(vals)
 
     @api.multi
     def _read_group_stage_ids(self, domain, read_group_order=None, access_rights_uid=None):
         """ Read group customization in order to display all the stages in the
             kanban view, even if they are empty
         """
-        stage_obj = self.env['equipment.stage']
+        stage_obj = self.env['maintenance.stage']
         order = stage_obj._order
         access_rights_uid = access_rights_uid or self._uid
 

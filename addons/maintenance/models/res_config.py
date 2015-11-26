@@ -14,7 +14,7 @@ class EquipmentConfigSettings(models.TransientModel):
     @api.multi
     def get_default_alias_equipment(self):
         alias_name = False
-        alias_id = self.env.ref('equipment.mail_alias_equipment')
+        alias_id = self.env.ref('maintenance.mail_alias_equipment')
         if alias_id:
             alias_name = alias_id.alias_name
         return {'equipment_alias_prefix': alias_name}
