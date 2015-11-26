@@ -4,7 +4,7 @@
     <!-- equiment.request : views -->
     <record id="equipment_request_view_search" model="ir.ui.view">
         <field name="name">equipment.request.search</field>
-        <field name="model">equipment.request</field>
+        <field name="model">maintenance.request</field>
         <field name="arch" type="xml">
             <search string="maintenance Request Search">
                 <field name="name"/>
@@ -13,6 +13,9 @@
                 <field name="equipment_id"/>
                 <field name="from_user_id"/>
                 <field name="stage_id"/>
+                <field name="maintenance_team_id"/>
+                <separator/>
+                <filter string="To do" domain="[('stage_id.done', '=', False)]" name="todo"/>
                 <separator/>
                 <filter string="My Requests" domain="[('from_user_id', '=', uid)]" class="o_equipment_request_my_requests_filter"/>
                 <separator/>
@@ -29,12 +32,12 @@
 
     <record id="equipment_request_view_form" model="ir.ui.view">
         <field name="name">equipment.request.form</field>
-        <field name="model">equipment.request</field>
+        <field name="model">maintenance.request</field>
         <field name="arch" type="xml">
             <form string="Maintenance Request">
                 <header>
-                    <button string="Cancel" name="archive_equipment_request" type="object" attrs="{'invisible': [('active', '=', False)]}"/>
-                    <button string="Reset Request" name="reset_equipment_request" type="object" attrs="{'invisible': [('active', '=', True)]}"/>
+                    <button string="Cancel" name="archive_equipment_request" type="object" attrs="{'invisible': [('archive', '=', True)]}"/>
+                    <button string="Reset Request" name="reset_equipment_request" type="object" attrs="{'invisible': [('archive', '=', False)]}"/>
                     <field name="stage_id" widget="statusbar" clickable="true" readonly="1"/>
                 </header>
                 <sheet>
@@ -54,10 +57,12 @@
                             <field name="category_id" groups="base.group_equipment_manager"/>
                             <field name="request_date" groups="base.group_no_one"/>
                             <field name="close_date" groups="base.group_no_one"/>
-                            <field name="active" invisible="1"/>
+                            <field name="archive" invisible="1"/>
                         </group>
                         <group>
                             <field name="technician_user_id" string="Repair Responsible"/>
+                            <field name="maintenance_type"/>
+                            <field name="maintenance_team_id"/>
                             <field name="priority" widget="priority"/>
                         </group>
                     </group>
@@ -73,7 +78,7 @@
 
     <record id="equipment_request_view_kanban" model="ir.ui.view">
         <field name="name">equipment.request.kanban</field>
-        <field name="model">equipment.request</field>
+        <field name="model">maintenance.request</field>
         <field name="arch" type="xml">
             <kanban default_group_by="stage_id">
                 <field name="stage_id"/>
@@ -133,7 +138,7 @@
 
     <record id="equipment_request_view_tree" model="ir.ui.view">
         <field name="name">equipment.request.tree</field>
-        <field name="model">equipment.request</field>
+        <field name="model">maintenance.request</field>
         <field name="arch" type="xml">
             <tree string="maintenance Request" decoration-bf="message_needaction==True">
                 <field name="message_needaction" invisible="1"/>
@@ -147,10 +152,21 @@
         </field>
     </record>
 
+    <record id="equipment_view_calendar" model="ir.ui.view">
+        <field name="name">equipment.request.calendar</field>
+        <field name="model">maintenance.request</field>
+        <field name="arch" type="xml">
+            <calendar date_start="request_date" color="kanban_state">
+                <field name="name"/>
+                <field name="technician_user_id"/>
+            </calendar>
+        </field>
+    </record>
+
     <!-- equiment.request : actions -->
     <record id="equipment_request_action" model="ir.actions.act_window">
         <field name="name">Maintenance Requests</field>
-        <field name="res_model">equipment.request</field>
+        <field name="res_model">maintenance.request</field>
         <field name="view_mode">kanban,tree,form</field>
         <field name="view_id" ref="equipment_request_view_kanban"/>
         <field name="help" type="html">
@@ -164,7 +180,7 @@
 
     <record id="equipment_request_action_link" model="ir.actions.act_window">
         <field name="name">Maintenance Requests</field>
-        <field name="res_model">equipment.request</field>
+        <field name="res_model">maintenance.request</field>
         <field name="view_mode">kanban,tree,form</field>
         <field name="search_view_id" ref="equipment_request_view_search"/>
         <field name="view_id" ref="equipment_request_view_kanban"/>
@@ -183,8 +199,8 @@
 
     <record id="equipment_request_action_from_equipment" model="ir.actions.act_window">
         <field name="name">Maintenance Requests</field>
-        <field name="res_model">equipment.request</field>
-        <field name="src_model">equipment</field>
+        <field name="res_model">maintenance.request</field>
+        <field name="src_model">maintenance.equipment</field>
         <field name="view_mode">kanban,tree,form</field>
         <field name="context">{
             'default_equipment_id': active_id,
@@ -192,10 +208,28 @@
         <field name="domain">[('equipment_id', '=', active_id)]</field>
     </record>
 
+    <record id="equipment_todo_request_action_from_dashboard" model="ir.actions.act_window">
+        <field name="name">Maintenance Requests</field>
+        <field name="res_model">maintenance.request</field>
+        <field name="view_mode">kanban,tree,form</field>
+        <field name="context">{
+            'default_maintenance_team_id': active_id,
+            'search_default_todo': 1,
+        }</field>
+        <field name="domain">[('maintenance_team_id', '=', active_id)]</field>
+    </record>
+
+    <record id="equipment_request_action_cal" model="ir.actions.act_window">
+        <field name="name">Maintenance Requests</field>
+        <field name="res_model">maintenance.request</field>
+        <field name="view_mode">calendar,tree,form</field>
+        <field name="view_id" ref="equipment_view_calendar"/>
+    </record>
+
     <!-- equiment : views -->
     <record id="equipment_view_form" model="ir.ui.view">
         <field name="name">equipment.form</field>
-        <field name="model">equipment</field>
+        <field name="model">maintenance.equipment</field>
         <field name="arch" type="xml">
             <form string="Equipments">
                 <sheet>
@@ -221,6 +255,7 @@
                         </group>
                         <group>
                             <field name="technician_user_id"/>
+                            <field name="maintenance_team_id"/>
                             <field name="assign_date" groups="base.group_no_one"/>
                             <field name="scrap_date" groups="base.group_no_one"/>
                         </group>
@@ -242,6 +277,12 @@
                                 </group>
                             </group>
                         </page>
+                        <page string="Maintenance">
+                            <group>
+                                <field name="period"/>
+                                <field name="next_action_date" class="oe_read_only"/>
+                            </group>
+                        </page>
                     </notebook>
                 </sheet>
                 <div class="oe_chatter">
@@ -254,9 +295,9 @@
 
     <record id="equipment_view_kanban" model="ir.ui.view">
         <field name="name">equipment.kanban</field>
-        <field name="model">equipment</field>
+        <field name="model">maintenance.equipment</field>
         <field name="arch" type="xml">
-            <kanban default_group_by="category_id">
+            <kanban>
                 <field name="name"/>
                 <field name="color"/>
                 <field name="technician_user_id"/>
@@ -309,7 +350,7 @@
 
     <record id="equipment_view_tree" model="ir.ui.view">
         <field name="name">equipment.tree</field>
-        <field name="model">equipment</field>
+        <field name="model">maintenance.equipment</field>
         <field name="arch" type="xml">
             <tree string="Assign To User"  decoration-bf="message_needaction==True">
                 <field name="message_needaction" invisible="1"/>
@@ -326,7 +367,7 @@
 
     <record id="equipment_view_search" model="ir.ui.view">
         <field name="name">equipment.search</field>
-        <field name="model">equipment</field>
+        <field name="model">maintenance.equipment</field>
         <field name="arch" type="xml">
             <search string="Search">
                 <field name="name"  filter_domain="['|','|','|',('name','ilike',self),('model','ilike',self),('serial_no','ilike',self),('partner_ref', 'ilike', self)]"/>
@@ -352,7 +393,7 @@
 
     <record id="equipment_action" model="ir.actions.act_window">
         <field name="name">Equipments</field>
-        <field name="res_model">equipment</field>
+        <field name="res_model">maintenance.equipment</field>
         <field name="view_mode">kanban,tree,form</field>
         <field name="view_id" ref="equipment_view_kanban"/>
         <field name="help" type="html">
@@ -370,7 +411,7 @@
     <!-- equiment : actions -->
     <record id="equipment_action_from_category_form" model="ir.actions.act_window">
         <field name="name">Equipments</field>
-        <field name="res_model">equipment</field>
+        <field name="res_model">maintenance.equipment</field>
         <field name="view_mode">kanban,tree,form</field>
         <field name="search_view_id" ref="equipment_view_search"/>
         <field name="view_id" ref="equipment_view_kanban"/>
@@ -392,7 +433,7 @@
     <!-- equipment.category : views -->
     <record id="equipment_category_view_form" model="ir.ui.view">
         <field name="name">equipment.category.form</field>
-        <field name="model">equipment.category</field>
+        <field name="model">maintenance.equipment.category</field>
         <field name="arch" type="xml">
             <form string="Equipment Categories">
                 <sheet>
@@ -442,7 +483,7 @@
 
     <record id="equipment_category_view_tree" model="ir.ui.view">
         <field name="name">equipment.category.tree</field>
-        <field name="model">equipment.category</field>
+        <field name="model">maintenance.equipment.category</field>
         <field name="arch" type="xml">
             <tree string="Assign To User">
                 <field name="name" string="Name"/>
@@ -453,7 +494,7 @@
 
     <record id="equipment_category_view_search" model="ir.ui.view">
         <field name="name">equipment.category.search</field>
-        <field name="model">equipment.category</field>
+        <field name="model">maintenance.equipment.category</field>
         <field name="arch" type="xml">
             <search string="Search">
                 <field name="name" string="Category Name" filter_domain="[('name','ilike',self)]"/>
@@ -467,7 +508,7 @@
     <!-- equipment.category : actions -->
     <record id="equipment_category_action" model="ir.actions.act_window">
         <field name="name">Equipment Categories</field>
-        <field name="res_model">equipment.category</field>
+        <field name="res_model">maintenance.equipment.category</field>
         <field name="view_mode">tree,form</field>
         <field name="view_id" ref="equipment_category_view_tree"/>
         <field name="help" type="html">
@@ -480,7 +521,7 @@
     <!-- equipment.stage : views -->
     <record id="equipment_stage_view_search" model="ir.ui.view">
         <field name="name">equipment.stage.search</field>
-        <field name="model">equipment.stage</field>
+        <field name="model">maintenance.stage</field>
         <field name="arch" type="xml">
             <search string="Maintenance Request Stages">
                <field name="name" string="Maintenance Request Stages"/>
@@ -490,7 +531,7 @@
 
     <record id="equipment_stage_view_tree" model="ir.ui.view">
         <field name="name">equipment.stage.tree</field>
-        <field name="model">equipment.stage</field>
+        <field name="model">maintenance.stage</field>
         <field name="arch" type="xml">
             <tree string="Maintenance Request Stage" editable="top">
                 <field name="sequence" widget="handle"/>
@@ -504,7 +545,7 @@
     <!-- equipment.stages : actions -->
     <record id="equipment_stage_action" model="ir.actions.act_window">
         <field name="name">Stages</field>
-        <field name="res_model">equipment.stage</field>
+        <field name="res_model">maintenance.stage</field>
         <field name="view_mode">tree</field>
         <field name="view_type">form</field>
         <field name="view_id" ref="equipment_stage_view_tree"/>
@@ -515,66 +556,174 @@
         </field>
     </record>
 
+    <!-- maitenance.team: views -->
+    <record id="maintenance_team_view_form" model="ir.ui.view">
+        <field name="name">maintenance.team.form</field>
+        <field name="model">maintenance.team</field>
+        <field name="arch" type="xml">
+            <form string="Maintenance Team">
+                <sheet>
+                <div class="oe_title">
+                    <label for="name" class="oe_edit_only" string="Category Name"/>
+                    <h1>
+                        <field name="name"/>
+                    </h1>
+                </div>
+                <field name="partner_id"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="maintenance_team_view_tree" model="ir.ui.view">
+        <field name="name">maintenance.team.tree</field>
+        <field name="model">maintenance.team</field>
+        <field name="arch" type="xml">
+            <tree string="Maintenance Team" editable="top">
+                <field name="name"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- equipment.team : actions -->
+    <record id="maintenance_team_action_settings" model="ir.actions.act_window">
+        <field name="name">Teams</field>
+        <field name="res_model">maintenance.team</field>
+        <field name="view_mode">tree</field>
+        <field name="view_type">form</field>
+        <field name="view_id" ref="maintenance_team_view_tree"/>
+        <field name="help" type="html">
+          <p class="oe_view_nocontent_create">
+            Click to add a team in the maintenance request.
+          </p>
+        </field>
+    </record>
+
+    <record id="maintenance_dashboard_action" model="ir.actions.act_window">
+        <field name="name">Teams</field>
+        <field name="res_model">maintenance.team</field>
+        <field name="view_mode">kanban</field>
+        <field name="view_type">form</field>
+        <field name="help" type="html">
+          <p class="oe_view_nocontent_create">
+            Click to add a stage in the maintenance request.
+          </p>
+        </field>
+    </record>
+
 
     <!-- Menu items hierachy -->
     <menuitem
-        id="menu_equipment_title"
-        name="Equipments"
-        web_icon="equipment,static/description/icon.png"
+        id="menu_maintenance_title"
+        name="Maintenance"
+        web_icon="maintenance,static/description/icon.png"
         sequence="110"/>
 
     <menuitem
-        id="menu_equipment_configuration"
-        name="Configuration"
-        parent="menu_equipment_title"
-        groups="base.group_equipment_manager,base.group_configuration"
-        sequence="100"/>
+        id="menu_m_dashboard"
+        name="Dashboard"
+        parent="menu_maintenance_title"
+        groups="base.group_equipment_manager,base.group_user"
+        action="maintenance_dashboard_action"
+        sequence="0"/>
+
+    <menuitem
+        id="menu_m_request" 
+        name="Maintenance"
+        parent="menu_maintenance_title"
+        groups="base.group_equipment_manager,base.group_user"
+        sequence="1"/>
 
     <menuitem
         id="menu_m_request_form"
         name="Maintenance Requests"
-        parent="menu_equipment_title"
+        parent="menu_m_request"
         action="equipment_request_action"
+        groups="base.group_equipment_manager,base.group_user"
+        sequence="1"/>
+
+    <menuitem
+        id="menu_m_request_calendar"
+        name="Maintenance Calendar"
+        parent="menu_m_request"
+        action="equipment_request_action_cal"
         groups="base.group_equipment_manager,base.group_user"
         sequence="2"/>
 
     <menuitem
         id="menu_equipment_form"
         name="Equipments"
-        parent="menu_equipment_title"
+        parent="menu_maintenance_title"
         action="equipment_action"
+        groups="base.group_equipment_manager,base.group_user"
+        sequence="2"/>
+
+    <menuitem
+        id="menu_m_reports" 
+        name="Reporting"
+        parent="menu_maintenance_title"
+        groups="base.group_equipment_manager,base.group_user"
+        sequence="3"/>
+
+    <menuitem
+        id="menu_m_reports_oee"
+        name="Overall Equipment Effectiveness (OEE)"
+        parent="menu_m_reports"
         groups="base.group_equipment_manager,base.group_user"
         sequence="1"/>
 
     <menuitem
-        id="menu_equipment_global_settings"
+        id="menu_m_reports_losses"
+        name="Losses Analysis"
+        parent="menu_m_reports"
+        groups="base.group_equipment_manager,base.group_user"
+        sequence="2"/>
+
+    <menuitem
+        id="menu_maintenance_configuration"
+        name="Configuration"
+        parent="menu_maintenance_title"
+        groups="base.group_equipment_manager,base.group_configuration"
+        sequence="100"/>
+
+    <menuitem
+        id="menu_maintenance_global_settings"
         name="Settings"
-        parent="menu_equipment_configuration"
-        action="action_equipment_configuration"
+        parent="menu_maintenance_configuration"
+        action="action_maintenance_configuration"
         sequence="0"/>
 
     <menuitem
-        id="menu_equipment_cat"
-        name="Equipment Categories"
-        parent="menu_equipment_configuration"
-        action="equipment_category_action"
+        id="menu_maintenance_teams"
+        name="Maintenance Teams"
+        parent="menu_maintenance_configuration"
+        action="maintenance_team_action_settings"
         groups="base.group_no_one"
         sequence="1"/>
 
     <menuitem
-        id="menu_equipment_stage_configuration"
+        id="menu_maintenance_cat"
+        name="Equipment Categories"
+        parent="menu_maintenance_configuration"
+        action="equipment_category_action"
+        groups="base.group_no_one"
+        sequence="2"/>
+
+    <menuitem
+        id="menu_maintenance_stage_configuration"
         name="Stages"
-        parent="menu_equipment_configuration"
+        parent="menu_maintenance_configuration"
         action="equipment_stage_action"
         groups="base.group_no_one"
-        sequence="2" />
+        sequence="3" />
+
 
     <data noupdate="1">
         <!-- After installation of the module, open the related menu -->
         <record id="action_client_equipment_menu" model="ir.actions.client">
             <field name="name">Open Equipments Menu</field>
             <field name="tag">reload</field>
-            <field name="params" eval="{'menu_id': ref('menu_equipment_title')}"/>
+            <field name="params" eval="{'menu_id': ref('menu_maintenance_title')}"/>
         </record>
         <record id="base.open_menu" model="ir.actions.todo">
             <field name="action_id" ref="action_client_equipment_menu"/>

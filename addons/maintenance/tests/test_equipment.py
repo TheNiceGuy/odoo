@@ -9,8 +9,8 @@ class TestEquipment(TransactionCase):
 
     def setUp(self):
         super(TestEquipment, self).setUp()
-        self.equipment = self.env['equipment']
-        self.maintenance_request = self.env['equipment.request']
+        self.equipment = self.env['maintenance.equipment']
+        self.maintenance_request = self.env['maintenance.request']
         self.res_users = self.env['res.users']
         self.main_company = self.env.ref('base.main_company')
         res_user = self.env.ref('base.group_user')
@@ -39,7 +39,7 @@ class TestEquipment(TransactionCase):
         # Create a new equipment
         equipment_01 = self.equipment.sudo(self.manager).create({
             'name': 'Samsung Monitor "15',
-            'category_id': self.ref('equipment.equipment_monitor'),
+            'category_id': self.ref('maintenance.equipment_monitor'),
             'technician_user_id': self.ref('base.user_root'),
             'owner_user_id': self.user.id,
             'assign_date': time.strftime('%Y-%m-%d'),
@@ -57,19 +57,19 @@ class TestEquipment(TransactionCase):
             'technician_user_id': self.user.id,
             'from_user_id': self.user.id,
             'equipment_id': equipment_01.id,
-            'category_id': self.ref('equipment.equipment_monitor'),
+            'category_id': self.ref('maintenance.equipment_monitor'),
             'color': 7,
-            'stage_id': self.ref('equipment.stage_0')
+            'stage_id': self.ref('maintenance.stage_0')
         })
 
         # I check that maintenance_request is created or not
         assert maintenance_request_01, "Maintenance Request not created"
 
         # I check that Initially maintenance request is in the "New Request" stage
-        self.assertEquals(maintenance_request_01.stage_id.id, self.ref('equipment.stage_0'))
+        self.assertEquals(maintenance_request_01.stage_id.id, self.ref('maintenance.stage_0'))
 
         # I check that change the maintenance_request stage on click statusbar
-        maintenance_request_01.sudo(self.user).write({'stage_id': self.ref('equipment.stage_1')})
+        maintenance_request_01.sudo(self.user).write({'stage_id': self.ref('maintenance.stage_1')})
 
         # I check that maintenance request is in the "In Progress" stage
-        self.assertEquals(maintenance_request_01.stage_id.id, self.ref('equipment.stage_1'))
+        self.assertEquals(maintenance_request_01.stage_id.id, self.ref('maintenance.stage_1'))

@@ -7,7 +7,7 @@
     'description': """
         Track equipment and manage maintenance requests.""",
     'author': 'Odoo S.A.',
-    'depends': ['hr', 'equipment'],
+    'depends': ['hr', 'maintenance'],
     'summary': 'Equipments, Assets, Internal Hardware, Allocation Tracking',
     'data': [
         'security/equipment.xml',

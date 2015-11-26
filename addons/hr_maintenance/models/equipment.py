@@ -2,8 +2,8 @@
 from openerp import api, fields, models, tools
 
 
-class HrEquipment(models.Model):
-    _inherit = 'equipment'
+class MaintenanceEquipment(models.Model):
+    _inherit = 'maintenance.equipment'
 
     employee_id = fields.Many2one('hr.employee', string='Assigned to Employee', track_visibility='onchange')
     department_id = fields.Many2one('hr.department', string='Assigned to Department', track_visibility='onchange')
@@ -43,11 +43,11 @@ class HrEquipment(models.Model):
                 users = users | department.manager_id.user_id.id
         if users:
             self.message_subscribe_users(user_ids=users.ids)
-        return super(HrEquipment, self).write(vals)
+        return super(MaintenanceEquipment, self).write(vals)
 
 
-class HrEquipmentRequest(models.Model):
-    _inherit = 'equipment.request'
+class MaintenanceRequest(models.Model):
+    _inherit = 'maintenance.request'
 
     @api.returns('self')
     def _default_employee_get(self):
@@ -66,7 +66,7 @@ class HrEquipmentRequest(models.Model):
             domain = ['|'] + domain
         if self.employee_id:
             domain = domain + ['|', ('employee_id', '=', self.employee_id.id), ('employee_id', '=', None)]
-        equipment = self.env['hr.equipment'].search(domain, limit=2)
+        equipment = self.env['maintenance.equipment'].search(domain, limit=2)
         if len(equipment) == 1:
             self.equipment_id = equipment
         return {'domain': {'equipment_id': domain}}
@@ -77,7 +77,7 @@ class HrEquipmentRequest(models.Model):
             employee = self.env['hr.employee'].browse(vals['employee_id'])
             if employee and employee.user_id:
                 self.message_subscribe_users(user_ids=[employee.user_id.id])
-        return super(HrEquipmentRequest, self).write(vals)
+        return super(MaintenanceRequest, self).write(vals)
 
     @api.model
     def message_new(self, msg, custom_values=None):
@@ -93,4 +93,4 @@ class HrEquipmentRequest(models.Model):
             employee = self.env['hr.employee'].search([('user_id', '=', user.id)], limit=1)
             if employee:
                 custom_values['employee_id'] = employee and employee[0].id
-        return super(HrEquipmentRequest, self).message_new(msg, custom_values=custom_values)
+        return super(MaintenanceRequest, self).message_new(msg, custom_values=custom_values)
