@@ -57,7 +57,8 @@ class MrpProduction(models.Model):
     date_finished = fields.Datetime(string='End Date', index=True, readonly=True, copy=False)
     bom_id = fields.Many2one('mrp.bom', string='Bill of Material', readonly=True, states={'draft': [('readonly', False)]},
                              help="Bill of Materials allow you to define the list of required raw materials to make a finished product.")
-    routing_id = fields.Many2one('mrp.routing', string='Routing', on_delete='set null', readonly=True, states={'draft': [('readonly', False)]},
+    routing_id = fields.Many2one('mrp.routing', string='Routing', related = 'bom_id.routing_id', store=True,
+                                 on_delete='set null', readonly=True,
                                  help="The list of operations (list of work centers) to produce the finished product. The routing is mainly used "
                                       "to compute work center costs during operations and to plan future loads on work centers based on production plannification.")
     move_prod_id = fields.Many2one('stock.move', string='Product Move', readonly=True, copy=False)
@@ -224,8 +225,55 @@ class MrpProduction(models.Model):
                 WorkcenterLine.create(line)
         return results
 
+
+    @api.multi
+    def _compute_planned_workcenter(self, mini=False):
+        """ Computes planned and finished dates for work order.
+        @return: Calculated date
+        """
+        dt_end = datetime.now()
+        context = self.env.context or {}
+        for po in self: #Maybe need to make difference between different pos
+            dt_end = datetime.strptime(po.date_planned, '%Y-%m-%d %H:%M:%S')
+            if not po.date_start:
+                po.write({
+                    'date_start': po.date_planned
+                })
+            old = None
+            for wci in range(len(po.workcenter_line_ids)):
+                wc  = po.workcenter_line_ids[wci]
+                if (old is None) or (wc.sequence>old):
+                    dt = dt_end
+                if context.get('__last_update'):
+                    del context['__last_update']
+                if (wc.date_planned_start < dt.strftime('%Y-%m-%d %H:%M:%S')) or mini:
+                    wc.write({
+                        'date_planned_start': dt.strftime('%Y-%m-%d %H:%M:%S')
+                    })
+                    i = wc.workcenter_id.calendar_id.interval_get(dt, wc.hour)
+                    if i:
+                        i = i[0]
+                        dt_end = max(dt_end, i[-1][1])
+                else:
+                    dt_end = datetime.strptime(wc.date_planned_end, '%Y-%m-%d %H:%M:%S')
+
+                old = wc.sequence or 0
+            po.write({
+                'date_finished': dt_end
+            })
+        return dt_end
+
+    @api.multi
+    def write(self, vals):
+        res = super(MrpProduction, self).write(vals)
+        # Recompute workcenters when workcenterlines changed or date_start
+        if (vals.get('workcenter_line_ids', False) or vals.get('date_start', False) or vals.get('date_planned', False)):
+            self._compute_planned_workcenter()
+        return res
+
     @api.multi
     def action_button_compute(self):
+        res = self._compute_planned_workcenter()
         return self.action_compute()
 
     @api.multi
