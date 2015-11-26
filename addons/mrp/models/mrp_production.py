@@ -180,10 +180,6 @@ class MrpProduction(models.Model):
             self.routing_id = False
         self.routing_id = self.bom_id.routing_id.id or False
 
-<<<<<<< HEAD
-=======
-    @api.model
->>>>>>> [REF] mrp: To new API.
     def _prepare_lines(self, properties=None):
         # search BoM structure and route
         bom_point = self.bom_id
@@ -484,11 +480,7 @@ class MrpProduction(models.Model):
                     produced_products[produced_product.product_id.id] = 0
                 produced_products[produced_product.product_id.id] += produced_product.product_qty
             for produce_product in self.move_created_ids:
-<<<<<<< HEAD
                 subproduct_factor = self._get_subproduct_factor(produce_product)
-=======
-                subproduct_factor = self._get_subproduct_factor(self.id, produce_product.id)
->>>>>>> [REF] mrp: To new API.
                 lot_id = False
                 if wizard:
                     lot_id = wizard.lot_id.id
@@ -647,10 +639,6 @@ class MrpProduction(models.Model):
             return "make_to_order"
         return "make_to_stock"
 
-<<<<<<< HEAD
-=======
-    @api.model
->>>>>>> [REF] mrp: To new API.
     def _create_previous_move(self, move, product, source_location, dest_location):
         '''
         When the routing gives a different location than the raw material location of the production order,
