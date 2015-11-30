@@ -43,7 +43,7 @@ class MrpProduction(models.Model):
     priority = fields.Selection([('0', 'Not urgent'), ('1', 'Normal'), ('2', 'Urgent'), ('3', 'Very Urgent')], 'Priority',
                                 index=True, readonly=True, states=dict.fromkeys(['draft', 'confirmed'], [('readonly', False)]), default='1')
     product_id = fields.Many2one('product.product', string='Product', required=True, readonly=True, states={'draft': [('readonly', False)]}, domain=[('type', 'in', ['product', 'consu'])])
-    product_qty = fields.Float(string='Product Quantity', digits=dp.get_precision('Product Unit of Measure'), required=True, readonly=True, states={'draft': [('readonly', False)]}, default=1.0)
+    product_qty = fields.Float(string='Quantity to Produce', digits=dp.get_precision('Product Unit of Measure'), required=True, readonly=True, states={'draft': [('readonly', False)]}, default=1.0)
     product_uom_id = fields.Many2one('product.uom', string='Product Unit of Measure', required=True, readonly=True, states={'draft': [('readonly', False)]}, oldname='product_uom')
     progress = fields.Float(compute='_get_progress', string='Production progress')
     location_src_id = fields.Many2one('stock.location', string='Raw Materials Location', required=True,
@@ -52,7 +52,9 @@ class MrpProduction(models.Model):
     location_dest_id = fields.Many2one('stock.location', string='Finished Products Location', required=True,
                                        readonly=True, states={'draft': [('readonly', False)]}, default=_dest_id_default,
                                        help="Location where the system will stock the finished products.")
-    date_planned = fields.Datetime(string='Scheduled Date', required=True, index=True, readonly=True, states={'draft': [('readonly', False)]}, copy=False, default=fields.Datetime.now)
+    date_planned = fields.Datetime(string='Required Date', required=True, index=True, readonly=True, states={'draft': [('readonly', False)]}, copy=False, default=fields.Datetime.now)
+    date_start_planned = fields.Datetime(string='Scheduled Start Date', index=True, copy=False)
+    date_finished_planned = fields.Datetime(string='Scheduled End Date', index=True, copy=False)
     date_start = fields.Datetime(string='Start Date', index=True, readonly=True, copy=False)
     date_finished = fields.Datetime(string='End Date', index=True, readonly=True, copy=False)
     bom_id = fields.Many2one('mrp.bom', string='Bill of Material', readonly=True, states={'draft': [('readonly', False)]},
