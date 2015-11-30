@@ -14,12 +14,6 @@ class MrpConfigSettings(models.TransientModel):
         ], "Product Variants",
         help='Work with product variant allows you to define some variant of the same products, an ease the product management in the ecommerce for example',
         implied_group='product.group_product_variant')
-    module_mrp_operations = fields.Selection([
-        (0, "Do not use a planning for the work orders "),
-        (1, "Allow detailed planning of work orders")
-        ], "Work Order Planning",
-        help='This allows to add state, date_start,date_stop in production order operation lines (in the "Work Centers" tab).\n'
-             '-This installs the module mrp_operations.')
     module_mrp_byproduct = fields.Selection([
         (0, "No by-products in bills of materials (A + B --> C)"),
         (1, "Bills of materials may produce residual products (A + B --> C + D)")

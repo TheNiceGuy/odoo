@@ -351,34 +351,14 @@
                                     <div class="row">
                                         <div class="col-xs-6 o_kanban_primary_left">
                                             <button class="btn btn-primary" name="%(action_work_orders)d" type="action">
-                                                <span><t t-esc="record.nb_orders.value"/> Work Orders</span>
+                                                <span>Work Orders</span>
                                             </button>
                                         </div>
                                         <div class="col-xs-6 o_kanban_primary_right">
                                             <div class="row"><!--t-if="record.nb_alerts.raw_value > 0"-->
                                                 <div class="col-xs-9">
                                                     <a name="%(action_work_orders)d" type="action">
-                                                        Work Orders
-                                                    </a>
-                                                </div>
-                                                <div class="col-xs-3">
-                                                    <field name="nb_orders"/>
-                                                </div>
-                                            </div>
-                                            <div class="row"><!--t-if="record.nb_alerts.raw_value > 0"-->
-                                                <div class="col-xs-9">
-                                                    <a name="%(action_work_orders)d" type="action">
                                                         Ready
-                                                    </a>
-                                                </div>
-                                                <div class="col-xs-3">
-                                                    0
-                                                </div>
-                                            </div>
-                                            <div class="row"><!--t-if="record.nb_alerts.raw_value > 0"-->
-                                                <div class="col-xs-9">
-                                                    <a name="%(action_work_orders)d" type="action">
-                                                        Todo Today
                                                     </a>
                                                 </div>
                                                 <div class="col-xs-3">
@@ -434,11 +414,11 @@
 
 
         <record id="mrp_workcenter_kanban_action" model="ir.actions.act_window">
-            <field name="name">Work Centers</field>
+            <field name="name">Dashboard</field>
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">mrp.workcenter</field>
             <field name="view_type">form</field>
-            <field name="view_mode">kanban,tree,form</field>
+            <field name="view_mode">kanban,form</field>
             <field name="search_view_id" ref="view_mrp_workcenter_search"/>
             <field name="help" type="html">
               <p class="oe_view_nocontent_create">
@@ -460,6 +440,7 @@
         <menuitem id="menu_mrp_dashboard"
             name="Dashboard"
             action="mrp_workcenter_kanban_action"
+            groups="group_mrp_routings"
             parent="base.menu_mrp_root"
             sequence="5"/>
 
@@ -470,15 +451,16 @@
             <field name="arch" type="xml">
                 <form string="Routing">
                     <sheet>
+                        <div class="oe_button_box"></div>
                         <group>
                             <group>
-                                <field name="name"/>
                                 <field name="code"/>
+                                <field name="name"/>
                             </group>
                             <group>
+                                <field name="active"/>
                                 <field name="location_id"/>
                                 <field name="company_id" options="{'no_create': True}" groups="base.group_multi_company"/>
-                                <field name="active"/>
                            </group>
                         </group>
                         <notebook>
@@ -563,9 +545,9 @@
                             <field name="product_tmpl_id"/>
                             <field name="product_id" groups="product.group_product_variant"/>
                             <label for="product_qty" string="Quantity"/>
-                            <div>
-                                <field name="product_qty" class="oe_inline"/>
-                                <field name="product_uom_id" options="{'no_open':True,'no_create':True}" class="oe_inline" groups="product.group_uom"/>
+                            <div class="o_row">
+                                <field name="product_qty"/>
+                                <field name="product_uom_id" options="{'no_open':True,'no_create':True}" groups="product.group_uom"/>
                             </div>
                             <field name="ready_to_produce"/>
                             <field name="picking_type_id"/>
@@ -788,8 +770,7 @@
                         <field name="workcenter_line_ids" invisible="1"/>
                     </div>
                     <div class="oe_title">
-                        <label for="name" class="oe_edit_only"/>
-                        <h1><field name="name" placeholder="Manufacturing Reference"/></h1>
+                        <h1><field name="name" placeholder="Manufacturing Reference" nolabel="1"/></h1>
                     </div>
                     <group>
                         <group>
@@ -803,9 +784,6 @@
                                     name="%(mrp.action_change_production_qty)d"
                                     string="Update" states="confirmed" class="oe_edit_only oe_link"/>
                             </div>
-                            <field name="date_planned"/>
-                        </group>
-                        <group>
                             <field name="bom_id"
                                 domain="['|',
                                             ('product_id','=',product_id),
@@ -814,9 +792,14 @@
                                                 ('product_id','=',False)]"
                                 context="{'default_product_id': product_id, 'default_product_tmpl_id': product_tmpl_id}" required="1"/>
                             <field name="routing_id" groups="mrp.group_mrp_routings"/>
+                        </group>
+                        <group>
+                            <field name="date_planned"/>
+                            <field name="date_start_planned"/>
+                            <field name="date_finished_planned"/>
                             <field name="user_id"/>
                             <field name="origin"/>
-                            <field name="priority"/>
+                            <field name="priority" invisible="1"/>
                             <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
                             <field name="move_prod_id" groups="base.group_no_one"/>
                         </group>
@@ -843,11 +826,11 @@
                     <field name="name"/>
                     <field name="date_planned"/>
                     <field name="product_id"/>
-                    <field name="product_qty" sum="Total Qty"/>
-                    <field name="product_uom_id" options="{'no_open':True,'no_create':True}" groups="product.group_uom"/>
+                    <field name="product_qty" sum="Total Qty" string="Quantity"/>
+                    <field name="product_uom_id" string="Unit of Measure" options="{'no_open':True,'no_create':True}" groups="product.group_uom"/>
                     <field name="routing_id" groups="mrp.group_mrp_routings"/>
-                    <field name="hour_total" sum="Total Hours"/>
-                    <field name="cycle_total" sum="Total Cycles"/>
+                    <field name="hour_total" sum="Total Hours" invisible="1"/>
+                    <field name="cycle_total" sum="Total Cycles" invisible="1"/>
                     <field name="origin"/>
                     <field name="state"/>
                 </tree>
@@ -937,6 +920,8 @@
             <field name="arch" type="xml">
                 <search string="Search Production">
                     <field name="name" string="Production" filter_domain="['|',('name','ilike',self),('origin','ilike',self)]"/>
+                    <filter string="To Do" name="todo" domain="[('state','=','draft')]"
+                        help="Manufacturing Orders which are in draft state."/>
                     <filter string="Pending" name="pending" domain="[('state','=','confirmed')]"
                         help="Manufacturing Orders which are waiting for raw materials."/>
                     <filter string="Ready" name="ready" domain="[('state','=','ready')]"
@@ -966,7 +951,7 @@
             <field name="view_mode">tree,kanban,form,calendar,pivot,graph,gantt</field>
             <field name="view_id" eval="False"/>
             <field name="search_view_id" ref="view_mrp_production_filter"/>
-            <field name="context">{}</field>
+            <field name="context">{'search_default_todo': True}</field>
             <field name="help" type="html">
               <p class="oe_view_nocontent_create">
                 Click to create a manufacturing order.
@@ -1217,30 +1202,33 @@
                     <field colspan="2" name="name"/>
                     <field name="workcenter_id"/>
                     <field name="production_id"/>
-                    <field name="production_state"/>
-                    <field name="sequence"/>
+                    <field name="production_state" string="Material Availability"/>
+                    <field name="sequence" invisible="1"/>
                 </group>
                 <notebook>
                 <page string="Information">
                     <group>
+                        <group string="Product to Produce">
+                            <field name="product"/>
+                            <label for="product_qty" string="Qty"/>
+                            <div class="o_row">
+                                <field name="qty"/>
+                                <field name="uom" widget="selection"/>
+                            </div>
+                        </group>
+                    </group>
+                </page>
+                <page string="Time Tracking">
+                    <group>
                         <group string="Planned Date">
                             <field name="date_planned_start"/>
                             <field name="date_planned_end"/>
-                        </group>
-
-                        <group string="Duration">
-                            <field name="cycle"/>
                             <field name="hour" widget="float_time"/>
                         </group>
                         <group string="Actual Production Date" >
                             <field name="date_start" readonly="1"/>
                             <field name="date_finished" readonly="1"/>
                             <field name="delay" widget="float_time"/>
-                        </group>
-                        <group string="Product to Produce">
-                            <field name="product"/>
-                            <field name="qty"/>
-                            <field name="uom" widget="selection"/>
                         </group>
                     </group>
                 </page>
@@ -1320,18 +1308,23 @@
                 <field name="production_id"/>
                 <field name="state"/>
                 <field name="workcenter_id"/>
+                <field name="product"/>
+                <field name="qty"/>
+                <field name="uom"/>
                 <templates>
                     <t t-name="kanban-box">
                         <div t-attf-class="oe_kanban_card oe_kanban_global_click">
-                            <div class="row">
-                                <div class="col-xs-4">
-                                    <strong><span><t t-esc="record.name.value"/></span></strong>
+                            <div class="oe_kanban_content">
+                                <div>
+                                    <span><strong><t t-esc="record.product.value"/></strong></span>
                                 </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-xs-4 text-muted">
-                                    <span><t t-esc="record.production_id.value"/></span>
-                                    <field name="state"/>
+                                <div class="row">
+                                    <div class="col-xs-7 o_kanban_primary_left">
+                                        <span><t t-esc="record.qty.value"/> <t t-esc="record.uom.value"/></span>
+                                    </div>
+                                    <div class="col-xs-5 o_kanban_primary_right">
+                                        <span><t t-esc="record.production_id.value"/></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1412,7 +1405,7 @@
     </record>
 
     <menuitem id="menu_mrp_workorder_todo"
-            name="Work Orders Todo"
+            name="Work Orders"
             action="mrp_workorder_todo"
             parent="menu_mrp_manufacturing"/>
 
