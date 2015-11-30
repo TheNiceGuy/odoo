@@ -2,7 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from openerp import fields, models
-
+from openerp import api
 
 class MrpRouting(models.Model):
     """
@@ -13,7 +13,7 @@ class MrpRouting(models.Model):
     _description = 'Routings'
     name = fields.Char(required=True)
     active = fields.Boolean(default=True, help="If the active field is set to False, it will allow you to hide the routing without removing it.")
-    code = fields.Char()
+    code = fields.Char('Reference', default="New")
     note = fields.Text(string='Description')
     workcenter_line_ids = fields.One2many('mrp.routing.workcenter', 'routing_id', string='Work Centers', copy=True, oldname='workcenter_lines')
 
@@ -22,6 +22,13 @@ class MrpRouting(models.Model):
                                   "Set a location if you produce at a fixed location. This can be a partner location "
                                   "if you subcontract the manufacturing operations.")
     company_id = fields.Many2one('res.company', string='Company', default=lambda self: self.env['res.company']._company_default_get('mrp.routing'))
+
+    @api.model
+    def create(self, vals):
+        if vals.get('code', 'New') == 'New':
+            vals['code'] = self.env['ir.sequence'].next_by_code('mrp.routing') or '/'
+        new_rec = super(MrpRouting, self).create(vals)
+        return new_rec
 
 
 class MrpRoutingWorkcenter(models.Model):

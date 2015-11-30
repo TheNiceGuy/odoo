@@ -470,15 +470,16 @@
             <field name="arch" type="xml">
                 <form string="Routing">
                     <sheet>
+                        <div class="oe_button_box"></div>
                         <group>
                             <group>
-                                <field name="name"/>
                                 <field name="code"/>
+                                <field name="name"/>
                             </group>
                             <group>
+                                <field name="active"/>
                                 <field name="location_id"/>
                                 <field name="company_id" options="{'no_create': True}" groups="base.group_multi_company"/>
-                                <field name="active"/>
                            </group>
                         </group>
                         <notebook>
