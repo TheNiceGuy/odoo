@@ -12,10 +12,10 @@
                 <group string="Track Equipments" name="equipment_grp">
                     <label for="id" string="Requests Alias"/>
                     <div>
-                        <label for="equipment_alias_prefix" class="oe_inline"/>
+                        <label for="maintenance_alias_prefix" class="oe_inline"/>
                         <div>
                             <label for="id" id="the following alias to report internal equipment issue"/> 
-                            <field name="equipment_alias_prefix" class="oe_inline"/>@
+                            <field name="maintenance_alias_prefix" class="oe_inline"/>@
                             <field name="alias_domain" class="oe_inline" readonly="1"/>
                         </div>
                     </div>

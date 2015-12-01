@@ -4,7 +4,7 @@
     <!-- equiment.request : views -->
     <record id="equipment_request_view_search" model="ir.ui.view">
         <field name="name">equipment.request.search</field>
-        <field name="model">equipment.request</field>
+        <field name="model">maintenance.request</field>
         <field name="arch" type="xml">
             <search string="maintenance Request Search">
                 <field name="name"/>
@@ -29,7 +29,7 @@
 
     <record id="equipment_request_view_form" model="ir.ui.view">
         <field name="name">equipment.request.form</field>
-        <field name="model">equipment.request</field>
+        <field name="model">maintenance.request</field>
         <field name="arch" type="xml">
             <form string="Maintenance Request">
                 <header>
@@ -73,7 +73,7 @@
 
     <record id="equipment_request_view_kanban" model="ir.ui.view">
         <field name="name">equipment.request.kanban</field>
-        <field name="model">equipment.request</field>
+        <field name="model">maintenance.request</field>
         <field name="arch" type="xml">
             <kanban default_group_by="stage_id">
                 <field name="stage_id"/>
@@ -133,7 +133,7 @@
 
     <record id="equipment_request_view_tree" model="ir.ui.view">
         <field name="name">equipment.request.tree</field>
-        <field name="model">equipment.request</field>
+        <field name="model">maintenance.request</field>
         <field name="arch" type="xml">
             <tree string="maintenance Request" decoration-bf="message_needaction==True">
                 <field name="message_needaction" invisible="1"/>
@@ -150,7 +150,7 @@
     <!-- equiment.request : actions -->
     <record id="equipment_request_action" model="ir.actions.act_window">
         <field name="name">Maintenance Requests</field>
-        <field name="res_model">equipment.request</field>
+        <field name="res_model">maintenance.request</field>
         <field name="view_mode">kanban,tree,form</field>
         <field name="view_id" ref="equipment_request_view_kanban"/>
         <field name="help" type="html">
@@ -164,7 +164,7 @@
 
     <record id="equipment_request_action_link" model="ir.actions.act_window">
         <field name="name">Maintenance Requests</field>
-        <field name="res_model">equipment.request</field>
+        <field name="res_model">maintenance.request</field>
         <field name="view_mode">kanban,tree,form</field>
         <field name="search_view_id" ref="equipment_request_view_search"/>
         <field name="view_id" ref="equipment_request_view_kanban"/>
@@ -183,8 +183,8 @@
 
     <record id="equipment_request_action_from_equipment" model="ir.actions.act_window">
         <field name="name">Maintenance Requests</field>
-        <field name="res_model">equipment.request</field>
-        <field name="src_model">equipment</field>
+        <field name="res_model">maintenance.request</field>
+        <field name="src_model">maintenance.equipment</field>
         <field name="view_mode">kanban,tree,form</field>
         <field name="context">{
             'default_equipment_id': active_id,
@@ -195,7 +195,7 @@
     <!-- equiment : views -->
     <record id="equipment_view_form" model="ir.ui.view">
         <field name="name">equipment.form</field>
-        <field name="model">equipment</field>
+        <field name="model">maintenance.equipment</field>
         <field name="arch" type="xml">
             <form string="Equipments">
                 <sheet>
@@ -254,7 +254,7 @@
 
     <record id="equipment_view_kanban" model="ir.ui.view">
         <field name="name">equipment.kanban</field>
-        <field name="model">equipment</field>
+        <field name="model">maintenance.equipment</field>
         <field name="arch" type="xml">
             <kanban default_group_by="category_id">
                 <field name="name"/>
@@ -309,7 +309,7 @@
 
     <record id="equipment_view_tree" model="ir.ui.view">
         <field name="name">equipment.tree</field>
-        <field name="model">equipment</field>
+        <field name="model">maintenance.equipment</field>
         <field name="arch" type="xml">
             <tree string="Assign To User"  decoration-bf="message_needaction==True">
                 <field name="message_needaction" invisible="1"/>
@@ -326,7 +326,7 @@
 
     <record id="equipment_view_search" model="ir.ui.view">
         <field name="name">equipment.search</field>
-        <field name="model">equipment</field>
+        <field name="model">maintenance.equipment</field>
         <field name="arch" type="xml">
             <search string="Search">
                 <field name="name"  filter_domain="['|','|','|',('name','ilike',self),('model','ilike',self),('serial_no','ilike',self),('partner_ref', 'ilike', self)]"/>
@@ -352,7 +352,7 @@
 
     <record id="equipment_action" model="ir.actions.act_window">
         <field name="name">Equipments</field>
-        <field name="res_model">equipment</field>
+        <field name="res_model">maintenance.equipment</field>
         <field name="view_mode">kanban,tree,form</field>
         <field name="view_id" ref="equipment_view_kanban"/>
         <field name="help" type="html">
@@ -370,7 +370,7 @@
     <!-- equiment : actions -->
     <record id="equipment_action_from_category_form" model="ir.actions.act_window">
         <field name="name">Equipments</field>
-        <field name="res_model">equipment</field>
+        <field name="res_model">maintenance.equipment</field>
         <field name="view_mode">kanban,tree,form</field>
         <field name="search_view_id" ref="equipment_view_search"/>
         <field name="view_id" ref="equipment_view_kanban"/>
@@ -392,7 +392,7 @@
     <!-- equipment.category : views -->
     <record id="equipment_category_view_form" model="ir.ui.view">
         <field name="name">equipment.category.form</field>
-        <field name="model">equipment.category</field>
+        <field name="model">maintenance.equipment.category</field>
         <field name="arch" type="xml">
             <form string="Equipment Categories">
                 <sheet>
@@ -442,7 +442,7 @@
 
     <record id="equipment_category_view_tree" model="ir.ui.view">
         <field name="name">equipment.category.tree</field>
-        <field name="model">equipment.category</field>
+        <field name="model">maintenance.equipment.category</field>
         <field name="arch" type="xml">
             <tree string="Assign To User">
                 <field name="name" string="Name"/>
@@ -453,7 +453,7 @@
 
     <record id="equipment_category_view_search" model="ir.ui.view">
         <field name="name">equipment.category.search</field>
-        <field name="model">equipment.category</field>
+        <field name="model">maintenance.equipment.category</field>
         <field name="arch" type="xml">
             <search string="Search">
                 <field name="name" string="Category Name" filter_domain="[('name','ilike',self)]"/>
@@ -467,7 +467,7 @@
     <!-- equipment.category : actions -->
     <record id="equipment_category_action" model="ir.actions.act_window">
         <field name="name">Equipment Categories</field>
-        <field name="res_model">equipment.category</field>
+        <field name="res_model">maintenance.equipment.category</field>
         <field name="view_mode">tree,form</field>
         <field name="view_id" ref="equipment_category_view_tree"/>
         <field name="help" type="html">
@@ -480,7 +480,7 @@
     <!-- equipment.stage : views -->
     <record id="equipment_stage_view_search" model="ir.ui.view">
         <field name="name">equipment.stage.search</field>
-        <field name="model">equipment.stage</field>
+        <field name="model">maintenance.stage</field>
         <field name="arch" type="xml">
             <search string="Maintenance Request Stages">
                <field name="name" string="Maintenance Request Stages"/>
@@ -490,7 +490,7 @@
 
     <record id="equipment_stage_view_tree" model="ir.ui.view">
         <field name="name">equipment.stage.tree</field>
-        <field name="model">equipment.stage</field>
+        <field name="model">maintenance.stage</field>
         <field name="arch" type="xml">
             <tree string="Maintenance Request Stage" editable="top">
                 <field name="sequence" widget="handle"/>
@@ -504,7 +504,7 @@
     <!-- equipment.stages : actions -->
     <record id="equipment_stage_action" model="ir.actions.act_window">
         <field name="name">Stages</field>
-        <field name="res_model">equipment.stage</field>
+        <field name="res_model">maintenance.stage</field>
         <field name="view_mode">tree</field>
         <field name="view_type">form</field>
         <field name="view_id" ref="equipment_stage_view_tree"/>
@@ -550,7 +550,7 @@
         id="menu_equipment_global_settings"
         name="Settings"
         parent="menu_equipment_configuration"
-        action="action_equipment_configuration"
+        action="action_maintenance_configuration"
         sequence="0"/>
 
     <menuitem
