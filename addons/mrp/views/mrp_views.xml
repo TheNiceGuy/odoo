@@ -1202,30 +1202,33 @@
                     <field colspan="2" name="name"/>
                     <field name="workcenter_id"/>
                     <field name="production_id"/>
-                    <field name="production_state"/>
-                    <field name="sequence"/>
+                    <field name="production_state" string="Material Availability"/>
+                    <field name="sequence" invisible="1"/>
                 </group>
                 <notebook>
                 <page string="Information">
                     <group>
+                        <group string="Product to Produce">
+                            <field name="product"/>
+                            <label for="product_qty" string="Qty"/>
+                            <div class="o_row">
+                                <field name="qty"/>
+                                <field name="uom" widget="selection"/>
+                            </div>
+                        </group>
+                    </group>
+                </page>
+                <page string="Time Tracking">
+                    <group>
                         <group string="Planned Date">
                             <field name="date_planned_start"/>
                             <field name="date_planned_end"/>
-                        </group>
-
-                        <group string="Duration">
-                            <field name="cycle"/>
                             <field name="hour" widget="float_time"/>
                         </group>
                         <group string="Actual Production Date" >
                             <field name="date_start" readonly="1"/>
                             <field name="date_finished" readonly="1"/>
                             <field name="delay" widget="float_time"/>
-                        </group>
-                        <group string="Product to Produce">
-                            <field name="product"/>
-                            <field name="qty"/>
-                            <field name="uom" widget="selection"/>
                         </group>
                     </group>
                 </page>
