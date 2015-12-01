@@ -818,7 +818,7 @@
                             <field name="date_finished_planned"/>
                             <field name="user_id"/>
                             <field name="origin"/>
-                            <field name="priority"/>
+                            <field name="priority" invisible="1"/>
                             <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
                             <field name="move_prod_id" groups="base.group_no_one"/>
                         </group>
