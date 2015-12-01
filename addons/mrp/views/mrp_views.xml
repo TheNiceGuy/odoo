@@ -789,8 +789,7 @@
                         <field name="workcenter_line_ids" invisible="1"/>
                     </div>
                     <div class="oe_title">
-                        <label for="name" class="oe_edit_only"/>
-                        <h1><field name="name" placeholder="Manufacturing Reference"/></h1>
+                        <h1><field name="name" placeholder="Manufacturing Reference" nolabel="1"/></h1>
                     </div>
                     <group>
                         <group>
@@ -804,9 +803,6 @@
                                     name="%(mrp.action_change_production_qty)d"
                                     string="Update" states="confirmed" class="oe_edit_only oe_link"/>
                             </div>
-                            <field name="date_planned"/>
-                        </group>
-                        <group>
                             <field name="bom_id"
                                 domain="['|',
                                             ('product_id','=',product_id),
@@ -815,6 +811,11 @@
                                                 ('product_id','=',False)]"
                                 context="{'default_product_id': product_id, 'default_product_tmpl_id': product_tmpl_id}" required="1"/>
                             <field name="routing_id" groups="mrp.group_mrp_routings"/>
+                        </group>
+                        <group>
+                            <field name="date_planned"/>
+                            <field name="date_start_planned"/>
+                            <field name="date_finished_planned"/>
                             <field name="user_id"/>
                             <field name="origin"/>
                             <field name="priority"/>
