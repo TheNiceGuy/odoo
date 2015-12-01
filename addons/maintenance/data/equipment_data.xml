@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-<data noupdate="1">
+<data>
 
     <!-- Standard stages for Maintenance Request -->
     <record id="stage_0" model="maintenance.stage">
@@ -72,12 +72,15 @@
 
     <record id="equipment_computer" model="maintenance.equipment.category">
         <field name="name">Computers</field>
+        <field name="alias_id" ref="mail_alias_equipment"/>
     </record>
     <record id="equipment_software" model="maintenance.equipment.category">
         <field name="name">Software</field>
+        <field name="alias_id" ref="mail_alias_equipment"/>
     </record>
     <record id="equipment_printer" model="maintenance.equipment.category">
         <field name="name">Printers</field>
+        <field name="alias_id" ref="mail_alias_equipment"/>
     </record>
 
 </data>
