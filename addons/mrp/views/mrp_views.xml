@@ -563,9 +563,9 @@
                             <field name="product_tmpl_id"/>
                             <field name="product_id" groups="product.group_product_variant"/>
                             <label for="product_qty" string="Quantity"/>
-                            <div>
-                                <field name="product_qty" class="oe_inline"/>
-                                <field name="product_uom_id" options="{'no_open':True,'no_create':True}" class="oe_inline" groups="product.group_uom"/>
+                            <div class="o_row">
+                                <field name="product_qty"/>
+                                <field name="product_uom_id" options="{'no_open':True,'no_create':True}" groups="product.group_uom"/>
                             </div>
                             <field name="ready_to_produce"/>
                             <field name="picking_type_id"/>
@@ -843,11 +843,11 @@
                     <field name="name"/>
                     <field name="date_planned"/>
                     <field name="product_id"/>
-                    <field name="product_qty" sum="Total Qty"/>
-                    <field name="product_uom_id" options="{'no_open':True,'no_create':True}" groups="product.group_uom"/>
+                    <field name="product_qty" sum="Total Qty" string="Quantity"/>
+                    <field name="product_uom_id" string="Unit of Measure" options="{'no_open':True,'no_create':True}" groups="product.group_uom"/>
                     <field name="routing_id" groups="mrp.group_mrp_routings"/>
-                    <field name="hour_total" sum="Total Hours"/>
-                    <field name="cycle_total" sum="Total Cycles"/>
+                    <field name="hour_total" sum="Total Hours" invisible="1"/>
+                    <field name="cycle_total" sum="Total Cycles" invisible="1"/>
                     <field name="origin"/>
                     <field name="state"/>
                 </tree>
@@ -937,6 +937,8 @@
             <field name="arch" type="xml">
                 <search string="Search Production">
                     <field name="name" string="Production" filter_domain="['|',('name','ilike',self),('origin','ilike',self)]"/>
+                    <filter string="To Do" name="todo" domain="[('state','=','draft')]"
+                        help="Manufacturing Orders which are in draft state."/>
                     <filter string="Pending" name="pending" domain="[('state','=','confirmed')]"
                         help="Manufacturing Orders which are waiting for raw materials."/>
                     <filter string="Ready" name="ready" domain="[('state','=','ready')]"
@@ -966,7 +968,7 @@
             <field name="view_mode">tree,kanban,form,calendar,pivot,graph,gantt</field>
             <field name="view_id" eval="False"/>
             <field name="search_view_id" ref="view_mrp_production_filter"/>
-            <field name="context">{}</field>
+            <field name="context">{'search_default_todo': True}</field>
             <field name="help" type="html">
               <p class="oe_view_nocontent_create">
                 Click to create a manufacturing order.
@@ -1412,7 +1414,7 @@
     </record>
 
     <menuitem id="menu_mrp_workorder_todo"
-            name="Work Orders Todo"
+            name="Work Orders"
             action="mrp_workorder_todo"
             parent="menu_mrp_manufacturing"/>
 
