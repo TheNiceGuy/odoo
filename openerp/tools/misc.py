@@ -993,8 +993,12 @@ def dumpstacks(sig=None, frame=None):
 def freehash(arg):
     if isinstance(arg, Mapping):
         return hash(frozendict(arg))
-    elif isinstance(arg, Iterable):
-        return hash(frozenset(arg))
+    elif isinstance(arg, Iterable) and not isinstance(arg, basestring):
+        try:
+            return hash(frozenset(arg))
+        except Exception as e:
+            print "No hash for", arg
+        return hash(frozenset(freehash(item) for item in arg))
     elif isinstance(arg, Hashable):
         return hash(arg)
     else:
