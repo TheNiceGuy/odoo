@@ -33,8 +33,8 @@
         <field name="arch" type="xml">
             <form string="Maintenance Request">
                 <header>
-                    <button string="Cancel" name="archive_equipment_request" type="object" attrs="{'invisible': [('active', '=', False)]}"/>
-                    <button string="Reset Request" name="reset_equipment_request" type="object" attrs="{'invisible': [('active', '=', True)]}"/>
+                    <button string="Cancel" name="archive_equipment_request" type="object" attrs="{'invisible': [('archive', '=', True)]}"/>
+                    <button string="Reset Request" name="reset_equipment_request" type="object" attrs="{'invisible': [('archive', '=', False)]}"/>
                     <field name="stage_id" widget="statusbar" clickable="true" readonly="1"/>
                 </header>
                 <sheet>
@@ -54,10 +54,11 @@
                             <field name="category_id" groups="base.group_equipment_manager"/>
                             <field name="request_date" groups="base.group_no_one"/>
                             <field name="close_date" groups="base.group_no_one"/>
-                            <field name="active" invisible="1"/>
+                            <field name="archive" invisible="1"/>
                         </group>
                         <group>
                             <field name="technician_user_id" string="Repair Responsible"/>
+                            <field name="maintenance_type"/>
                             <field name="priority" widget="priority"/>
                         </group>
                     </group>
@@ -242,6 +243,12 @@
                                 </group>
                             </group>
                         </page>
+                        <page string="Maintenance">
+                            <group>
+                                <field name="period"/>
+                                <field name="next_action_date" class="oe_read_only"/>
+                            </group>
+                        </page>
                     </notebook>
                 </sheet>
                 <div class="oe_chatter">
@@ -256,7 +263,7 @@
         <field name="name">equipment.kanban</field>
         <field name="model">maintenance.equipment</field>
         <field name="arch" type="xml">
-            <kanban default_group_by="category_id">
+            <kanban>
                 <field name="name"/>
                 <field name="color"/>
                 <field name="technician_user_id"/>
@@ -512,6 +519,25 @@
           <p class="oe_view_nocontent_create">
             Click to add a stage in the maintenance request.
           </p>
+        </field>
+    </record>
+
+    <!-- maitenance.team: views -->
+    <record id="maintenace_team_view_form" model="ir.ui.view">
+        <field name="name">maintenance.team.form</field>
+        <field name="model">maintenance.team</field>
+        <field name="arch" type="xml">
+            <form string="Maintenance Team">
+                <sheet>
+                <div class="oe_title">
+                    <label for="name" class="oe_edit_only" string="Category Name"/>
+                    <h1>
+                        <field name="name"/>
+                    </h1>
+                </div>
+                <field name="partner_id"/>
+                </sheet>
+            </form>
         </field>
     </record>
 

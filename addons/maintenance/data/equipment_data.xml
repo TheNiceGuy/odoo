@@ -83,5 +83,20 @@
         <field name="alias_id" ref="mail_alias_equipment"/>
     </record>
 
+    <record id="equipment_team_operator" model="maintenance.team">
+        <field name="name">Operator</field>
+    </record>
+
+    <record id="equipment_team_maintenance" model="maintenance.team">
+        <field name="name">Maintenance</field>
+    </record>
+
+    <record id="equipment_team_metrology" model="maintenance.team">
+        <field name="name">Metrology</field>
+    </record>
+
+    <record id="equipment_team_subcontractor" model="maintenance.team">
+        <field name="name">Subcontractor</field>
+    </record>
 </data>
 </odoo>
