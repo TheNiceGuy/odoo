@@ -1306,18 +1306,23 @@
                 <field name="production_id"/>
                 <field name="state"/>
                 <field name="workcenter_id"/>
+                <field name="product"/>
+                <field name="qty"/>
+                <field name="uom"/>
                 <templates>
                     <t t-name="kanban-box">
                         <div t-attf-class="oe_kanban_card oe_kanban_global_click">
-                            <div class="row">
-                                <div class="col-xs-4">
-                                    <strong><span><t t-esc="record.name.value"/></span></strong>
+                            <div class="oe_kanban_content">
+                                <div>
+                                    <span><strong><t t-esc="record.product.value"/></strong></span>
                                 </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-xs-4 text-muted">
-                                    <span><t t-esc="record.production_id.value"/></span>
-                                    <field name="state"/>
+                                <div class="row">
+                                    <div class="col-xs-7 o_kanban_primary_left">
+                                        <span><t t-esc="record.qty.value"/> <t t-esc="record.uom.value"/></span>
+                                    </div>
+                                    <div class="col-xs-5 o_kanban_primary_right">
+                                        <span><t t-esc="record.production_id.value"/></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
