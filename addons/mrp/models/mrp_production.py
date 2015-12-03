@@ -78,6 +78,19 @@ class MrpProduction(models.Model):
                 order.date_planned_start = order.date_planned_start_store
                 order.date_planned_finished = order.date_planned_finished_store
 
+    @api.multi
+    @api.depends('workcenter_line_ids')
+    def _compute_nb_orders(self):
+        for mo in self:
+            total_mo = 0
+            done_mo = 0
+            for wo in mo.workcenter_line_ids:
+                total_mo += 1
+                if wo.state == 'done':
+                    done_mo += 1
+            mo.nb_orders = total_mo
+            mo.nb_done = done_mo
+
 
     name = fields.Char(string='Reference', required=True, readonly=True, states={'confirmed': [('readonly', False)]}, copy=False,
                        default=lambda self: self.env['ir.sequence'].next_by_code('mrp.production') or '/')
@@ -121,6 +134,8 @@ class MrpProduction(models.Model):
     workcenter_line_ids = fields.One2many('mrp.production.workcenter.line', 'production_id', string='Work Centers Utilisation',
                                           readonly=True, states={'draft': [('readonly', False)]}, oldname='workcenter_lines')
     
+    nb_orders = fields.Integer('Number of Orders', compute='_compute_nb_orders')
+    nb_done = fields.Integer('Number of Orders Done', compute='_compute_nb_orders')
     state = fields.Selection([('confirmed', 'Confirmed'), ('planned', 'Planned'), ('progress', 'In Progress'), ('done', 'Done'), ('cancel', 'Cancelled')], 'State', default='confirmed', copy=False)
     availability = fields.Selection([('assigned', 'Available'), ('partially_available', 'Partially available'), ('none', 'Nothing Yet')], compute='_compute_availability', default="none")
 
@@ -652,7 +667,8 @@ class MrpProductionWorkcenterLine(models.Model):
     date_finished = fields.Datetime('Effective End Date')
     delay = fields.Float('Real Duration', compute='_compute_delay', readonly=True)
     operation_id = fields.Many2one('mrp.routing.workcenter', 'Operation') #Should be used differently as BoM can change in the meantime
-    consume_line_ids = fields.Many2one('mrp.production.consume.line', 'workorder_id')
+    consume_line_ids = fields.One2many('mrp.production.consume.line', 'workorder_id')
+    move_line_ids = fields.One2many('stock.move', 'workorder_id', 'Moves')
     production_state = fields.Selection(related='production_id.state', readonly=True)
     product = fields.Many2one('product.product', related='production_id.product_id', string="Product", readonly=True)
     qty = fields.Float(related='production_id.product_qty', string='Qty', readonly=True, store=True) #store really needed?
