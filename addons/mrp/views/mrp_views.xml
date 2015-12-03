@@ -770,7 +770,10 @@
                 </header>
                 <sheet>
                     <div class="oe_button_box">
-                        <button name="%(action_mrp_workorder_production_specific)d" type="action" string="Work Orders" attrs="{'invisible': [('workcenter_line_ids', '=', [])]}"/>
+                        <button name="%(action_mrp_workorder_production_specific)d" type="action" attrs="{'invisible': [('workcenter_line_ids', '=', [])]}">
+                            <span class="o_stat_value"><field name="nb_done" widget="statinfo" nolabel="1"/> / <field name="nb_orders" widget="statinfo" nolabel="1"/></span><br/>
+                            <span class="o_stat_text">Work Orders</span>
+                        </button>
                         <field name="workcenter_line_ids" invisible="1"/>
                     </div>
                     <div class="oe_title">
@@ -1191,6 +1194,7 @@
                 <button name="button_pause" type="object" string="Pending" states="progress"/>
                 <button name="button_draft" type="object" string="Set Draft" states="cancel"/>
                 <button name="button_cancel" type="object" string="Cancel" states="confirmed,planned,progress"/>
+                <button name="%(stock.picking_scrap)d" type="action" string="Scrap" attrs="{'invisible': [('state', 'in', ('confirmed', 'cancel'))]}"/>
                 <field name="state" widget="statusbar" statusbar_visible="confirmed,progress,done"/>
             </header>
             <sheet string="Work Orders">
