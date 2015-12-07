@@ -451,10 +451,19 @@
             <field name="arch" type="xml">
                 <form string="Routing">
                     <sheet>
-                        <div class="oe_button_box"></div>
+                        <div class="oe_button_box" name="button_box">
+                            <button class="oe_stat_button" name="toggle_active" type="object" icon="fa-archive">
+                                <field name="active" widget="boolean_button"
+                                    options='{"terminology": "archive"}'/>
+                            </button>
+                        </div>
+                        <div class="oe_title">
+                            <h1>
+                                <field name="code"/>
+                            </h1>
+                        </div>
                         <group>
                             <group>
-                                <field name="code"/>
                                 <field name="name"/>
                             </group>
                             <group>
@@ -493,7 +502,7 @@
             <field name="arch" type="xml">
                 <search string="Routing">
                     <field name="name" string="Routing" filter_domain="['|',('name','ilike',self),('code','ilike',self)]"/>
-                    <filter string="Inactive" domain="[('active','=',False)]"/>
+                    <filter string="Archived" domain="[('active','=',False)]"/>
                     <field name="location_id"/>
                     <field name="company_id" groups="base.group_multi_company"/>
                     <group expand="0" string="Group By...">
@@ -549,9 +558,6 @@
                                 <field name="product_qty"/>
                                 <field name="product_uom_id" options="{'no_open':True,'no_create':True}" groups="product.group_uom"/>
                             </div>
-                            <field name="ready_to_produce"/>
-                            <field name="picking_type_id"/>
-                            <field name="routing_id" groups="mrp.group_mrp_routings"/>
                         </group>
                         <group>
                             <field name="name"/>
@@ -585,6 +591,11 @@
                                 <group>
                                     <field name="product_rounding"/>
                                     <field name="product_efficiency"/>
+                                </group>
+                                <group>
+                                    <field name="ready_to_produce"/>
+                                    <field name="picking_type_id"/>
+                                    <field name="routing_id" groups="mrp.group_mrp_routings"/>
                                 </group>
                             </group>
                             <separator string="Properties" groups="product.group_mrp_properties"/>
@@ -1169,15 +1180,13 @@
         <field name="model">mrp.production.workcenter.line</field>
         <field name="arch" type="xml">
             <tree string="Work Orders" decoration-muted="state in ('done','cancel')" decoration-danger="date_planned_start&lt;current_date and state in ('draft', 'confirmed', 'ready')">
-                <field name="production_id"/>
+                <field name="name"/>
                 <field name="date_planned_start"/>
+                <field name="workcenter_id" widget="selection"/>
+                <field name="production_id"/>
                 <field name="product"/>
                 <field name="qty"/>
                 <field name="uom"/>
-                <field name="name"/>
-                <field name="workcenter_id" widget="selection"/>
-                <field name="cycle"/>
-                <field name="hour" widget="float_time"/>
                 <field name="state"/>
             </tree>
         </field>
