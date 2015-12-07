@@ -38,7 +38,7 @@ class MrpProduction(models.Model):
 
     name = fields.Char(string='Reference', required=True, readonly=True, states={'draft': [('readonly', False)]}, copy=False,
                        default=lambda self: self.env['ir.sequence'].next_by_code('mrp.production') or '/')
-    origin = fields.Char(string='Source Document', readonly=True, states={'draft': [('readonly', False)]},
+    origin = fields.Char(string='Source', readonly=True, states={'draft': [('readonly', False)]},
                          help="Reference of the document that generated this production order request.", copy=False)
     priority = fields.Selection([('0', 'Not urgent'), ('1', 'Normal'), ('2', 'Urgent'), ('3', 'Very Urgent')], 'Priority',
                                 index=True, readonly=True, states=dict.fromkeys(['draft', 'confirmed'], [('readonly', False)]), default='1')

@@ -1167,15 +1167,13 @@
         <field name="model">mrp.production.workcenter.line</field>
         <field name="arch" type="xml">
             <tree string="Work Orders" decoration-muted="state in ('done','cancel')" decoration-danger="date_planned_start&lt;current_date and state in ('draft', 'confirmed', 'ready')">
-                <field name="production_id"/>
+                <field name="name"/>
                 <field name="date_planned_start"/>
+                <field name="workcenter_id" widget="selection"/>
+                <field name="production_id"/>
                 <field name="product"/>
                 <field name="qty"/>
                 <field name="uom"/>
-                <field name="name"/>
-                <field name="workcenter_id" widget="selection"/>
-                <field name="cycle"/>
-                <field name="hour" widget="float_time"/>
                 <field name="state"/>
             </tree>
         </field>
