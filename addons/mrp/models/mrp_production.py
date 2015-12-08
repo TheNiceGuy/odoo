@@ -216,15 +216,19 @@ class MrpProduction(models.Model):
             results = res[0]  # product_line_ids
             results2 = res[1]  # workcenter_line_ids
 
-            # reset product_line_ids in production order
-            for line in results:
-                line['production_id'] = production.id
-                ProductLine.create(line)
-
             # reset workcenter_line_ids in production order
             for line in results2:
                 line['production_id'] = production.id
                 WorkcenterLine.create(line)
+
+            # reset product_line_ids in production order
+            for line in results:
+                # Search corresponding operation
+                if results2:
+                    # TODO: optimize without doing the search
+                    line['workorder_id'] = WorkcenterLine.search([('operation_id', '=', line['operation_id'])], limit=1).id
+                line['production_id'] = production.id
+                ProductLine.create(line)
         return results
 
 
@@ -772,6 +776,7 @@ class MrpProductionWorkcenterLine(models.Model):
     date_start = fields.Datetime('Effective Start Date')
     date_finished = fields.Datetime('Effective End Date')
     delay = fields.Float('Working Hours', readonly=True)
+    operation_id = fields.Many2one('mrp.routing.workcenter', 'Operation') #Should be used differently as BoM can change in the meantime
     production_state = fields.Selection(related='production_id.state', readonly=True)
     product = fields.Many2one('product.product', related='production_id.product_id', string="Product", readonly=True)
     qty = fields.Float(related='production_id.product_qty', string='Qty', readonly=True, store=True) #store really needed?
@@ -784,7 +789,7 @@ class MrpProductionWorkcenterLine(models.Model):
     @api.multi
     def button_start_working(self):
         self.write({'state': 'startworking',
-                    'date_start': time.strftime(DEFAULT_SERVER_DATETIME_FORMAT)})
+                    'date_start': datetime.now()})
 
     @api.multi
     def button_resume(self):
@@ -801,7 +806,7 @@ class MrpProductionWorkcenterLine(models.Model):
     @api.multi
     def button_done(self):
         self.write({'state': 'done',
-                    'date_finished': time.strftime(DEFAULT_SERVER_DATETIME_FORMAT)})
+                    'date_finished': datetime.now()})
         #for workorder in self:
         #    workorder.state='done'
         # Put date_finished
