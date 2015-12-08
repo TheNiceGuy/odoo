@@ -16,7 +16,6 @@ class MrpRouting(models.Model):
     code = fields.Char('Reference', copy=False, readonly=True, default='New')
     note = fields.Text(string='Description')
     workcenter_line_ids = fields.One2many('mrp.routing.workcenter', 'routing_id', string='Work Centers', copy=True, oldname='workcenter_lines')
-
     location_id = fields.Many2one('stock.location', string='Production Location',
                                   help="Keep empty if you produce at the location where the finished products are needed."
                                   "Set a location if you produce at a fixed location. This can be a partner location "
@@ -33,7 +32,7 @@ class MrpRouting(models.Model):
 
 class MrpRoutingWorkcenter(models.Model):
     """
-    Defines working cycles and hours of a Work Center using routings.
+    Defines working hours of a Work Center using routings.
     """
     _name = 'mrp.routing.workcenter'
     _description = 'Work Center Usage'
@@ -42,10 +41,9 @@ class MrpRoutingWorkcenter(models.Model):
     workcenter_id = fields.Many2one('mrp.workcenter', string='Work Center', required=True)
     name = fields.Char(required=True)
     sequence = fields.Integer(default=100, help="Gives the sequence order when displaying a list of routing Work Centers.")
-    cycle_nbr = fields.Float(string='Number of Cycles', required=True, default=1.0, help="Number of iterations this work center has to do in the specified operation of the routing.")
     hour_nbr = fields.Float(string='Number of Hours', required=True, help="Time in hours for this Work Center to achieve the operation of the specified routing.")
     routing_id = fields.Many2one('mrp.routing', string='Parent Routing', index=True, ondelete='cascade', required=True,
-                                 help="Routings indicates all the Work Centers used, for how long and/or cycles."
+                                 help="Routings indicates all the Work Centers used and for how long."
                                  "If Routings is indicated then,the third tab of a production order (Work Centers) will be automatically pre-completed.")
     note = fields.Text(string='Description')
     company_id = fields.Many2one('res.company', related='routing_id.company_id', string='Company', store=True, readonly=True)

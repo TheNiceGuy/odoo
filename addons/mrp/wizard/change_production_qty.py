@@ -43,6 +43,7 @@ class ChangeProductionQty(models.TransientModel):
         :param context: A standard dictionary
         :return:
         """
+        #TODO: rewre
         record_id = self._context and self._context.get('active_id', False)
         assert record_id, _('Active Id not found')
         MrpBom = self.env['mrp.bom']
@@ -50,7 +51,7 @@ class ChangeProductionQty(models.TransientModel):
         for wizard_qty in self:
             production = MrpProduction.browse(record_id)
             production.write({'product_qty': wizard_qty.product_qty})
-            production.action_compute()
+            #production.action_compute() #TODO: Do we still need to change the quantity of a production order?
 
             for move in production.move_line_ids:
                 bom_point = production.bom_id

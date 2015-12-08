@@ -52,12 +52,14 @@ class ProcurementOrder(models.Model):
         return True
 
     def _get_date_planned(self):
+        self.ensure_one()
         format_date_planned = fields.Datetime.from_string(self.date_planned)
         date_planned = format_date_planned - relativedelta(days=self.product_id.produce_delay or 0.0)
         date_planned = date_planned - relativedelta(days=self.company_id.manufacturing_lead)
         return date_planned
 
     def _prepare_mo_vals(self):
+        self.ensure_one()
         res_id = self.move_dest_id and self.move_dest_id.id or False
         newdate = self._get_date_planned()
         if self.bom_id:
@@ -75,7 +77,9 @@ class ProcurementOrder(models.Model):
             'location_dest_id': self.location_id.id,
             'bom_id': bom.id,
             'routing_id': routing_id,
-            'date_planned': fields.Datetime.to_string(newdate),
+            'date_planned': self.date_planned,
+            'date_planned_finished': self.date_planned,
+            'date_planned_start': fields.Datetime.to_string(newdate),
             'move_prod_id': res_id,
             'company_id': self.company_id.id,
         }
@@ -93,8 +97,6 @@ class ProcurementOrder(models.Model):
                 res[procurement.id] = produce_id
                 procurement.write({'production_id': produce_id.id})
                 procurement.message_post(body=_("Manufacturing Order <em>%s</em> created.") % (procurement.production_id.name,))
-                produce_id.action_compute(properties=procurement.property_ids)
-                produce_id.signal_workflow('button_confirm')
             else:
                 res[procurement.id] = False
                 procurement.message_post(body=_("No BoM exists for this product!"))

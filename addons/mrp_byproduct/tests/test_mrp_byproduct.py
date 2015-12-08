@@ -34,12 +34,8 @@ class TestMrpByProduct(common.TransactionCase):
 
         # I compute the data of production order
         context = {"active_ids": [mnf_hardisk.id], "active_id": mnf_hardisk.id}
-        mnf_hardisk.with_context(context).action_compute()
 
-        # I confirm the production order.
-        mnf_hardisk.signal_workflow('button_confirm')
-
-        # I confirm the production order.
+        # I confirm the production order
         self.assertEqual(mnf_hardisk.state, 'confirmed', 'Production order should be in state confirmed')
 
         # Now I check the stock moves for the byproduct I created in the bill of material.
@@ -49,7 +45,7 @@ class TestMrpByProduct(common.TransactionCase):
 
         # I want to start the production so I force the reservation of products.
         context = {"active_ids": [self.mrp_action.id], "active_id": self.mrp_action.id}
-        mnf_hardisk.with_context(context).force_production()
+        mnf_hardisk.with_context(context).force_assign()
 
         # I start the production.
         mnf_hardisk.signal_workflow('button_produce')
@@ -61,9 +57,6 @@ class TestMrpByProduct(common.TransactionCase):
                                                          })
         # I finish the production order.
         context = {"active_model": "mrp.production", "active_ids": [mnf_hardisk.id], "active_id": mnf_hardisk.id}
-        qty = product_consume.product_qty
-        lines = product_consume.with_context(context).on_change_qty(qty, [])
-        product_consume.write(lines['value'])
         product_consume.with_context(context).do_produce()
 
         # I see that stock moves of External Hard Disk including Headset USB are done now.
