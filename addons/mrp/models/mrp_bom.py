@@ -81,23 +81,23 @@ class MrpBom(models.Model):
 
     def _prepare_wc_line(self, wc_use, level=0, factor=1):
         wc = wc_use.workcenter_id
-        d, m = divmod(factor, wc_use.workcenter_id.capacity_per_cycle)
+        d, m = divmod(factor, wc_use.workcenter_id.capacity)
         mult = (d + (m and 1.0 or 0.0))
-        cycle = mult * wc_use.cycle_nbr
         return {
             'name': ("%s-  %s") % (wc_use.name, self.product_tmpl_id.display_name),
             'workcenter_id': wc.id,
             'sequence': level + (wc_use.sequence or 0),
-            'cycle': cycle,
-            'hour': float(wc_use.hour_nbr * mult + ((wc.time_start or 0.0) + (wc.time_stop or 0.0) + cycle * (wc.time_cycle or 0.0)) * (wc.time_efficiency or 1.0)),
+            'operation_id': wc_use.id,
+            'hour': float(wc_use.hour_nbr * mult + ((wc.time_start or 0.0) + (wc.time_stop or 0.0))), #+ cycle * (wc.time_cycle or 0.0)) * (wc.time_efficiency or 1.0)),
         }
 
     def _prepare_consume_line(self, bom_line, quantity):
         return {
             'name': bom_line.product_id.name,
             'product_id': bom_line.product_id.id,
-            'product_qty': quantity,
-            'product_uom_id': bom_line.product_uom_id.id
+            'product_uom_qty': quantity,
+            'product_uom_id': bom_line.product_uom_id.id,
+            'operation_id': bom_line.operation_id.id,
         }
 
     def explode(self, product, factor, properties=None, level=0, routing_id=False, previous_products=None, master_bom=None):
@@ -224,13 +224,17 @@ class MrpBomLine(models.Model):
     product_uom_id = fields.Many2one('product.uom', string='Product Unit of Measure', required=True, default=_get_uom_id,
                                      help="Unit of Measure (Unit of Measure) is the unit of measurement for the inventory control", oldname='product_uom')
     sequence = fields.Integer(default=1, help="Gives the sequence order when displaying.")
-    routing_id = fields.Many2one('mrp.routing', string='Routing', help="The list of operations (list of work centers) to produce the finished product. The routing is mainly used to compute work center costs during operations and to plan future loads on work centers based on production planning.")
+    routing_id = fields.Many2one('mrp.routing', string='Routing',
+                                 related="bom_id.routing_id", store=True, 
+                                 help="The list of operations (list of work centers) to produce the finished product. The routing is mainly used to compute work center costs during operations and to plan future loads on work centers based on production planning.")
     product_rounding = fields.Float(string='Product Rounding', help="Rounding applied on the product quantity.")
     product_efficiency = fields.Float(string='Manufacturing Efficiency', required=True, default=1.0, help="A factor of 0.9 means a loss of 10% within the production process.")
     property_ids = fields.Many2many('mrp.property', string='Properties')  # Not used
     bom_id = fields.Many2one('mrp.bom', string='Parent BoM', ondelete='cascade', index=True, required=True)
     attribute_value_ids = fields.Many2many('product.attribute.value', string='Variants', help="BOM Product Variants needed form apply this line.")
-    operation_id = fields.Many2one('mrp.routing.workcenter', string='Consumed in Operation Sequence #', help="The operation where the components are consumed, or the finished products created.")
+    operation_id = fields.Many2one('mrp.routing.workcenter', string='Consumed in Operation Sequence #',
+                                   domain="[('routing_id', '=', routing_id)]", 
+                                   help="The operation where the components are consumed, or the finished products created.")
     child_line_ids = fields.One2many('mrp.bom.line', compute='_get_child_bom_lines', string='BOM lines of the referred bom')
 
     _sql_constraints = [
@@ -256,7 +260,7 @@ class MrpBomLine(models.Model):
             values['product_uom_id'] = self.env['product.product'].browse(values.get('product_id')).uom_id.id
         return super(MrpBomLine, self).create(values)
 
-    @api.onchange('product_id')
+    @api.onchange('product_uom_id')
     def onchange_uom(self):
         res = {}
         if not self.product_uom_id or not self.product_id:

@@ -5,14 +5,14 @@ from openerp import api, fields, models
 import openerp.addons.decimal_precision as dp
 
 
-class MrpProductProduceLine(models.TransientModel):
-    _name="mrp.product.produce.line"
-    _description = "Product Produce Consume lines"
-
-    product_id = fields.Many2one('product.product', string='Product')
-    product_qty = fields.Float(string='Quantity (in default UoM)', digits=dp.get_precision('Product Unit of Measure'))
-    lot_id = fields.Many2one('stock.production.lot', string='Lot')
-    produce_id = fields.Many2one('mrp.product.produce', string='Produce')
+# class MrpProductProduceLine(models.TransientModel):
+#     _name="mrp.product.produce.line"
+#     _description = "Product Produce Consume lines"
+# 
+#     product_id = fields.Many2one('product.product', string='Product')
+#     product_qty = fields.Float(string='Quantity (in default UoM)', digits=dp.get_precision('Product Unit of Measure'))
+#     lot_id = fields.Many2one('stock.production.lot', string='Lot')
+#     produce_id = fields.Many2one('mrp.product.produce', string='Produce')
 
 
 class MrpProductProduce(models.TransientModel):
@@ -59,28 +59,28 @@ class MrpProductProduce(models.TransientModel):
                                     "'Consume & Produce' mode will consume as well as produce the products with the quantity selected "
                                     "and it will finish the production order when total ordered quantities are produced.")
     lot_id = fields.Many2one('stock.production.lot', string='Lot')  # Should only be visible when it is consume and produce mode
-    consume_lines = fields.One2many('mrp.product.produce.line', 'produce_id', string='Products Consumed')
+#    consume_lines = fields.One2many('mrp.product.produce.line', 'produce_id', string='Products Consumed')
     tracking = fields.Selection(related='product_id.tracking', selection=[('serial', 'By Unique Serial Number'), ('lot', 'By Lots'), ('none', 'No Tracking')], default=_get_track)
 
-    @api.multi
-    def on_change_qty(self, product_qty, consume_lines):
-        """ 
-            When changing the quantity of products to be produced it will 
-            recalculate the number of raw materials needed according
-            to the scheduled products and the already consumed/produced products
-            It will return the consume lines needed for the products to be produced
-            which the user can still adapt
-        """
-        production = self.env['mrp.production'].browse(self._context['active_id'])
-        consume_lines = []
-        new_consume_lines = []
-        if product_qty > 0.0:
-            product_uom_qty = production.product_uom_id._compute_qty(product_qty, production.product_id.uom_id.id)
-            consume_lines = production._calculate_qty(product_qty=product_uom_qty)
-
-        for consume in consume_lines:
-            new_consume_lines.append([0, False, consume])
-        return {'value': {'consume_lines': new_consume_lines}}
+#     @api.multi
+#     def on_change_qty(self, product_qty, consume_lines):
+#         """ 
+#             When changing the quantity of products to be produced it will 
+#             recalculate the number of raw materials needed according
+#             to the scheduled products and the already consumed/produced products
+#             It will return the consume lines needed for the products to be produced
+#             which the user can still adapt
+#         """
+#         production = self.env['mrp.production'].browse(self._context['active_id'])
+#         consume_lines = []
+#         new_consume_lines = []
+#         if product_qty > 0.0:
+#             product_uom_qty = production.product_uom_id._compute_qty(product_qty, production.product_id.uom_id.id)
+#             consume_lines = production._calculate_qty(product_qty=product_uom_qty)
+# 
+#         for consume in consume_lines:
+#             new_consume_lines.append([0, False, consume])
+#         return {'value': {'consume_lines': new_consume_lines}}
 
     @api.multi
     def do_produce(self):

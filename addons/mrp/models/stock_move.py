@@ -12,6 +12,8 @@ class StockMove(models.Model):
     production_id = fields.Many2one('mrp.production', string='Production Order for Produced Products', index=True, copy=False)
     raw_material_production_id = fields.Many2one('mrp.production', string='Production Order for Raw Materials', index=True)
     consumed_for_id = fields.Many2one('stock.move', string='Consumed for', help='Technical field used to make the traceability of produced products', oldname='consumed_for')
+    operation_id = fields.Many2one('mrp.routing.workcenter', string="Operation To Consume")
+    workorder_id = fields.Many2one('mrp.production.workcenter.line', string="Work Order To Consume")
 
     @api.model
     def check_tracking(self, move, lot_id):
@@ -40,7 +42,7 @@ class StockMove(models.Model):
                         'picking_id': self.picking_id.id if self.picking_id else False,
                         'product_id': line['product_id'],
                         'product_uom': line['product_uom_id'],
-                        'product_uom_qty': line['product_qty'],
+                        'product_uom_qty': line['product_uom_qty'],
                         'state': 'draft',  # will be confirmed below
                         'name': line['name'],
                         'procurement_id': self.procurement_id.id,
@@ -56,7 +58,7 @@ class StockMove(models.Model):
                             'company_id': self.company_id and self.company_id.id or False,
                             'date_planned': self.date,
                             'product_id': line['product_id'],
-                            'product_qty': line['product_qty'],
+                            'product_qty': line['product_uom_qty'],
                             'product_uom_id': line['product_uom_id'],
                             'group_id': self.group_id.id,
                             'priority': self.priority,
@@ -109,9 +111,9 @@ class StockMove(models.Model):
         """ Consumed product with specific quantity from specific source location.
         :param product_qty: Consumed/produced product quantity (= in quantity of UoM of product)
         :param location_id: Source location
-        :param restrict_lot_id: optionnal parameter that allows to restrict the choice of quants on this specific lot
-        :param restrict_partner_id: optionnal parameter that allows to restrict the choice of quants to this specific partner
-        :param consumed_for_id: optionnal parameter given to this function to make the link between raw material consumed and produced product, for a better traceability
+        :param restrict_lot_id: optional parameter that allows to restrict the choice of quants on this specific lot
+        :param restrict_partner_id: optional parameter that allows to restrict the choice of quants to this specific partner
+        :param consumed_for_id: optional parameter given to this function to make the link between raw material consumed and produced product, for a better traceability
         :return: New lines created if not everything was consumed for this line
         """
         res = self - self  # creates empty recordset
@@ -172,17 +174,6 @@ class StockMove(models.Model):
             if move.production_id.id:
                 new_moves.write({'production_id': move.production_id.id})
             res = res | new_moves
-        return res
-
-    @api.multi
-    def write(self, vals):
-        res = super(StockMove, self).write(vals)
-        from openerp import workflow
-        if vals.get('state') == 'assigned':
-            orders = self.filtered(lambda x: x.raw_material_production_id and x.raw_material_production_id.state == 'confirmed').raw_material_production_id
-            for order in orders:
-                if order.test_ready():
-                    workflow.trg_validate(self.env.uid, 'mrp.production', order.id, 'moves_ready', self.env.cr)
         return res
 
 
