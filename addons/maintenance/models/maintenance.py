@@ -82,7 +82,7 @@ class MaintenanceEquipment(models.Model):
     def _track_subtype(self, init_values):
         self.ensure_one()
         if 'owner_user_id' in init_values and self.owner_user_id:
-            return 'equipment.mt_mat_assign'
+            return 'maintenance.mt_mat_assign'
         return super(MaintenanceEquipment, self)._track_subtype(init_values)
 
     @api.multi
