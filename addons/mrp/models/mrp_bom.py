@@ -89,7 +89,8 @@ class MrpBom(models.Model):
             'workcenter_id': wc.id,
             'sequence': level + (wc_use.sequence or 0),
             'cycle': cycle,
-            'hour': float(wc_use.hour_nbr * mult + ((wc.time_start or 0.0) + (wc.time_stop or 0.0) + cycle * (wc.time_cycle or 0.0)) * (wc.time_efficiency or 1.0)),
+            'operation_id': wc_use.id,
+            'hour': float(wc_use.hour_nbr * mult + ((wc.time_start or 0.0) + (wc.time_stop or 0.0))), #+ cycle * (wc.time_cycle or 0.0)) * (wc.time_efficiency or 1.0)),
         }
 
     def _prepare_consume_line(self, bom_line, quantity):
@@ -97,7 +98,8 @@ class MrpBom(models.Model):
             'name': bom_line.product_id.name,
             'product_id': bom_line.product_id.id,
             'product_qty': quantity,
-            'product_uom_id': bom_line.product_uom_id.id
+            'product_uom_id': bom_line.product_uom_id.id,
+            'operation_id': bom_line.operation_id.id,
         }
 
     def explode(self, product, factor, properties=None, level=0, routing_id=False, previous_products=None, master_bom=None):
