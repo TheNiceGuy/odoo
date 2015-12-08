@@ -148,6 +148,17 @@
         </field>
     </record>
 
+    <record id="equipment_view_calendar" model="ir.ui.view">
+        <field name="name">equipment.request.calendar</field>
+        <field name="model">maintenance.request</field>
+        <field name="arch" type="xml">
+            <calendar date_start="request_date" color="kanban_state">
+                <field name="name"/>
+                <field name="technician_user_id"/>
+            </calendar>
+        </field>
+    </record>
+
     <!-- equiment.request : actions -->
     <record id="equipment_request_action" model="ir.actions.act_window">
         <field name="name">Maintenance Requests</field>
@@ -191,6 +202,13 @@
             'default_equipment_id': active_id,
         }</field>
         <field name="domain">[('equipment_id', '=', active_id)]</field>
+    </record>
+
+    <record id="equipment_request_action_cal" model="ir.actions.act_window">
+        <field name="name">Maintenance Requests</field>
+        <field name="res_model">maintenance.request</field>
+        <field name="view_mode">calendar,tree,form</field>
+        <field name="view_id" ref="equipment_view_calendar"/>
     </record>
 
     <!-- equiment : views -->
@@ -541,66 +559,135 @@
         </field>
     </record>
 
+    <record id="maintenace_team_view_tree" model="ir.ui.view">
+        <field name="name">maintenance.team.tree</field>
+        <field name="model">maintenance.team</field>
+        <field name="arch" type="xml">
+            <tree string="Maintenance Team" editable="top">
+                <field name="name"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- equipment.team : actions -->
+    <record id="maintenance_team_action_settings" model="ir.actions.act_window">
+        <field name="name">Stages</field>
+        <field name="res_model">maintenance.stage</field>
+        <field name="view_mode">tree</field>
+        <field name="view_type">form</field>
+        <field name="view_id" ref="equipment_stage_view_tree"/>
+        <field name="help" type="html">
+          <p class="oe_view_nocontent_create">
+            Click to add a stage in the maintenance request.
+          </p>
+        </field>
+    </record>
+
 
     <!-- Menu items hierachy -->
     <menuitem
-        id="menu_equipment_title"
-        name="Equipments"
-        web_icon="equipment,static/description/icon.png"
+        id="menu_maintenance_title"
+        name="Maintenance"
+        web_icon="maintenance,static/description/icon.png"
         sequence="110"/>
 
     <menuitem
-        id="menu_equipment_configuration"
-        name="Configuration"
-        parent="menu_equipment_title"
-        groups="base.group_equipment_manager,base.group_configuration"
-        sequence="100"/>
+        id="menu_m_request" 
+        name="Maintenance"
+        parent="menu_maintenance_title"
+        groups="base.group_equipment_manager,base.group_user"
+        sequence="1"/>
 
     <menuitem
         id="menu_m_request_form"
         name="Maintenance Requests"
-        parent="menu_equipment_title"
+        parent="menu_m_request"
         action="equipment_request_action"
+        groups="base.group_equipment_manager,base.group_user"
+        sequence="1"/>
+
+    <menuitem
+        id="menu_m_request_calendar"
+        name="Maintenance Calendar"
+        parent="menu_m_request"
+        action="equipment_request_action_cal"
         groups="base.group_equipment_manager,base.group_user"
         sequence="2"/>
 
     <menuitem
         id="menu_equipment_form"
         name="Equipments"
-        parent="menu_equipment_title"
+        parent="menu_maintenance_title"
         action="equipment_action"
+        groups="base.group_equipment_manager,base.group_user"
+        sequence="2"/>
+
+    <menuitem
+        id="menu_m_reports" 
+        name="Reporting"
+        parent="menu_maintenance_title"
+        groups="base.group_equipment_manager,base.group_user"
+        sequence="3"/>
+
+    <menuitem
+        id="menu_m_reports_oee"
+        name="Overall Equipment Effectiveness (OEE)"
+        parent="menu_m_reports"
         groups="base.group_equipment_manager,base.group_user"
         sequence="1"/>
 
     <menuitem
-        id="menu_equipment_global_settings"
+        id="menu_m_reports_losses"
+        name="Losses Analysis"
+        parent="menu_m_reports"
+        groups="base.group_equipment_manager,base.group_user"
+        sequence="2"/>
+
+    <menuitem
+        id="menu_maintenance_configuration"
+        name="Configuration"
+        parent="menu_maintenance_title"
+        groups="base.group_equipment_manager,base.group_configuration"
+        sequence="100"/>
+
+    <menuitem
+        id="menu_maintenance_global_settings"
         name="Settings"
-        parent="menu_equipment_configuration"
+        parent="menu_maintenance_configuration"
         action="action_maintenance_configuration"
         sequence="0"/>
 
     <menuitem
-        id="menu_equipment_cat"
-        name="Equipment Categories"
-        parent="menu_equipment_configuration"
-        action="equipment_category_action"
+        id="menu_maintenance_teams"
+        name="Maintenance Teams"
+        parent="menu_maintenance_configuration"
+        action="maintenance_team_action_settings"
         groups="base.group_no_one"
         sequence="1"/>
 
     <menuitem
-        id="menu_equipment_stage_configuration"
+        id="menu_maintenance_cat"
+        name="Equipment Categories"
+        parent="menu_maintenance_configuration"
+        action="equipment_category_action"
+        groups="base.group_no_one"
+        sequence="2"/>
+
+    <menuitem
+        id="menu_maintenance_stage_configuration"
         name="Stages"
-        parent="menu_equipment_configuration"
+        parent="menu_maintenance_configuration"
         action="equipment_stage_action"
         groups="base.group_no_one"
-        sequence="2" />
+        sequence="3" />
+
 
     <data noupdate="1">
         <!-- After installation of the module, open the related menu -->
         <record id="action_client_equipment_menu" model="ir.actions.client">
             <field name="name">Open Equipments Menu</field>
             <field name="tag">reload</field>
-            <field name="params" eval="{'menu_id': ref('menu_equipment_title')}"/>
+            <field name="params" eval="{'menu_id': ref('menu_maintenance_title')}"/>
         </record>
         <record id="base.open_menu" model="ir.actions.todo">
             <field name="action_id" ref="action_client_equipment_menu"/>

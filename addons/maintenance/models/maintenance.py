@@ -291,7 +291,7 @@ class MaintenanceRequest(models.Model):
 
 class MaintenanceTeam(models.Model):
     _name = 'maintenance.team'
-    _description = 'Maintenance Requests'
+    _description = 'Maintenance Teams'
 
     name = fields.Char(required=True)
     partner_id = fields.Many2one('res.partner', string='Subcontracting Partner')
