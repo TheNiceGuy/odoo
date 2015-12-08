@@ -226,13 +226,17 @@ class MrpBomLine(models.Model):
     product_uom_id = fields.Many2one('product.uom', string='Product Unit of Measure', required=True, default=_get_uom_id,
                                      help="Unit of Measure (Unit of Measure) is the unit of measurement for the inventory control", oldname='product_uom')
     sequence = fields.Integer(default=1, help="Gives the sequence order when displaying.")
-    routing_id = fields.Many2one('mrp.routing', string='Routing', help="The list of operations (list of work centers) to produce the finished product. The routing is mainly used to compute work center costs during operations and to plan future loads on work centers based on production planning.")
+    routing_id = fields.Many2one('mrp.routing', string='Routing',
+                                 related="bom_id.routing_id", store=True, 
+                                 help="The list of operations (list of work centers) to produce the finished product. The routing is mainly used to compute work center costs during operations and to plan future loads on work centers based on production planning.")
     product_rounding = fields.Float(string='Product Rounding', help="Rounding applied on the product quantity.")
     product_efficiency = fields.Float(string='Manufacturing Efficiency', required=True, default=1.0, help="A factor of 0.9 means a loss of 10% within the production process.")
     property_ids = fields.Many2many('mrp.property', string='Properties')  # Not used
     bom_id = fields.Many2one('mrp.bom', string='Parent BoM', ondelete='cascade', index=True, required=True)
     attribute_value_ids = fields.Many2many('product.attribute.value', string='Variants', help="BOM Product Variants needed form apply this line.")
-    operation_id = fields.Many2one('mrp.routing.workcenter', string='Consumed in Operation Sequence #', help="The operation where the components are consumed, or the finished products created.")
+    operation_id = fields.Many2one('mrp.routing.workcenter', string='Consumed in Operation Sequence #',
+                                   domain="[('routing_id', '=', routing_id)]", 
+                                   help="The operation where the components are consumed, or the finished products created.")
     child_line_ids = fields.One2many('mrp.bom.line', compute='_get_child_bom_lines', string='BOM lines of the referred bom')
 
     _sql_constraints = [

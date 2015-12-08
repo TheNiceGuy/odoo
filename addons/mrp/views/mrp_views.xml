@@ -582,7 +582,8 @@
                                     <field name="product_efficiency" groups="mrp.group_rounding_efficiency"/>
                                     <field name="attribute_value_ids" widget="many2many_tags" domain="[('product_ids.product_tmpl_id', '=', parent.product_tmpl_id)]" groups="product.group_product_variant"/>
                                     <field name="property_ids" widget="many2many_tags" groups="product.group_mrp_properties"/>
-                                    <field name="operation_id" groups="mrp.group_mrp_routings" domain="[('routing_id', '=', routing_id)]"/>
+                                    <field name="routing_id" invisible="1"/>
+                                    <field name="operation_id" groups="mrp.group_mrp_routings" attrs="{'invisible': [('routing_id', '=', False)]}"/>
                                 </tree>
                             </field>
                         </page>
@@ -819,6 +820,26 @@
                             <field name="location_dest_id" domain="[('usage','=','internal')]"/>
                         </group>
                     </group>
+                    <notebook>
+                        <page string="Consume Lines"> <!--  attrs="{'invisible': [('consume_line_ids', '=', [])]}" -->
+                            <field name="consume_line_ids" domain="[('workorder_id', '=', False)]">
+                                <tree editable="bottom">
+                                    <field name="product_id"/>
+                                    <field name="lot_id"/>
+                                    <field name="product_qty"/>
+                                    <field name="qty_done"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Finished Products">
+                            <field name="move_created_ids2">
+                                <field name="product_id"/>
+                                <field name="restrict_lot_id"/>
+                                <field name="product_uom_qty"/>
+                                <field name="product_uom"/>
+                            </field>
+                        </page>
+                    </notebook>
                 </sheet>
                 <div class="oe_chatter">
                     <field name="message_follower_ids" widget="mail_followers"/>
@@ -1240,6 +1261,16 @@
                             <field name="delay" widget="float_time"/>
                         </group>
                     </group>
+                </page>
+                <page string="Products to Consume">
+                    <field name="consume_line_ids">
+                        <tree editable="bottom">
+                            <field name="product_id"/>
+                            <field name="lot_id"/>
+                            <field name="product_qty"/>
+                            <field name="qty_done"/>
+                        </tree>
+                    </field>
                 </page>
                 </notebook>
                 </sheet>

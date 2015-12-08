@@ -73,6 +73,7 @@ class MrpProduction(models.Model):
     move_created_ids2 = fields.One2many('stock.move', 'production_id', 'Produced Products',
                                         domain=[('state', 'in', ('done', 'cancel'))], readonly=True)
     product_line_ids = fields.One2many('mrp.production.product.line', 'production_id', string='Scheduled goods', readonly=True, oldname='product_lines')
+    consume_line_ids = fields.One2many('mrp.production.consume.line', 'production_id', string='To Consume')
     workcenter_line_ids = fields.One2many('mrp.production.workcenter.line', 'production_id', string='Work Centers Utilisation',
                                           readonly=True, states={'draft': [('readonly', False)]}, oldname='workcenter_lines')
     state = fields.Selection(
@@ -226,7 +227,9 @@ class MrpProduction(models.Model):
                 # Search corresponding operation
                 if results2:
                     # TODO: optimize without doing the search
-                    line['workorder_id'] = WorkcenterLine.search([('operation_id', '=', line['operation_id'])], limit=1).id
+                    line['workorder_id'] = WorkcenterLine.search([('operation_id', '=', line['operation_id']), ('production_id', '=', production.id)], limit=1).id
+                    import pdb; pdb.set_trace()
+                        
                 line['production_id'] = production.id
                 ProductLine.create(line)
         return results
@@ -317,7 +320,18 @@ class MrpProduction(models.Model):
         :return: True
         """
         self.write({'state': 'ready'})
+        consume_obj = self.env['mrp.production.consume.line']
         for production in self:
+            #Let us create consume lines
+            consume_lines = production._calculate_qty()
+            import pdb; pdb.set_trace()
+            for line in consume_lines:
+                consume_obj.create({'product_id': line['product_id'],
+                                    'product_qty': line['product_qty'],
+                                    'lot_id': line['lot_id'],
+                                    'product_qty': line['product_qty'],
+                                    'workorder_id': line['workorder_id'],
+                                    'production_id': production.id})
             if not production.move_created_ids:
                 production._make_production_produce_line()
             if production.move_prod_id and production.move_prod_id.location_id.id != production.location_dest_id.id:
@@ -428,36 +442,43 @@ class MrpProduction(models.Model):
                 total_consume = sched_product_qty
             qty = total_consume - consumed_qty
 
-            # Search for quants related to this related move
+            #Create dict of workcenters and the moves
+            work_move = {}
             for move in self.move_line_ids:
-                if qty <= 0.0:
-                    break
-                if move.product_id.id != product_id:
-                    continue
+                work_move.setdefault(move.workorder_id.id, [])
+                work_move[move.workorder_id.id].append(move)
 
-                q = min(move.product_qty, qty)
-                quants = StockQuant.quants_get_preferred_domain(q, move, domain=[('qty', '>', 0.0)],
-                                                                preferred_domain_list=[[('reservation_id', '=', move.id)]])
-                for quant, quant_qty in quants:
-                    if quant:
-                        lot_id = quant.lot_id.id
-                        if product_id not in dicts.keys():
-                            dicts[product_id] = {lot_id: quant_qty}
-                        elif lot_id in dicts[product_id].keys():
-                            dicts[product_id][lot_id] += quant_qty
-                        else:
-                            dicts[product_id][lot_id] = quant_qty
-                        qty -= quant_qty
-            if float_compare(qty, 0, self.env['decimal.precision'].precision_get('Product Unit of Measure')) == 1:
-                if dicts[product_id].get(False):
-                    dicts[product_id][False] += qty
-                else:
-                    dicts[product_id][False] = qty
-
-        consume_lines = []
-        for product in dicts.keys():
-            for lot, qty in dicts[product].items():
-                consume_lines.append({'product_id': product, 'product_qty': qty, 'lot_id': lot})
+            # Search for quants related to this related move
+            consume_lines = []
+            for workorder in work_move:
+                for move in work_move[workorder]:
+                    if qty <= 0.0:
+                        break
+                    if move.product_id.id != product_id:
+                        continue
+    
+                    q = min(move.product_qty, qty)
+                    quants = StockQuant.quants_get_preferred_domain(q, move, domain=[('qty', '>', 0.0)],
+                                                                    preferred_domain_list=[[('reservation_id', '=', move.id)]])
+                    for quant, quant_qty in quants:
+                        if quant:
+                            lot_id = quant.lot_id.id
+                            if product_id not in dicts.keys():
+                                dicts[product_id] = {lot_id: quant_qty}
+                            elif lot_id in dicts[product_id].keys():
+                                dicts[product_id][lot_id] += quant_qty
+                            else:
+                                dicts[product_id][lot_id] = quant_qty
+                            qty -= quant_qty
+                if float_compare(qty, 0, self.env['decimal.precision'].precision_get('Product Unit of Measure')) == 1:
+                    if dicts[product_id].get(False):
+                        dicts[product_id][False] += qty
+                    else:
+                        dicts[product_id][False] = qty
+    
+                for product in dicts.keys():
+                    for lot, qty in dicts[product].items():
+                        consume_lines.append({'product_id': product, 'product_qty': qty, 'lot_id': lot, 'workorder_id': workorder})
         return consume_lines
 
     @api.multi
@@ -471,6 +492,8 @@ class MrpProduction(models.Model):
         :param wizard: the mrp produce product wizard, which will tell the amount of consumed products needed
         :return: True
         """
+        self.ensure_one()
+
         ProductProduct = self.env['product.product']
         production_qty_uom = self.product_uom_id._compute_qty(production_qty, self.product_id.uom_id.id)
         precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
@@ -507,7 +530,7 @@ class MrpProduction(models.Model):
         if production_mode in ['consume', 'consume_produce']:
             if wizard:
                 consume_lines = []
-                for cons in wizard.consume_lines:
+                for cons in self.consume_line_ids:
                     consume_lines.append({'product_id': cons.product_id.id, 'lot_id': cons.lot_id.id, 'product_qty': cons.product_qty})
             else:
                 consume_lines = self._calculate_qty(production_qty_uom)
@@ -777,6 +800,7 @@ class MrpProductionWorkcenterLine(models.Model):
     date_finished = fields.Datetime('Effective End Date')
     delay = fields.Float('Working Hours', readonly=True)
     operation_id = fields.Many2one('mrp.routing.workcenter', 'Operation') #Should be used differently as BoM can change in the meantime
+    consume_line_ids = fields.Many2one('mrp.production.consume.line', 'workorder_id')
     production_state = fields.Selection(related='production_id.state', readonly=True)
     product = fields.Many2one('product.product', related='production_id.product_id', string="Product", readonly=True)
     qty = fields.Float(related='production_id.product_qty', string='Qty', readonly=True, store=True) #store really needed?
@@ -790,6 +814,7 @@ class MrpProductionWorkcenterLine(models.Model):
     def button_start_working(self):
         self.write({'state': 'startworking',
                     'date_start': datetime.now()})
+        import pdb; pdb.set_trace()
 
     @api.multi
     def button_resume(self):
@@ -811,6 +836,7 @@ class MrpProductionWorkcenterLine(models.Model):
         #    workorder.state='done'
         # Put date_finished
 
+
 class MrpProductionProductLine(models.Model):
     _name = 'mrp.production.product.line'
     _description = 'Production Scheduled Product'
@@ -820,3 +846,15 @@ class MrpProductionProductLine(models.Model):
     product_qty = fields.Float(string='Product Quantity', digits=dp.get_precision('Product Unit of Measure'), required=True)
     product_uom_id = fields.Many2one('product.uom', string='Product Unit of Measure', required=True, oldname='product_uom')
     production_id = fields.Many2one('mrp.production', string='Production Order', index=True)
+
+
+class MrpProductionConsumeLine(models.Model):
+    _name="mrp.production.consume.line"
+    _description = "Consume Lines"
+
+    product_id = fields.Many2one('product.product', string='Product')
+    product_qty = fields.Float(string='Quantity to Consume (in default UoM)', digits=dp.get_precision('Product Unit of Measure'))
+    qty_done = fields.Float(string='Quantity Consumed', digits=dp.get_precision('Product Unit of Measure'))
+    lot_id = fields.Many2one('stock.production.lot', string='Lot')
+    production_id = fields.Many2one('mrp.production', string='Production Order')
+    workorder_id = fields.Many2one('mrp.production.workcenter.line', string='Work Order')
