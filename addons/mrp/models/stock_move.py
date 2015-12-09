@@ -176,17 +176,6 @@ class StockMove(models.Model):
             res = res | new_moves
         return res
 
-    @api.multi
-    def write(self, vals):
-        res = super(StockMove, self).write(vals)
-        from openerp import workflow
-        if vals.get('state') == 'assigned':
-            orders = self.filtered(lambda x: x.raw_material_production_id and x.raw_material_production_id.state == 'confirmed').raw_material_production_id
-            for order in orders:
-                if order.test_ready():
-                    workflow.trg_validate(self.env.uid, 'mrp.production', order.id, 'moves_ready', self.env.cr)
-        return res
-
 
 class StockPickingType(models.Model):
     _inherit = 'stock.picking.type'

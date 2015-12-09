@@ -50,28 +50,28 @@ class MrpProduction(models.Model):
             else:
                 order.availability = 'none'
 
-    name = fields.Char(string='Reference', required=True, readonly=True, states={'draft': [('readonly', False)]}, copy=False,
+    name = fields.Char(string='Reference', required=True, readonly=True, states={'confirmed': [('readonly', False)]}, copy=False,
                        default=lambda self: self.env['ir.sequence'].next_by_code('mrp.production') or '/')
-    origin = fields.Char(string='Source', readonly=True, states={'draft': [('readonly', False)]},
+    origin = fields.Char(string='Source', readonly=True, states={'confirmed': [('readonly', False)]},
                          help="Reference of the document that generated this production order request.", copy=False)
     priority = fields.Selection([('0', 'Not urgent'), ('1', 'Normal'), ('2', 'Urgent'), ('3', 'Very Urgent')], 'Priority',
                                 index=True, readonly=True, states=dict.fromkeys(['draft', 'confirmed'], [('readonly', False)]), default='1')
-    product_id = fields.Many2one('product.product', string='Product', required=True, readonly=True, states={'draft': [('readonly', False)]}, domain=[('type', 'in', ['product', 'consu'])])
-    product_qty = fields.Float(string='Quantity to Produce', digits=dp.get_precision('Product Unit of Measure'), required=True, readonly=True, states={'draft': [('readonly', False)]}, default=1.0)
-    product_uom_id = fields.Many2one('product.uom', string='Product Unit of Measure', required=True, readonly=True, states={'draft': [('readonly', False)]}, oldname='product_uom')
+    product_id = fields.Many2one('product.product', string='Product', required=True, readonly=True, states={'confirmed': [('readonly', False)]}, domain=[('type', 'in', ['product', 'consu'])])
+    product_qty = fields.Float(string='Quantity to Produce', digits=dp.get_precision('Product Unit of Measure'), required=True, readonly=True, states={'confirmed': [('readonly', False)]}, default=1.0)
+    product_uom_id = fields.Many2one('product.uom', string='Product Unit of Measure', required=True, readonly=True, states={'confirmed': [('readonly', False)]}, oldname='product_uom')
     progress = fields.Float(compute='_get_progress', string='Production progress')
     location_src_id = fields.Many2one('stock.location', string='Raw Materials Location', required=True,
-                                      readonly=True, states={'draft': [('readonly', False)]}, default=_src_id_default,
+                                      readonly=True, states={'confirmed': [('readonly', False)]}, default=_src_id_default,
                                       help="Location where the system will look for components.")
     location_dest_id = fields.Many2one('stock.location', string='Finished Products Location', required=True,
-                                       readonly=True, states={'draft': [('readonly', False)]}, default=_dest_id_default,
+                                       readonly=True, states={'confirmed': [('readonly', False)]}, default=_dest_id_default,
                                        help="Location where the system will stock the finished products.")
-    date_planned = fields.Datetime(string='Required Date', required=True, index=True, readonly=True, states={'draft': [('readonly', False)]}, copy=False, default=fields.Datetime.now)
+    date_planned = fields.Datetime(string='Required Date', required=True, index=True, readonly=True, states={'confirmed': [('readonly', False)]}, copy=False, default=fields.Datetime.now)
     date_start_planned = fields.Datetime(string='Scheduled Start Date', index=True, copy=False)
     date_finished_planned = fields.Datetime(string='Scheduled End Date', index=True, copy=False)
     date_start = fields.Datetime(string='Start Date', index=True, readonly=True, copy=False)
     date_finished = fields.Datetime(string='End Date', index=True, readonly=True, copy=False)
-    bom_id = fields.Many2one('mrp.bom', string='Bill of Material', readonly=True, states={'draft': [('readonly', False)]},
+    bom_id = fields.Many2one('mrp.bom', string='Bill of Material', readonly=True, states={'confirmed': [('readonly', False)]},
                              help="Bill of Materials allow you to define the list of required raw materials to make a finished product.")
     routing_id = fields.Many2one('mrp.routing', string='Routing', related = 'bom_id.routing_id', store=True,
                                  on_delete='set null', readonly=True,
@@ -79,7 +79,7 @@ class MrpProduction(models.Model):
                                       "to compute work center costs during operations and to plan future loads on work centers based on production plannification.")
     move_prod_id = fields.Many2one('stock.move', string='Product Move', readonly=True, copy=False)
     move_line_ids = fields.One2many('stock.move', 'raw_material_production_id', string='Products to Consume',
-                                    domain=[('state', 'not in', ('done', 'cancel'))], readonly=True, states={'draft': [('readonly', False)]}, oldname='move_lines')
+                                    domain=[('state', 'not in', ('done', 'cancel'))], readonly=True, states={'confirmed': [('readonly', False)]}, oldname='move_lines')
     move_line_ids2 = fields.One2many('stock.move', 'raw_material_production_id', string='Consumed Products',
                                      domain=[('state', 'in', ('done', 'cancel'))], readonly=True, oldname='move_lines2')
     move_created_ids = fields.One2many('stock.move', 'production_id', string='Products to Produce',
@@ -90,7 +90,7 @@ class MrpProduction(models.Model):
     workcenter_line_ids = fields.One2many('mrp.production.workcenter.line', 'production_id', string='Work Centers Utilisation',
                                           readonly=True, states={'draft': [('readonly', False)]}, oldname='workcenter_lines')
     
-    state = fields.Selection([('confirmed', 'Confirmed'), ('planned', 'Planned'), ('progress', 'In Progress'), ('done', 'Done')], 'State', default='confirmed', copy=False)
+    state = fields.Selection([('confirmed', 'Confirmed'), ('planned', 'Planned'), ('progress', 'In Progress'), ('done', 'Done'), ('cancel', 'Cancelled')], 'State', default='confirmed', copy=False)
     availability = fields.Selection([('assigned', 'Available'), ('partially_available', 'Partially available'), ('none', 'Nothing Yet')], compute='_compute_availability')
 
 #     state = fields.Selection(
@@ -160,7 +160,9 @@ class MrpProduction(models.Model):
     def create(self, values):
         if 'product_id' in values and ('product_uom_id' not in values or not values['product_uom_id']):
             values['product_uom_id'] = self.env['product.product'].browse(values.get('product_id')).uom_id.id
-        return super(MrpProduction, self).create(values)
+        production = super(MrpProduction, self).create(values)
+        production.generate_moves_workorders(properties=None) #TODO: solutions for properties: procurement.property_ids
+        return production
 
     @api.multi
     def unlink(self):
@@ -262,11 +264,6 @@ class MrpProduction(models.Model):
         return res
 
     @api.multi
-    def action_button_compute(self):
-        res = self._compute_planned_workcenter()
-        return self.action_compute()
-
-    @api.multi
     def action_compute(self, properties=None):
         """ Computes bills of material of a product.
         :param properties: List containing dictionaries of properties.
@@ -296,25 +293,17 @@ class MrpProduction(models.Model):
         return True
 
     @api.multi
-    def action_ready(self):
+    def generate_production_consume_lines(self):
         """ Changes the production state to Ready and location id of stock move.
         :return: True
         """
-        self.write({'state': 'ready'})
         consume_obj = self.env['mrp.production.consume.line']
         for production in self:
             #Let us create consume lines
             consume_lines = production._calculate_qty()
-            import pdb; pdb.set_trace()
             for line in consume_lines:
-                consume_obj.create({'product_id': line['product_id'],
-                                    'product_qty': line['product_qty'],
-                                    'lot_id': line['lot_id'],
-                                    'product_qty': line['product_qty'],
-                                    'workorder_id': line['workorder_id'],
-                                    'production_id': production.id})
-            if not production.move_created_ids:
-                production._make_production_produce_line()
+                line['production_id'] = production.id
+                consume_obj.create(line)
             if production.move_prod_id and production.move_prod_id.location_id.id != production.location_dest_id.id:
                 production.move_prod_id.write({'location_id': production.location_dest_id.id})
         return True
@@ -377,89 +366,22 @@ class MrpProduction(models.Model):
             consumed_data[consumed.product_id.id] += consumed.product_qty
         return consumed_data
 
-    def _calculate_qty(self, product_qty=0.0):
-        """
-            Calculates the quantity still needed to produce an extra number of products
-            product_qty is in the uom of the product
-        """
-        StockQuant = self.env["stock.quant"]
-        produced_qty = self._get_produced_qty()
-        consumed_data = self._get_consumed_data()
-
-        #  In case no product_qty is given, take the remaining qty to produce for the given production
-        if not product_qty:
-            product_qty = self.product_uom_id._compute_qty(self.product_qty, self.product_id.uom_id.id) - produced_qty
-        production_qty = self.product_uom_id._compute_qty(self.product_qty, self.product_id.uom_id.id)
-
-        scheduled_qty = OrderedDict()
-        for scheduled in self.product_line_ids:
-            if scheduled.product_id.type not in ['product', 'consu']:
-                continue
-            qty = scheduled.product_uom_id._compute_qty(scheduled.product_qty, scheduled.product_id.uom_id.id)
-            if scheduled_qty.get(scheduled.product_id.id):
-                scheduled_qty[scheduled.product_id.id] += qty
-            else:
-                scheduled_qty[scheduled.product_id.id] = qty
-        dicts = OrderedDict()
-        # Find product qty to be consumed and consume it
-        for product_id in scheduled_qty.keys():
-
-            consumed_qty = consumed_data.get(product_id, 0.0)
-
-            # qty available for consume and produce
-            sched_product_qty = scheduled_qty[product_id]
-            qty_avail = sched_product_qty - consumed_qty
-            if qty_avail <= 0.0:
-                # there will be nothing to consume for this raw material
-                continue
-
-            if not dicts.get(product_id):
-                dicts[product_id] = {}
-
-            # total qty of consumed product we need after this consumption
-            if product_qty + produced_qty <= production_qty:
-                total_consume = ((product_qty + produced_qty) * sched_product_qty / production_qty)
-            else:
-                total_consume = sched_product_qty
-            qty = total_consume - consumed_qty
-
-            #Create dict of workcenters and the moves
-            work_move = {}
-            for move in self.move_line_ids:
-                work_move.setdefault(move.workorder_id.id, [])
-                work_move[move.workorder_id.id].append(move)
-
-            # Search for quants related to this related move
-            consume_lines = []
-            for workorder in work_move:
-                for move in work_move[workorder]:
-                    if qty <= 0.0:
-                        break
-                    if move.product_id.id != product_id:
-                        continue
-    
-                    q = min(move.product_qty, qty)
-                    quants = StockQuant.quants_get_preferred_domain(q, move, domain=[('qty', '>', 0.0)],
-                                                                    preferred_domain_list=[[('reservation_id', '=', move.id)]])
-                    for quant, quant_qty in quants:
-                        if quant:
-                            lot_id = quant.lot_id.id
-                            if product_id not in dicts.keys():
-                                dicts[product_id] = {lot_id: quant_qty}
-                            elif lot_id in dicts[product_id].keys():
-                                dicts[product_id][lot_id] += quant_qty
-                            else:
-                                dicts[product_id][lot_id] = quant_qty
-                            qty -= quant_qty
-                if float_compare(qty, 0, self.env['decimal.precision'].precision_get('Product Unit of Measure')) == 1:
-                    if dicts[product_id].get(False):
-                        dicts[product_id][False] += qty
-                    else:
-                        dicts[product_id][False] = qty
-    
-                for product in dicts.keys():
-                    for lot, qty in dicts[product].items():
-                        consume_lines.append({'product_id': product, 'product_qty': qty, 'lot_id': lot, 'workorder_id': workorder})
+    def _calculate_qty(self, to_produce_qty=0.0): #Add option to put them partially or not at all
+        self.ensure_one()
+        consume_dict = {}
+        for move in self.move_line_ids:
+            if move.reserved_quant_ids:
+                for quant in move.reserved_quant_ids:
+                    key = (move.workorder_id.id, move.product_id.id, quant.lot_id.id)
+                    consume_dict.setdefault(key, 0.0)
+                    consume_dict[key] += quant.qty
+            elif move.state == 'assigned':
+                key = (move.workorder_id.id, move.product_id.id, False)
+                consume_dict.setdefault(key, 0.0)
+                consume_dict[key] += move.product_qty
+        consume_lines=[]
+        for key in consume_dict:
+            consume_lines.append({'product_id': key[1], 'product_qty': consume_dict[key], 'lot_id': key[2], 'workorder_id': key[0]})
         return consume_lines
 
     @api.multi
@@ -543,6 +465,7 @@ class MrpProduction(models.Model):
 
         self.signal_workflow('button_produce_done')
         return True
+
 
     def _costs_generate(self):
         """ Calculates total costs at the end of the production.
@@ -749,16 +672,20 @@ class MrpProduction(models.Model):
 
     @api.multi
     def action_assign(self):
-        """git comm
+        """
         Checks the availability on the consume lines of the production order
         """
         for production in self:
             production.move_line_ids.action_assign()
+            if production.availability in ('assigned', 'partially_available'):
+                production.generate_production_consume_lines()
+        return True
  
     @api.multi
     def force_assign(self):
         for order in self:
             order.move_line_ids.force_assign()
+            order.generate_production_consume_lines()
         return True
 
 
