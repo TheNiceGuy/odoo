@@ -14,6 +14,7 @@
         'security/ir.model.access.csv',
         'data/equipment_data.xml',
         'views/res_config_views.xml',
+        'views/maintenance_dashboard.xml',
         'views/equipment_views.xml',
     ],
     'demo': ['data/equipment_demo.xml'],

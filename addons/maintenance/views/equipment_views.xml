@@ -541,7 +541,7 @@
     </record>
 
     <!-- maitenance.team: views -->
-    <record id="maintenace_team_view_form" model="ir.ui.view">
+    <record id="maintenance_team_view_form" model="ir.ui.view">
         <field name="name">maintenance.team.form</field>
         <field name="model">maintenance.team</field>
         <field name="arch" type="xml">
@@ -559,7 +559,7 @@
         </field>
     </record>
 
-    <record id="maintenace_team_view_tree" model="ir.ui.view">
+    <record id="maintenance_team_view_tree" model="ir.ui.view">
         <field name="name">maintenance.team.tree</field>
         <field name="model">maintenance.team</field>
         <field name="arch" type="xml">
@@ -571,11 +571,23 @@
 
     <!-- equipment.team : actions -->
     <record id="maintenance_team_action_settings" model="ir.actions.act_window">
-        <field name="name">Stages</field>
-        <field name="res_model">maintenance.stage</field>
+        <field name="name">Teams</field>
+        <field name="res_model">maintenance.team</field>
         <field name="view_mode">tree</field>
         <field name="view_type">form</field>
-        <field name="view_id" ref="equipment_stage_view_tree"/>
+        <field name="view_id" ref="maintenance_team_view_tree"/>
+        <field name="help" type="html">
+          <p class="oe_view_nocontent_create">
+            Click to add a team in the maintenance request.
+          </p>
+        </field>
+    </record>
+
+    <record id="maintenance_dashboard_action" model="ir.actions.act_window">
+        <field name="name">Teams</field>
+        <field name="res_model">maintenance.team</field>
+        <field name="view_mode">kanban</field>
+        <field name="view_type">form</field>
         <field name="help" type="html">
           <p class="oe_view_nocontent_create">
             Click to add a stage in the maintenance request.
@@ -590,6 +602,14 @@
         name="Maintenance"
         web_icon="maintenance,static/description/icon.png"
         sequence="110"/>
+
+    <menuitem
+        id="menu_m_dashboard"
+        name="Dashboard"
+        parent="menu_maintenance_title"
+        groups="base.group_equipment_manager,base.group_user"
+        action="maintenance_dashboard_action"
+        sequence="0"/>
 
     <menuitem
         id="menu_m_request" 

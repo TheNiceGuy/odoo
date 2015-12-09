@@ -295,3 +295,4 @@ class MaintenanceTeam(models.Model):
 
     name = fields.Char(required=True)
     partner_id = fields.Many2one('res.partner', string='Subcontracting Partner')
+    color = fields.Integer(default=0)
