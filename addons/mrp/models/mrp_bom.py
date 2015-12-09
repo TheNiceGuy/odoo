@@ -97,7 +97,7 @@ class MrpBom(models.Model):
         return {
             'name': bom_line.product_id.name,
             'product_id': bom_line.product_id.id,
-            'product_qty': quantity,
+            'product_uom_qty': quantity,
             'product_uom_id': bom_line.product_uom_id.id,
             'operation_id': bom_line.operation_id.id,
         }
@@ -262,7 +262,7 @@ class MrpBomLine(models.Model):
             values['product_uom_id'] = self.env['product.product'].browse(values.get('product_id')).uom_id.id
         return super(MrpBomLine, self).create(values)
 
-    @api.onchange('product_id')
+    @api.onchange('product_uom_id')
     def onchange_uom(self):
         res = {}
         if not self.product_uom_id or not self.product_id:

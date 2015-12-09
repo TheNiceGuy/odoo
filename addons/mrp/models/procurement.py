@@ -93,8 +93,7 @@ class ProcurementOrder(models.Model):
                 res[procurement.id] = produce_id
                 procurement.write({'production_id': produce_id.id})
                 procurement.message_post(body=_("Manufacturing Order <em>%s</em> created.") % (procurement.production_id.name,))
-                produce_id.action_compute(properties=procurement.property_ids)
-                produce_id.signal_workflow('button_confirm')
+                produce_id.generate_moves_workorders(properties=procurement.property_ids)
             else:
                 res[procurement.id] = False
                 procurement.message_post(body=_("No BoM exists for this product!"))
