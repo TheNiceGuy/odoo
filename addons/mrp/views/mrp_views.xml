@@ -765,15 +765,11 @@
                 <form string="Manufacturing Orders">
                 <header>
                     <button name="%(act_mrp_product_produce)d" states="progress" string="Produce" type="action" class="oe_highlight"/>
-                    <button name="action_assign" states="confirmed" string="Reserve" type="object" class="oe_highlight"/>
-                    <button name="force_assign" states="confirmed" string="Force Reservation" type="object"/>
-                    <button name="button_produce" states="ready" string="Mark as Started"/>
+                    <button name="action_assign" attrs="{'invisible': [('availability', '=', 'assigned')]}" string="Reserve" type="object" class="oe_highlight"/>
+                    <button name="force_assign" attrs="{'invisible': [('availability', '=', 'assigned')]}" strin)g="Force Reservation" type="object"/>
+                    <button name="button_produce" states="progress" string="Plan"/>
                     <button name="button_cancel" states="draft,ready,in_production" string="Cancel Production"/>
-                    <button name="action_cancel" type="object" states="confirmed" string="Cancel Production"/>
-                    <button name="action_button_compute" states="draft"
-                                string="Compute Data" type="object"
-                                icon="terp-stock_format-scientific"/>
-                    <field name="state" widget="statusbar" statusbar_visible="draft,ready,in_production,done" statusbar_colors='{"confirmed":"blue"}'/>
+                    <field name="state" widget="statusbar" statusbar_visible="confirmed,progress,done" statusbar_colors='{"confirmed":"blue"}'/>
                     <field name="availability" invisible="1"/>
                 </header>
                 <sheet>
