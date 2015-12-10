@@ -752,13 +752,13 @@
             <field name="arch" type="xml">
                 <form string="Manufacturing Orders">
                 <header>
-                    <button name="%(act_mrp_product_produce)d" states="confirmed,planned,progress" attrs="{'invisible': [('availability', '=', 'none')]}" string="Produce" type="action" class="oe_highlight"/>
+                    <button name="%(act_mrp_product_produce)d" attrs="{'invisible': [('availability', '=', 'none')]}" string="Produce" type="action" class="oe_highlight"/>
                     <button name="action_assign" attrs="{'invisible': [('availability', '=', 'assigned')]}" string="Reserve" type="object" class="oe_highlight"/>
                     <button name="force_assign" attrs="{'invisible': [('availability', '=', 'assigned')]}" string="Force Reservation" type="object"/>
                     <button name="button_plan" states="confirmed" type="object" string="Plan"/>
                     <button name="button_cancel" states="confirmed,planned,progress" string="Cancel Production"/>
                     <field name="state" widget="statusbar" statusbar_visible="confirmed,progress,done" statusbar_colors='{"confirmed":"blue"}'/>
-                    <field name="availability" invisible="1"/>
+                    
                 </header>
                 <sheet>
                     <div class="oe_button_box">
@@ -770,6 +770,7 @@
                     </div>
                     <group>
                         <group>
+                            <field name="availability" invisible="1"/>
                             <field name="product_id" domain="[('bom_ids','!=',False),('bom_ids.bom_type','!=','phantom')]" context='{"default_type": "product"}'/>
                             <field name="product_tmpl_id" invisible="1"/>
                             <label for="product_qty"/>
@@ -791,8 +792,8 @@
                         </group>
                         <group>
                             <field name="date_planned"/>
-                            <field name="date_start_planned"/>
-                            <field name="date_finished_planned"/>
+                            <field name="date_planned_start"/>
+                            <field name="date_planned_finished"/>
                             <field name="user_id"/>
                             <field name="origin"/>
                             <field name="priority" invisible="1"/>
@@ -805,7 +806,7 @@
                         </group>
                     </group>
                     <notebook>
-                        <page string="Consume Lines"> <!--  attrs="{'invisible': [('consume_line_ids', '=', [])]}" -->
+                        <page string="Consume Lines">
                             <field name="consume_line_ids" domain="[('workorder_id', '=', False)]">
                                 <tree editable="bottom">
                                     <field name="product_id"/>
@@ -1173,13 +1174,13 @@
         <field name="arch" type="xml">
             <form string="Production Workcenter">
             <header>
-                <button name="button_start_working" string="Start" states="draft" class="oe_highlight"/>
-                <button name="button_resume" string="Resume" states="pause" class="oe_highlight"/>
-                <button name="button_done" string="Finished" states="startworking" class="oe_highlight"/>
-                <button name="button_pause" string="Pending" states="startworking"/>
-                <button name="button_draft" string="Set Draft" states="cancel"/>
-                <button name="button_cancel" string="Cancel" states="draft,startworking"/>
-                <field name="state" widget="statusbar" statusbar_visible="draft,startworking"/>
+                <button name="button_start" type="object" string="Start" states="confirmed,planned" class="oe_highlight"/>
+                <button name="button_resume" type="object" string="Resume" states="pause" class="oe_highlight"/>
+                <button name="button_done" type="object" string="Finished" states="progress" class="oe_highlight"/>
+                <button name="button_pause" type="object" string="Pending" states="progress"/>
+                <button name="button_draft" type="object" string="Set Draft" states="cancel"/>
+                <button name="button_cancel" type="object" string="Cancel" states="confirmed,planned,progress"/>
+                <field name="state" widget="statusbar" statusbar_visible="confirmed,progress,done"/>
             </header>
             <sheet string="Work Orders">
                 <group col="4">

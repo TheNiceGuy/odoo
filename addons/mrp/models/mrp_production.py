@@ -67,8 +67,8 @@ class MrpProduction(models.Model):
                                        readonly=True, states={'confirmed': [('readonly', False)]}, default=_dest_id_default,
                                        help="Location where the system will stock the finished products.")
     date_planned = fields.Datetime(string='Required Date', required=True, index=True, readonly=True, states={'confirmed': [('readonly', False)]}, copy=False, default=fields.Datetime.now)
-    date_start_planned = fields.Datetime(string='Scheduled Start Date', index=True, copy=False)
-    date_finished_planned = fields.Datetime(string='Scheduled End Date', index=True, copy=False)
+    date_planned_start = fields.Datetime(string='Scheduled Start Date', index=True, copy=False)
+    date_planned_finished = fields.Datetime(string='Scheduled End Date', index=True, copy=False)
     date_start = fields.Datetime(string='Start Date', index=True, readonly=True, copy=False)
     date_finished = fields.Datetime(string='End Date', index=True, readonly=True, copy=False)
     bom_id = fields.Many2one('mrp.bom', string='Bill of Material', readonly=True, states={'confirmed': [('readonly', False)]},
@@ -91,7 +91,7 @@ class MrpProduction(models.Model):
                                           readonly=True, states={'draft': [('readonly', False)]}, oldname='workcenter_lines')
     
     state = fields.Selection([('confirmed', 'Confirmed'), ('planned', 'Planned'), ('progress', 'In Progress'), ('done', 'Done'), ('cancel', 'Cancelled')], 'State', default='confirmed', copy=False)
-    availability = fields.Selection([('assigned', 'Available'), ('partially_available', 'Partially available'), ('none', 'Nothing Yet')], compute='_compute_availability')
+    availability = fields.Selection([('assigned', 'Available'), ('partially_available', 'Partially available'), ('none', 'Nothing Yet')], compute='_compute_availability', default="none")
 
 #     state = fields.Selection(
 #         [('draft', 'New'), ('cancel', 'Cancelled'), ('confirmed', 'Awaiting Raw Materials'),
@@ -107,7 +107,6 @@ class MrpProduction(models.Model):
     hour_total = fields.Float(compute='_production_calc', string='Total Hours', store=True)
     user_id = fields.Many2one('res.users', string='Responsible', default=lambda self: self.env.user)
     company_id = fields.Many2one('res.company', string='Company', required=True, default=lambda self: self.env['res.company']._company_default_get('mrp.production'))
-    ready_production = fields.Boolean(compute='_moves_assigned', string="Ready for production", store=True)
     product_tmpl_id = fields.Many2one('product.template', related='product_id.product_tmpl_id', string='Product')
     categ_id = fields.Many2one('product.category', related='product_tmpl_id.categ_id', string='Product Category', readonly=True, store=True)
 
@@ -138,17 +137,6 @@ class MrpProduction(models.Model):
                 result[mrp_production.id] = done / mrp_production.product_qty * 100
         return result
 
-    @api.multi
-    @api.depends('move_line_ids.state')
-    def _moves_assigned(self):
-        """ Test whether all the consume lines are assigned """
-        for production in self:
-            res = True
-            states = [record.state != 'assigned' for record in production.move_line_ids if record]
-            if any(states) or len(states) == 0:  # When no moves, ready_production will be False, but test_ready will pass
-                res = False
-            production.ready_production = res
-
     @api.constrains('product_qty')
     def _check_qty(self):
         if self.product_qty <= 0:
@@ -166,9 +154,8 @@ class MrpProduction(models.Model):
     def button_plan(self):
         self.ensure_one()
         self.write({'state': 'planned'})
-        #TODO: code for calculating work orders
-
-
+        #Let us try to plan the order
+        self._compute_planned_workcenter(False) #TODO: should take into account existing orders
 
     @api.multi
     def unlink(self):
@@ -235,7 +222,7 @@ class MrpProduction(models.Model):
             dt_end = datetime.strptime(po.date_planned, '%Y-%m-%d %H:%M:%S')
             if not po.date_start:
                 po.write({
-                    'date_start': po.date_planned
+                    'date_planned_start': po.date_planned
                 })
             old = None
             for wci in range(len(po.workcenter_line_ids)):
@@ -257,7 +244,7 @@ class MrpProduction(models.Model):
 
                 old = wc.sequence or 0
             po.write({
-                'date_finished': dt_end
+                'date_planned_finished': dt_end
             })
         return dt_end
 
@@ -325,19 +312,6 @@ class MrpProduction(models.Model):
         self.env["procurement.order"].search([('production_id', 'in', self.ids)]).check()
         return write_res
 
-    def test_production_done(self):
-        """ Tests whether production is done or not.
-        :return: True or False
-        """
-        res = True
-        for production in self:
-            if production.move_line_ids:
-                res = False
-
-            if production.move_created_ids:
-                res = False
-        return res
-
     def _get_subproduct_factor(self, move=None):
         """ Compute the factor to compute the qty of procucts to produce for the given production_id. By default,
             it's always equal to the quantity encoded in the production order or the production wizard, but if the
@@ -359,18 +333,6 @@ class MrpProduction(models.Model):
             produced_qty += produced_product.product_qty
         return produced_qty
 
-    def _get_consumed_data(self):
-        ''' returns a dictionary containing for each raw material of the given production, its quantity already consumed (in the raw material UoM)
-        '''
-        consumed_data = {}
-        # Calculate already consumed qtys
-        for consumed in self.move_line_ids2:
-            if consumed.scrapped:
-                continue
-            if not consumed_data.get(consumed.product_id.id, False):
-                consumed_data[consumed.product_id.id] = 0
-            consumed_data[consumed.product_id.id] += consumed.product_qty
-        return consumed_data
 
     def _calculate_qty(self, to_produce_qty=0.0): #Add option to put them partially or not at all
         self.ensure_one()
@@ -480,20 +442,6 @@ class MrpProduction(models.Model):
             self.move_line_ids.action_cancel()
 
         return True 
-
-    @api.multi
-    def action_in_production(self):
-        """ Changes state to In Production and writes starting date.
-        :return: True
-        """
-        return self.write({'state': 'in_production', 'date_start': fields.Datetime.now()})
-
-    def test_ready(self):
-        res = True
-        for production in self:
-            if production.move_line_ids and not production.ready_production:
-                res = False
-        return res
 
     def _make_production_produce_line(self):
         procs = self.env['procurement.order'].search([('production_id', '=', self.id)])
@@ -669,7 +617,7 @@ class MrpProductionWorkcenterLine(models.Model):
     hour = fields.Float(string='Number of Hours', digits=(16, 2))
     sequence = fields.Integer(required=True, default=1, help="Gives the sequence order when displaying a list of work orders.")
     production_id = fields.Many2one('mrp.production', string='Manufacturing Order', track_visibility='onchange', index=True, ondelete='cascade', required=True)
-    state = fields.Selection([('confirmed', 'Confirmed'), ('planned', 'Planned'), ('cancel', 'Cancelled'), ('pause', 'Pending'), ('startworking', 'In Progress'), ('done', 'Finished')], default='confirmed')
+    state = fields.Selection([('confirmed', 'Confirmed'), ('planned', 'Planned'), ('cancel', 'Cancelled'), ('pause', 'Pending'), ('progress', 'In Progress'), ('done', 'Finished')], default='confirmed')
     date_planned_start = fields.Datetime('Scheduled Date Start')
     date_planned_end = fields.Datetime('Scheduled Date Finished')
     date_start = fields.Datetime('Effective Start Date')
@@ -681,19 +629,24 @@ class MrpProductionWorkcenterLine(models.Model):
     product = fields.Many2one('product.product', related='production_id.product_id', string="Product", readonly=True)
     qty = fields.Float(related='production_id.product_qty', string='Qty', readonly=True, store=True) #store really needed?
     uom = fields.Many2one('product.uom', related='production_id.product_uom_id', string='Unit of Measure')
+    
 
     @api.multi
     def button_draft(self):
-        return self.write({'state': 'confirmed'})
+        self.write({'state': 'confirmed'})
 
     @api.multi
-    def button_start_working(self):
-        self.write({'state': 'startworking',
-                    'date_start': datetime.now()})
+    def button_plan(self):
+        self.write({'state' 'planned'})
 
+    @api.multi
+    def button_start(self):
+        self.write({'state': 'progress',
+                    'date_start': datetime.now()})
+        
     @api.multi
     def button_resume(self):
-        self.write({'state':'startworking'})
+        self.write({'state':'progress'})
 
     @api.multi
     def button_pause(self):
