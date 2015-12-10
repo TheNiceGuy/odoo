@@ -3,6 +3,8 @@
 from openerp import api, fields, models
 from openerp import _
 from openerp.exceptions import UserError
+from datetime import date, timedelta
+from openerp.tools.misc import DEFAULT_SERVER_DATE_FORMAT
 
 
 class MaintenanceStage(models.Model):
@@ -124,7 +126,8 @@ class MaintenanceEquipment(models.Model):
     maintenance_count = fields.Integer(compute='_compute_maintenance_count', string="Maintenance", store=True)
     maintenance_open_count = fields.Integer(compute='_compute_maintenance_count', string="Current Maintenance", store=True)
     period = fields.Integer('Days between each preventive maintenance')
-    next_action_date = fields.Date('Date of the next preventive maintenance')
+    next_action_date = fields.Datetime('Date of the next preventive maintenance')
+    maintenance_team_id = fields.Many2one('maintenance.team', string='Maintenance Team')
 
     @api.one
     @api.depends('maintenance_ids.stage_id.done')
@@ -146,6 +149,10 @@ class MaintenanceEquipment(models.Model):
         # subscribe employee or department manager when equipment assign to him.
         if equipment.owner_user_id:
             equipment.message_subscribe_users(user_ids=equipment.owner_user_id.ids)
+        if equipment.period:
+            today = date.today()
+            next_action_date = today + timedelta(days=equipment.period)
+            equipment.next_action_date = next_action_date.strftime(DEFAULT_SERVER_DATE_FORMAT)
         return equipment
 
     @api.multi
@@ -174,6 +181,21 @@ class MaintenanceEquipment(models.Model):
         for category in category_obj.browse(category_ids):
             fold[category.id] = category.fold
         return result, fold
+
+    @api.model
+    def _cron_generate_requests(self):
+        for equipment in self.search([]):
+            if equipment.period and equipment.next_action_date == date.today().strftime(DEFAULT_SERVER_DATE_FORMAT):
+                self.env['maintenance.request'].create({
+                    'name': _('Corrective Maintenance - %s' % equipment.next_action_date),
+                    'request_date': equipment.next_action_date,
+                    'category_id': equipment.category_id.id,
+                    'equipment_id': equipment.id,
+                    'maintenance_type': 'preventive',
+                })
+                today = date.today()
+                next_action_date = today + timedelta(days=equipment.period)
+                equipment.next_action_date = next_action_date.strftime(DEFAULT_SERVER_DATE_FORMAT)
 
     _group_by_full = {
         'category_id': _read_group_category_ids
@@ -213,6 +235,7 @@ class MaintenanceRequest(models.Model):
                                     string='Kanban State', required=True, default='normal', track_visibility='onchange')
     archive = fields.Boolean(default=False, help="Set archive to true to hide the maintenance request without deleting it.")
     maintenance_type = fields.Selection([('corrective', 'corrective'), ('preventive', 'preventive')], string='Maintenance Type')
+    maintenance_team_id = fields.Many2one('maintenance.team', string='Maintenance Team')
 
     @api.multi
     def archive_equipment_request(self):
@@ -224,18 +247,19 @@ class MaintenanceRequest(models.Model):
         first_stage_obj = self.env['equipment.stage'].search([], order="sequence asc", limit=1)
         self.write({'archive': False, 'stage_id': first_stage_obj.id})
 
-    @api.onchange('from_user_id')
-    def onchange_department_or_employee_id(self):
-        domain = [('owner_user_id', '=', self.from_user_id.id)]
-        equipment = self.env['hr.equipment'].search(domain, limit=2)
-        if len(equipment) == 1:
-            self.equipment_id = equipment
-        return {'domain': {'equipment_id': domain}}
+    # @api.onchange('from_user_id')
+    # def onchange_department_or_employee_id(self):
+    #     domain = [('owner_user_id', '=', self.from_user_id.id)]
+    #     equipment = self.env['maintenance.equipment'].search(domain, limit=2)
+    #     if len(equipment) == 1:
+    #         self.equipment_id = equipment
+    #     return {'domain': {'equipment_id': domain}}
 
     @api.onchange('equipment_id')
     def onchange_equipment_id(self):
         self.technician_user_id = self.equipment_id.technician_user_id if self.equipment_id.technician_user_id else self.equipment_id.category_id.technician_user_id
         self.category_id = self.equipment_id.category_id
+        self.maintenance_team_id = self.equipment_id.maintenance_team_id
 
     @api.onchange('category_id')
     def onchange_category_id(self):
@@ -249,6 +273,8 @@ class MaintenanceRequest(models.Model):
         result = super(MaintenanceRequest, self).create(vals)
         if result.from_user_id:
             result.message_subscribe_users(user_ids=[result.from_user_id.id])
+        if result.equipment_id and not result.maintenance_team_id:
+            result.maintenance_team_id = result.equipment_id.maintenance_team_id
         return result
 
     @api.multi
@@ -296,3 +322,22 @@ class MaintenanceTeam(models.Model):
     name = fields.Char(required=True)
     partner_id = fields.Many2one('res.partner', string='Subcontracting Partner')
     color = fields.Integer(default=0)
+    request_ids = fields.One2many('maintenance.request', 'maintenance_team_id', copy=False)
+    equipment_ids = fields.One2many('maintenance.equipment', 'maintenance_team_id', copy=False)
+
+    # For the dashboard only
+    todo_request_ids = fields.One2many('maintenance.request', copy=False, compute='_compute_todo_requests')
+    todo_request_count = fields.Integer(compute='_compute_todo_requests')
+    todo_request_count_prev = fields.Integer(compute='_compute_todo_requests')
+
+    @api.one
+    @api.depends('todo_request_ids.stage_id.done')
+    def _compute_todo_requests(self):
+        self.todo_request_ids = self.request_ids.filtered(lambda e: e.stage_id.done==False)
+        self.todo_request_count = len(self.todo_request_ids)
+        self.todo_request_count_prev = len(self.todo_request_ids.filtered(lambda e: e.maintenance_type=='preventive'))
+
+    @api.one
+    @api.depends('equipment_ids')
+    def _compute_equipment(self):
+        self.equipment_count = len(self.equipment_ids)
