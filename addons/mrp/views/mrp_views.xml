@@ -196,20 +196,11 @@
                     <notebook>
                         <page string="General Information">
                             <group>
-                                <group string="Capacity Information">
+                                <group string="Capacity Information" name="capacity">
                                     <field name="time_efficiency"/>
-                                    <field name="capacity_per_cycle"/>
-                                    <field name="time_cycle" widget="float_time"/>
+                                    <field name="capacity"/>
                                     <field name="time_start" widget="float_time"/>
                                     <field name="time_stop" widget="float_time"/>
-                                </group>
-                                <group string="Costing Information">
-                                    <field name="product_id"/>
-                                    <field name="costs_hour"/>
-                                    <field name="costs_hour_account_id" groups="analytic.group_analytic_accounting"/>
-                                    <field name="costs_cycle"/>
-                                    <field name="costs_cycle_account_id" groups="analytic.group_analytic_accounting"/>
-                                    <field name="costs_general_account_id" attrs="{ 'required':['|',('costs_cycle_account_id', '=', True),('costs_hour_account_id', '=', True)]}" groups="analytic.group_analytic_accounting"/>
                                 </group>
                             </group>
                             <separator string="Description"/>
@@ -244,7 +235,6 @@
                     <field name="sequence" widget="handle"/>
                     <field name="name"/>
                     <field name="workcenter_id"/>
-                    <field name="cycle_nbr"/>
                     <field name="hour_nbr"/>
                     <field name="company_id" options="{'no_create': True}" groups="base.group_multi_company"/>
                 </tree>
@@ -262,7 +252,6 @@
                                 <field name="workcenter_id"/>
                                 <field name="sequence" groups="base.group_no_one"/>
                             </group><group>
-                                <field name="cycle_nbr"/>
                                 <field name="hour_nbr" widget="float_time"/>
                                 <field name="company_id" options="{'no_create': True}" groups="base.group_multi_company"/>
                             </group>
@@ -331,8 +320,7 @@
             <field name="arch" type="xml">
                 <kanban class="oe_background_grey o_kanban_dashboard o_stock_kanban" create="0">
                     <field name="name"/>
-                    <field name="capacity_per_cycle"/>
-                    <field name="time_cycle"/>
+                    <field name="capacity"/>
                     <field name="time_start"/>
                     <field name="time_stop"/>
                     <field name="color"/>
@@ -764,11 +752,11 @@
             <field name="arch" type="xml">
                 <form string="Manufacturing Orders">
                 <header>
-                    <button name="%(act_mrp_product_produce)d" states="progress" string="Produce" type="action" class="oe_highlight"/>
+                    <button name="%(act_mrp_product_produce)d" states="confirmed,planned,progress" attrs="{'invisible': [('availability', '=', 'none')]}" string="Produce" type="action" class="oe_highlight"/>
                     <button name="action_assign" attrs="{'invisible': [('availability', '=', 'assigned')]}" string="Reserve" type="object" class="oe_highlight"/>
-                    <button name="force_assign" attrs="{'invisible': [('availability', '=', 'assigned')]}" strin)g="Force Reservation" type="object"/>
-                    <button name="button_produce" states="progress" string="Plan"/>
-                    <button name="button_cancel" states="draft,ready,in_production" string="Cancel Production"/>
+                    <button name="force_assign" attrs="{'invisible': [('availability', '=', 'assigned')]}" string="Force Reservation" type="object"/>
+                    <button name="button_plan" states="confirmed" type="object" string="Plan"/>
+                    <button name="button_cancel" states="confirmed,planned,progress" string="Cancel Production"/>
                     <field name="state" widget="statusbar" statusbar_visible="confirmed,progress,done" statusbar_colors='{"confirmed":"blue"}'/>
                     <field name="availability" invisible="1"/>
                 </header>
@@ -858,7 +846,6 @@
                     <field name="product_uom_id" string="Unit of Measure" options="{'no_open':True,'no_create':True}" groups="product.group_uom"/>
                     <field name="routing_id" groups="mrp.group_mrp_routings"/>
                     <field name="hour_total" sum="Total Hours" invisible="1"/>
-                    <field name="cycle_total" sum="Total Cycles" invisible="1"/>
                     <field name="origin"/>
                     <field name="state"/>
                 </tree>
@@ -927,7 +914,6 @@
                 <pivot string="Manufacturing Orders">
                     <field name="date_planned" type="row"/>
                     <field name="hour_total" type="measure"/>
-                    <field name="cycle_total" type="measure"/>
                 </pivot>
             </field>
         </record>
@@ -938,7 +924,6 @@
                 <graph string="Manufacturing Orders">
                     <field name="date_planned"/>
                     <field name="hour_total" type="measure"/>
-                    <field name="cycle_total" type="measure"/>
                 </graph>
             </field>
         </record>

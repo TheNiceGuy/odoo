@@ -81,14 +81,12 @@ class MrpBom(models.Model):
 
     def _prepare_wc_line(self, wc_use, level=0, factor=1):
         wc = wc_use.workcenter_id
-        d, m = divmod(factor, wc_use.workcenter_id.capacity_per_cycle)
+        d, m = divmod(factor, wc_use.workcenter_id.capacity)
         mult = (d + (m and 1.0 or 0.0))
-        cycle = mult * wc_use.cycle_nbr
         return {
             'name': ("%s-  %s") % (wc_use.name, self.product_tmpl_id.display_name),
             'workcenter_id': wc.id,
             'sequence': level + (wc_use.sequence or 0),
-            'cycle': cycle,
             'operation_id': wc_use.id,
             'hour': float(wc_use.hour_nbr * mult + ((wc.time_start or 0.0) + (wc.time_stop or 0.0))), #+ cycle * (wc.time_cycle or 0.0)) * (wc.time_efficiency or 1.0)),
         }

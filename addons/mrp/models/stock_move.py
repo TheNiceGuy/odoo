@@ -111,9 +111,9 @@ class StockMove(models.Model):
         """ Consumed product with specific quantity from specific source location.
         :param product_qty: Consumed/produced product quantity (= in quantity of UoM of product)
         :param location_id: Source location
-        :param restrict_lot_id: optionnal parameter that allows to restrict the choice of quants on this specific lot
-        :param restrict_partner_id: optionnal parameter that allows to restrict the choice of quants to this specific partner
-        :param consumed_for_id: optionnal parameter given to this function to make the link between raw material consumed and produced product, for a better traceability
+        :param restrict_lot_id: optional parameter that allows to restrict the choice of quants on this specific lot
+        :param restrict_partner_id: optional parameter that allows to restrict the choice of quants to this specific partner
+        :param consumed_for_id: optional parameter given to this function to make the link between raw material consumed and produced product, for a better traceability
         :return: New lines created if not everything was consumed for this line
         """
         res = self - self  # creates empty recordset

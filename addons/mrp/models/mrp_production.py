@@ -105,7 +105,6 @@ class MrpProduction(models.Model):
 #              "When the production gets started then the status is set to 'In Production.\n"
 #              "When the production is over, the status is set to 'Done'.")
     hour_total = fields.Float(compute='_production_calc', string='Total Hours', store=True)
-    cycle_total = fields.Float(compute='_production_calc', string='Total Cycles', store=True)
     user_id = fields.Many2one('res.users', string='Responsible', default=lambda self: self.env.user)
     company_id = fields.Many2one('res.company', string='Company', required=True, default=lambda self: self.env['res.company']._company_default_get('mrp.production'))
     ready_production = fields.Boolean(compute='_moves_assigned', string="Ready for production", store=True)
@@ -117,16 +116,15 @@ class MrpProduction(models.Model):
     ]
 
     @api.multi
-    @api.depends('workcenter_line_ids.hour', 'workcenter_line_ids.cycle')
+    @api.depends('workcenter_line_ids.hour')
     def _production_calc(self):
-        """ Calculates total hours and total no. of cycles for a production order.
+        """ Calculates total hours for a production order.
         :return: Dictionary of values.
         """
-        data = self.env['mrp.production.workcenter.line'].read_group([('production_id', 'in', self.ids)], ['hour', 'cycle', 'production_id'], ['production_id'])
-        mapped_data = dict([(m['production_id'][0], {'hour': m['hour'], 'cycle': m['cycle']}) for m in data])
+        data = self.env['mrp.production.workcenter.line'].read_group([('production_id', 'in', self.ids)], ['hour', 'production_id'], ['production_id'])
+        mapped_data = dict([(m['production_id'][0], {'hour': m['hour']}) for m in data])
         for record in self:
             record.hour_total = mapped_data.get(record.id, {}).get('hour', 0)
-            record.cycle_total = mapped_data.get(record.id, {}).get('cycle', 0)
 
     def _get_progress(self):
         """ Return product quantity percentage """
@@ -163,6 +161,14 @@ class MrpProduction(models.Model):
         production = super(MrpProduction, self).create(values)
         production.generate_moves_workorders(properties=None) #TODO: solutions for properties: procurement.property_ids
         return production
+
+    @api.multi
+    def button_plan(self):
+        self.ensure_one()
+        self.write({'state': 'planned'})
+        #TODO: code for calculating work orders
+
+
 
     @api.multi
     def unlink(self):
@@ -453,8 +459,18 @@ class MrpProduction(models.Model):
                 if not float_is_zero(remaining_qty, precision_digits=precision):
                     # consumed more in wizard than previously planned
                     product = ProductProduct.browse(consume['product_id'])
-                    extra_move_id = self._make_consume_line_from_data(product, product.uom_id.id, remaining_qty)
-                    extra_move_id.write({'restrict_lot_id': consume['lot_id'], 'consumed_for_id': main_production_move})
+                    extra_move_id = self.env['stock.move'].create({'product_id': consume['product_id'],
+                                                                   'product_uom_qty': consume['product_qty'],
+                                                                   'product_uom': product.uom_id.id,
+                                                                   'name': _('Extra'),
+                                                                   'restrict_lot_id': consume['lot_id'], 
+                                                                   'consumed_for_id': main_production_move, 
+                                                                   'procure_method': 'make_to_stock',
+                                                                   'raw_material_production_id': self.id,
+                                                                   'location_id': self.location_src_id.id,
+                                                                   'location_dest_id': product.property_stock_production.id,
+                                                                   })
+                    extra_move_id.action_confirm()
                     extra_move_id.action_done()
 
         self.message_post(body=_("%s produced") % self._description)
@@ -463,54 +479,7 @@ class MrpProduction(models.Model):
         if not self.move_created_ids and self.move_line_ids:
             self.move_line_ids.action_cancel()
 
-        self.signal_workflow('button_produce_done')
-        return True
-
-
-    def _costs_generate(self):
-        """ Calculates total costs at the end of the production.
-        :param production: Id of production order.
-        :return: Calculated amount.
-        """
-        AccountAnalyticLine = self.env['account.analytic.line']
-        amount = 0.0
-        for wc_line in self.workcenter_line_ids:
-            wc = wc_line.workcenter_id
-            if wc.costs_general_account_id:
-                # Cost per hour
-                value = wc_line.hour * wc.costs_hour
-                account = wc.costs_hour_account_id.id
-                if value and account:
-                    amount += value
-                    # we user SUPERUSER_ID as we do not garantee an mrp user
-                    # has access to account analytic lines but still should be
-                    # able to produce orders
-                    AccountAnalyticLine.sudo().create({
-                        'name': wc_line.name + ' (H)',
-                        'amount': value,
-                        'account_id': account,
-                        'general_account_id': wc.costs_general_account_id.id,
-                        'ref': wc.code,
-                        'product_id': wc.product_id.id,
-                        'unit_amount': wc_line.hour,
-                        'product_uom_id': wc.product_id and wc.product_id.uom_id.id or False
-                    })
-                # Cost per cycle
-                value = wc_line.cycle * wc.costs_cycle
-                account = wc.costs_cycle_account_id.id
-                if value and account:
-                    amount += value
-                    AccountAnalyticLine.sudo().create({
-                        'name': wc_line.name + ' (C)',
-                        'amount': value,
-                        'account_id': account,
-                        'general_account_id': wc.costs_general_account_id.id,
-                        'ref': wc.code,
-                        'product_id': wc.product_id.id,
-                        'unit_amount': wc_line.cycle,
-                        'product_uom_id': wc.product_id and wc.product_id.uom_id.id or False
-                    })
-        return amount
+        return True 
 
     @api.multi
     def action_in_production(self):
@@ -697,11 +666,10 @@ class MrpProductionWorkcenterLine(models.Model):
 
     name = fields.Char(string='Work Order', required=True)
     workcenter_id = fields.Many2one('mrp.workcenter', string='Work Center', required=True)
-    cycle = fields.Float(string='Number of Cycles', digits=(16, 2))
     hour = fields.Float(string='Number of Hours', digits=(16, 2))
     sequence = fields.Integer(required=True, default=1, help="Gives the sequence order when displaying a list of work orders.")
     production_id = fields.Many2one('mrp.production', string='Manufacturing Order', track_visibility='onchange', index=True, ondelete='cascade', required=True)
-    state = fields.Selection([('draft', 'Draft'), ('cancel', 'Cancelled'), ('pause', 'Pending'), ('startworking', 'In Progress'), ('done', 'Finished')], default='draft')
+    state = fields.Selection([('confirmed', 'Confirmed'), ('planned', 'Planned'), ('cancel', 'Cancelled'), ('pause', 'Pending'), ('startworking', 'In Progress'), ('done', 'Finished')], default='confirmed')
     date_planned_start = fields.Datetime('Scheduled Date Start')
     date_planned_end = fields.Datetime('Scheduled Date Finished')
     date_start = fields.Datetime('Effective Start Date')
@@ -716,7 +684,7 @@ class MrpProductionWorkcenterLine(models.Model):
 
     @api.multi
     def button_draft(self):
-        return self.write({'state': 'draft'})
+        return self.write({'state': 'confirmed'})
 
     @api.multi
     def button_start_working(self):
