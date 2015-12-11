@@ -336,6 +336,8 @@
                     <field name="time_start"/>
                     <field name="time_stop"/>
                     <field name="color"/>
+                    <field name="nb_ready"/>
+                    <field name="nb_late"/>
                     <templates>
                         <t t-name="kanban-box">
                             <div t-attf-class="#{kanban_color(record.color.raw_value)}">
@@ -362,7 +364,7 @@
                                                     </a>
                                                 </div>
                                                 <div class="col-xs-3">
-                                                    0
+                                                    <span><t t-raw="record.nb_ready.raw_value"/></span>
                                                 </div>
                                             </div>
                                             <div class="row"><!--t-if="record.nb_alerts.raw_value > 0"-->
@@ -372,7 +374,7 @@
                                                     </a>
                                                 </div>
                                                 <div class="col-xs-3">
-                                                    0
+                                                    <span><t t-raw="record.nb_late.raw_value"/></span>
                                                 </div>
                                             </div>
                                         </div>
@@ -1198,12 +1200,12 @@
         <field name="arch" type="xml">
             <form string="Production Workcenter">
             <header>
-                <button name="button_start_working" string="Start" states="draft" class="oe_highlight"/>
-                <button name="button_resume" string="Resume" states="pause" class="oe_highlight"/>
-                <button name="button_done" string="Finished" states="startworking" class="oe_highlight"/>
-                <button name="button_pause" string="Pending" states="startworking"/>
-                <button name="button_draft" string="Set Draft" states="cancel"/>
-                <button name="button_cancel" string="Cancel" states="draft,startworking"/>
+                <button name="button_start_working" string="Start" states="draft" class="oe_highlight" type="object"/>
+                <button name="button_resume" string="Resume" states="pause" class="oe_highlight" type="object"/>
+                <button name="button_done" string="Finished" states="startworking" class="oe_highlight" type="object"/>
+                <button name="button_pause" string="Pending" states="startworking" type="object"/>
+                <button name="button_draft" string="Set Draft" states="cancel" type="object"/>
+                <button name="button_cancel" string="Cancel" states="draft,startworking" type="object"/>
                 <field name="state" widget="statusbar" statusbar_visible="draft,startworking"/>
             </header>
             <sheet string="Work Orders">

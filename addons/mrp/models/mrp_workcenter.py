@@ -19,7 +19,9 @@ class MrpWorkcenter(models.Model):
     @api.one
     @api.depends('order_ids')
     def _compute_orders(self):
-        self.nb_orders = self.env['mrp.production.workcenter.line'].search_count([('workcenter_id', '=', self.id), ('state', '!=', 'done')]) #('state', 'in', ['pending', 'startworking'])
+        self.nb_orders = len(self.order_ids.filtered(lambda r: r.state != 'done'))
+        self.nb_ready = len(self.order_ids.filtered(lambda r: r.state == 'done'))
+        self.nb_late = len(self.order_ids.filtered(lambda r: r.state in ['done', 'startworking'] and r.date_planned_end and (r.date_finished > r.date_planned_end or r.date_planned_end < fields.Datetime.now())))
 
     note = fields.Text(string='Description', help="Description of the Work Center. Explain here what's a cycle according to this Work Center.")
     capacity_per_cycle = fields.Float(string='Capacity per Cycle', default=1.0, help="Number of operations this Work Center can do in parallel. If this Work Center represents a team of 5 workers, the capacity per cycle is 5.")
@@ -39,6 +41,8 @@ class MrpWorkcenter(models.Model):
     order_ids = fields.One2many('mrp.production.workcenter.line', 'workcenter_id', string="Orders")
     routing_line_ids = fields.One2many('mrp.routing.workcenter', 'workcenter_id', "Routing Lines")
     nb_orders = fields.Integer('Computed Orders', compute='_compute_orders')
+    nb_ready = fields.Integer('Ready Orders', compute='_compute_orders')
+    nb_late = fields.Integer('Late Orders', compute='_compute_orders')
     color = fields.Integer('Color')
 
 
