@@ -59,17 +59,17 @@ class TestEquipment(TransactionCase):
             'equipment_id': equipment_01.id,
             'category_id': self.ref('maintenance.equipment_monitor'),
             'color': 7,
-            'stage_id': self.ref('equipment.stage_0')
+            'stage_id': self.ref('maintenance.stage_0')
         })
 
         # I check that maintenance_request is created or not
         assert maintenance_request_01, "Maintenance Request not created"
 
         # I check that Initially maintenance request is in the "New Request" stage
-        self.assertEquals(maintenance_request_01.stage_id.id, self.ref('equipment.stage_0'))
+        self.assertEquals(maintenance_request_01.stage_id.id, self.ref('maintenance.stage_0'))
 
         # I check that change the maintenance_request stage on click statusbar
-        maintenance_request_01.sudo(self.user).write({'stage_id': self.ref('equipment.stage_1')})
+        maintenance_request_01.sudo(self.user).write({'stage_id': self.ref('maintenance.stage_1')})
 
         # I check that maintenance request is in the "In Progress" stage
-        self.assertEquals(maintenance_request_01.stage_id.id, self.ref('equipment.stage_1'))
+        self.assertEquals(maintenance_request_01.stage_id.id, self.ref('maintenance.stage_1'))
