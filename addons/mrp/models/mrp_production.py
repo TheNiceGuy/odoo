@@ -68,12 +68,12 @@ class MrpProduction(models.Model):
                 first_planned_start_date = False
                 last_planned_end_date = False
                 for wo in order.workcenter_line_ids:
-                    if (not first_planned_start_date) or (fields.Datetime.from_string(wo.date_planned_start) < first_planned_start_date):
+                    if wo.date_planned_start and ((not first_planned_start_date) or (fields.Datetime.from_string(wo.date_planned_start) < first_planned_start_date)):
                         first_planned_start_date = fields.Datetime.from_string(wo.date_planned_start)
-                    if (not last_planned_end_date) or (fields.Datetime.from_string(wo.date_planned_end) > last_planned_end_date):
+                    if wo.date_planned_end and ((not last_planned_end_date) or (fields.Datetime.from_string(wo.date_planned_end) > last_planned_end_date)):
                         last_planned_end_date = fields.Datetime.from_string(wo.date_planned_end)
-                order.date_planned_start = fields.Datetime.to_string(first_planned_start_date)
-                order.date_planned_finished = fields.Datetime.to_string(last_planned_end_date)
+                order.date_planned_start = first_planned_start_date and fields.Datetime.to_string(first_planned_start_date) or False
+                order.date_planned_finished = last_planned_end_date and fields.Datetime.to_string(last_planned_end_date) or False
             else:
                 order.date_planned_start = order.date_planned_start_store
                 order.date_planned_finished = order.date_planned_finished_store
