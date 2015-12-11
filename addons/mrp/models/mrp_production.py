@@ -74,7 +74,6 @@ class MrpProduction(models.Model):
                         last_planned_end_date = fields.Datetime.from_string(wo.date_planned_end)
                 order.date_planned_start = fields.Datetime.to_string(first_planned_start_date)
                 order.date_planned_finished = fields.Datetime.to_string(last_planned_end_date)
-                print "Set from workorders", order.date_planned_finished, order.date_planned_start
             else:
                 order.date_planned_start = order.date_planned_start_store
                 order.date_planned_finished = order.date_planned_finished_store
@@ -99,8 +98,8 @@ class MrpProduction(models.Model):
     date_planned = fields.Datetime(string='Required Date', required=True, index=True, readonly=True, states={'confirmed': [('readonly', False)]}, copy=False, default=fields.Datetime.now)
     date_planned_start_store = fields.Datetime(string='Technical Field for planned start')
     date_planned_finished_store = fields.Datetime(string='Technical Field for planned finished')
-    date_planned_start = fields.Datetime(string='Scheduled Start Date', compute='_compute_date_planned', inverse='_inverse_date_planned', store=True, index=True, copy=False)
-    date_planned_finished = fields.Datetime(string='Scheduled End Date', compute='_compute_date_planned', inverse='_inverse_date_planned', store=True, index=True, copy=False)
+    date_planned_start = fields.Datetime(string='Scheduled Start Date', compute='_compute_date_planned', inverse='_inverse_date_planned', states={'confirmed': [('readonly', False)]}, readonly=True, store=True, index=True, copy=False)
+    date_planned_finished = fields.Datetime(string='Scheduled End Date', compute='_compute_date_planned', inverse='_inverse_date_planned', states={'confirmed': [('readonly', False)]}, readonly=True, store=True, index=True, copy=False)
     date_start = fields.Datetime(string='Start Date', index=True, readonly=True, copy=False)
     date_finished = fields.Datetime(string='End Date', index=True, readonly=True, copy=False)
     bom_id = fields.Many2one('mrp.bom', string='Bill of Material', readonly=True, states={'confirmed': [('readonly', False)]},
