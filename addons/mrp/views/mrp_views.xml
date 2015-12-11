@@ -807,7 +807,7 @@
                     </group>
                     <notebook>
                         <page string="Consume Lines">
-                            <field name="consume_line_ids" domain="[('workorder_id', '=', False)]">
+                            <field name="consume_line_ids">
                                 <tree editable="bottom">
                                     <field name="product_id"/>
                                     <field name="lot_id"/>
@@ -1279,7 +1279,7 @@
         <field name="name">mrp.production.workcenter.line.gantt.production</field>
         <field name="model">mrp.production.workcenter.line</field>
         <field name="arch" type="xml">
-            <gantt date_delay="hour" date_start="date_planned_start" string="Operations" default_group_by="production_id">
+            <gantt date_stop="date_planned_end" date_start="date_planned_start" string="Operations" default_group_by="production_id">
             </gantt>
         </field>
     </record>
@@ -1288,8 +1288,7 @@
         <field name="name">mrp.production.workcenter.line.gantt.workcenter</field>
         <field name="model">mrp.production.workcenter.line</field>
         <field name="arch" type="xml">
-            <gantt date_delay="hour" date_start="date_planned_start" string="Operations" default_group_by="workcenter_id">
-
+            <gantt date_stop="date_planned_end" date_start="date_planned_start" string="Operations" default_group_by="workcenter_id">
             </gantt>
         </field>
     </record>

@@ -7,6 +7,7 @@ from openerp.exceptions import AccessError, UserError
 from openerp.tools import float_compare, float_is_zero, DEFAULT_SERVER_DATETIME_FORMAT
 import openerp.addons.decimal_precision as dp
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
 import time
 
 
@@ -37,6 +38,7 @@ class MrpProduction(models.Model):
         return location
 
     @api.multi
+    @api.depends('move_line_ids')
     def _compute_availability(self):
         for order in self:
             if not order.move_line_ids:
@@ -49,6 +51,34 @@ class MrpProduction(models.Model):
                 order.availability = 'partially_available'
             else:
                 order.availability = 'none'
+
+    @api.multi
+    def _inverse_date_planned(self):
+        for order in self:
+            if order.workcenter_line_ids and order.state != 'confirmed':
+                raise UserError(_('You should change the Work Order planning instead!'))
+            order.write({'date_planned_start_store': order.date_planned_start,
+                         'date_planned_finished_store': order.date_planned_finished})
+
+    @api.multi
+    @api.depends('workcenter_line_ids.date_planned_start', 'workcenter_line_ids.date_planned_end', 'date_planned_start_store', 'date_planned_finished_store')
+    def _compute_date_planned(self):
+        for order in self:
+            if order.workcenter_line_ids and order.state != 'confirmed': #It is already planned somehow
+                first_planned_start_date = False
+                last_planned_end_date = False
+                for wo in order.workcenter_line_ids:
+                    if (not first_planned_start_date) or (fields.Datetime.from_string(wo.date_planned_start) < first_planned_start_date):
+                        first_planned_start_date = fields.Datetime.from_string(wo.date_planned_start)
+                    if (not last_planned_end_date) or (fields.Datetime.from_string(wo.date_planned_end) > last_planned_end_date):
+                        last_planned_end_date = fields.Datetime.from_string(wo.date_planned_end)
+                order.date_planned_start = fields.Datetime.to_string(first_planned_start_date)
+                order.date_planned_finished = fields.Datetime.to_string(last_planned_end_date)
+                print "Set from workorders", order.date_planned_finished, order.date_planned_start
+            else:
+                order.date_planned_start = order.date_planned_start_store
+                order.date_planned_finished = order.date_planned_finished_store
+
 
     name = fields.Char(string='Reference', required=True, readonly=True, states={'confirmed': [('readonly', False)]}, copy=False,
                        default=lambda self: self.env['ir.sequence'].next_by_code('mrp.production') or '/')
@@ -67,8 +97,10 @@ class MrpProduction(models.Model):
                                        readonly=True, states={'confirmed': [('readonly', False)]}, default=_dest_id_default,
                                        help="Location where the system will stock the finished products.")
     date_planned = fields.Datetime(string='Required Date', required=True, index=True, readonly=True, states={'confirmed': [('readonly', False)]}, copy=False, default=fields.Datetime.now)
-    date_planned_start = fields.Datetime(string='Scheduled Start Date', index=True, copy=False)
-    date_planned_finished = fields.Datetime(string='Scheduled End Date', index=True, copy=False)
+    date_planned_start_store = fields.Datetime(string='Technical Field for planned start')
+    date_planned_finished_store = fields.Datetime(string='Technical Field for planned finished')
+    date_planned_start = fields.Datetime(string='Scheduled Start Date', compute='_compute_date_planned', inverse='_inverse_date_planned', store=True, index=True, copy=False)
+    date_planned_finished = fields.Datetime(string='Scheduled End Date', compute='_compute_date_planned', inverse='_inverse_date_planned', store=True, index=True, copy=False)
     date_start = fields.Datetime(string='Start Date', index=True, readonly=True, copy=False)
     date_finished = fields.Datetime(string='End Date', index=True, readonly=True, copy=False)
     bom_id = fields.Many2one('mrp.bom', string='Bill of Material', readonly=True, states={'confirmed': [('readonly', False)]},
@@ -172,7 +204,7 @@ class MrpProduction(models.Model):
             self.location_dest_id = self.location_src_id.id
 
     @api.multi
-    @api.onchange('product_id')
+    @api.onchange('product_id', 'company_id')
     def onchange_product_id(self):
         if not self.product_id:
             self.product_uom_id = False
@@ -184,10 +216,14 @@ class MrpProduction(models.Model):
             routing_id = False
             if bom_point:
                 routing_id = bom_point.routing_id
-            self.product_uom_id = self.product_id.uom_id and self.product_id.uom_id.id or False
+            self.product_uom_id = self.product_id.uom_id.id
             self.bom_id = bom_point.id
-            self.routing_id = routing_id and routing_id.id or False
+            self.routing_id = routing_id.id
             self.product_tmpl_id = self.product_id.product_tmpl_id.id
+            self.date_planned_start = fields.Datetime.to_string(datetime.now())
+            date_planned = datetime.now() + relativedelta(days=self.product_id.produce_delay or 0.0) + relativedelta(days=self.company_id.manufacturing_lead)
+            self.date_planned = fields.Datetime.to_string(date_planned)
+            self.date_planned_finished = date_planned
 
     @api.onchange('bom_id')
     def onchange_bom_id(self):
@@ -219,11 +255,7 @@ class MrpProduction(models.Model):
         dt_end = datetime.now()
         context = self.env.context or {}
         for po in self: #Maybe need to make difference between different pos
-            dt_end = datetime.strptime(po.date_planned, '%Y-%m-%d %H:%M:%S')
-            if not po.date_start:
-                po.write({
-                    'date_planned_start': po.date_planned
-                })
+            dt_end = datetime.strptime(po.date_planned_start, '%Y-%m-%d %H:%M:%S')
             old = None
             for wci in range(len(po.workcenter_line_ids)):
                 wc  = po.workcenter_line_ids[wci]
@@ -241,20 +273,10 @@ class MrpProduction(models.Model):
                         dt_end = max(dt_end, i[-1][1])
                 else:
                     dt_end = datetime.strptime(wc.date_planned_end, '%Y-%m-%d %H:%M:%S')
-
+                if dt_end:
+                    wc.write({'date_planned_end': dt_end.strftime('%Y-%m-%d %H:%M:%S')})
                 old = wc.sequence or 0
-            po.write({
-                'date_planned_finished': dt_end
-            })
         return dt_end
-
-    @api.multi
-    def write(self, vals):
-        res = super(MrpProduction, self).write(vals)
-        # Recompute workcenters when workcenterlines changed or date_start
-        if (vals.get('workcenter_line_ids', False) or vals.get('date_start', False) or vals.get('date_planned', False)):
-            self._compute_planned_workcenter()
-        return res
 
     @api.multi
     def action_compute(self, properties=None):
@@ -402,7 +424,8 @@ class MrpProduction(models.Model):
             if wizard:
                 consume_lines = []
                 for cons in self.consume_line_ids:
-                    consume_lines.append({'product_id': cons.product_id.id, 'lot_id': cons.lot_id.id, 'product_qty': cons.product_qty})
+                    if cons.qty_done > 0.0:
+                        consume_lines.append({'product_id': cons.product_id.id, 'lot_id': cons.lot_id.id, 'product_qty': cons.qty_done})
             else:
                 consume_lines = self._calculate_qty(production_qty_uom)
             for consume in consume_lines:
@@ -641,6 +664,9 @@ class MrpProductionWorkcenterLine(models.Model):
 
     @api.multi
     def button_start(self):
+        for workorder in self:
+            if workorder.production_id.state != 'progress':
+                workorder.production_id.state = 'progress'
         self.write({'state': 'progress',
                     'date_start': datetime.now()})
         
