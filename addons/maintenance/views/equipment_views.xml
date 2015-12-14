@@ -306,6 +306,8 @@
                 <field name="model"/>
                 <field name="maintenance_ids"/>
                 <field name="maintenance_open_count"/>
+                <field name="owner_user_id"/>
+                <field name="next_action_date"/>
                 <templates>
                     <t t-name="kanban-tooltip">
                         <ul class="oe_kanban_tooltip">
@@ -331,13 +333,15 @@
                                 <div class="mt4">
                                     <div t-if="record.serial_no.raw_value"><field name="serial_no"/></div>
                                     <div class="o_equipment_unassigned" t-if="!record.owner_user_id.raw_value">Unassigned</div>
-                                    <div t-if="record.owner_user_id.raw_value"><field name="owner_user_id"/></div>
                                 </div>
                                 <div class="oe_kanban_bottom_right">
                                     <img t-att-src="kanban_image('res.users', 'image_small', record.owner_user_id.raw_value)" t-att-title="record.owner_user_id.value" width="27" height="27" class="oe_kanban_avatar"/>
                                 </div>
                                 <div class="oe_kanban_footer_left mt4 label label-danger" t-if="record.maintenance_open_count.raw_value" >
                                     <t t-raw="record.maintenance_open_count.raw_value"/> Request
+                                </div>
+                                <div class="oe_kanban_footer_left mt4 label label-default" t-if="record.maintenance_open_count.raw_value == 0 and record.next_action_date.raw_value" >
+                                    <t t-raw="moment(record.next_action_date.raw_value).format('MMMM Do')"/>
                                 </div>
                             </div>
                             <div class="oe_clear"></div>
@@ -651,11 +655,23 @@
         sequence="2"/>
 
     <menuitem
-        id="menu_equipment_form"
+        id="menu_equipment"
         name="Equipments"
         parent="menu_maintenance_title"
-        action="equipment_action"
         groups="base.group_equipment_manager,base.group_user"
+        sequence="2"/>
+
+    <menuitem id="menu_workcenter_tree"
+            action="mrp.mrp_workcenter_action"
+            groups="mrp.group_mrp_routings"
+            parent="menu_equipment"
+            sequence="1"/>
+
+    <menuitem
+        id="menu_equipment_form"
+        name="Machines &amp; Tools"
+        parent="menu_equipment"
+        action="equipment_action"
         sequence="2"/>
 
     <menuitem
