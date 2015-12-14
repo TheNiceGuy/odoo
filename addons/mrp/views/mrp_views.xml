@@ -10,7 +10,7 @@
             sequence="35"/>
 
         <menuitem id="menu_mrp_manufacturing"
-            name="To Dos"
+            name="Operations"
             parent="base.menu_mrp_root"
             sequence="10"/>
 
@@ -169,8 +169,8 @@
             <field name="model">mrp.workcenter</field>
             <field name="arch" type="xml">
                 <tree string="Work Center">
-                    <field name="code"/>
                     <field name="name"/>
+                    <field name="code"/>
                     <field name="resource_type"/>
                     <field name="company_id" groups="base.group_multi_company"/>
                 </tree>
@@ -297,7 +297,7 @@
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">mrp.production.workcenter.line</field>
             <field name="view_type">form</field>
-            <field name="view_mode">tree,form</field>
+            <field name="view_mode">tree,form,gantt,pivot,graph,calendar</field>
             <!--<field name="context">{'default_workcenter_id': }</field>-->
             <field name="domain">[('workcenter_id', '=', active_id), ('state', '!=', 'done')]</field>
             <field name="help" type="html">
@@ -423,8 +423,8 @@
         <menuitem id="menu_view_resource_search_mrp"
             action="mrp_workcenter_action"
             groups="group_mrp_routings"
-            parent="menu_mrp_configuration"
-            sequence="40"/>
+            parent="menu_mrp_bom"
+            sequence="100"/>
         <menuitem id="menu_mrp_dashboard"
             name="Dashboard"
             action="mrp_workcenter_kanban_action"
@@ -455,7 +455,6 @@
                                 <field name="name"/>
                             </group>
                             <group>
-                                <field name="active"/>
                                 <field name="location_id"/>
                                 <field name="company_id" options="{'no_create': True}" groups="base.group_multi_company"/>
                            </group>
@@ -546,6 +545,7 @@
                                 <field name="product_qty"/>
                                 <field name="product_uom_id" options="{'no_open':True,'no_create':True}" groups="product.group_uom"/>
                             </div>
+                            <field name="routing_id" groups="mrp.group_mrp_routings"/>
                         </group>
                         <group>
                             <field name="name"/>
@@ -570,8 +570,7 @@
                                     <field name="product_efficiency" groups="mrp.group_rounding_efficiency"/>
                                     <field name="attribute_value_ids" widget="many2many_tags" domain="[('product_ids.product_tmpl_id', '=', parent.product_tmpl_id)]" groups="product.group_product_variant"/>
                                     <field name="property_ids" widget="many2many_tags" groups="product.group_mrp_properties"/>
-                                    <field name="routing_id" invisible="1"/>
-                                    <field name="operation_id" groups="mrp.group_mrp_routings" attrs="{'invisible': [('routing_id', '=', False)]}"/>
+                                    <field name="operation_id" groups="mrp.group_mrp_routings" domain="[('routing_id', '=', parent.routing_id)]"/>
                                 </tree>
                             </field>
                         </page>
@@ -579,12 +578,15 @@
                             <group>
                                 <group>
                                     <field name="product_rounding"/>
-                                    <field name="product_efficiency"/>
+                                    <label for="product_efficiency"/>
+                                    <div>
+                                        <field name="product_efficiency"/> %
+                                    </div>
+                                    <field name="operation_id" domain="[('routing_id', '=', routing_id)]"/>
                                 </group>
                                 <group>
-                                    <field name="ready_to_produce"/>
+                                    <field name="ready_to_produce" string="Manufacturing Readiness"/>
                                     <field name="picking_type_id"/>
-                                    <field name="routing_id" groups="mrp.group_mrp_routings"/>
                                 </group>
                             </group>
                             <separator string="Properties" groups="product.group_mrp_properties"/>
@@ -729,7 +731,7 @@
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">mrp.production.workcenter.line</field>
             <field name="view_type">form</field>
-            <field name="view_mode">tree,form,gantt,calendar,graph</field>
+            <field name="view_mode">tree,form,gantt,calendar,pivot,graph</field>
             <field name="domain">[('production_id', '=', active_id)]</field>
             <field name="help" type="html">
               <p class="oe_view_nocontent_create">
@@ -1296,6 +1298,30 @@
         </field>
     </record>
 
+    <record id="workcenter_line_graph" model="ir.ui.view">
+        <field name="name">mrp.production.workcenter.line.graph</field>
+        <field name="model">mrp.production.workcenter.line</field>
+        <field name="arch" type="xml">
+            <graph string="Operations">
+                <field name="workcenter_id"/>
+                <field name="production_id"/>
+                <field name="qty" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="workcenter_line_pivot" model="ir.ui.view">
+        <field name="name">mrp.production.workcenter.line.pivot</field>
+        <field name="model">mrp.production.workcenter.line</field>
+        <field name="arch" type="xml">
+            <pivot string="Operations">
+                <field name="workcenter_id"/>
+                <field name="production_id"/>
+                <field name="qty" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
 
     <record id="workcenter_line_gantt_production" model="ir.ui.view">
         <field name="name">mrp.production.workcenter.line.gantt.production</field>
@@ -1360,7 +1386,7 @@
         <field name="type">ir.actions.act_window</field>
         <field name="res_model">mrp.production.workcenter.line</field>
         <field name="view_type">form</field>
-        <field name="view_mode">gantt,tree,form,calendar,graph</field>
+        <field name="view_mode">gantt,tree,form,calendar,pivot,graph</field>
         <field name="search_view_id" ref="view_mrp_production_workcenter_form_view_filter"/>
         <field name="view_id" ref="workcenter_line_gantt_workcenter"/>
         <field name="help" type="html">
@@ -1383,7 +1409,7 @@
         <field name="res_model">mrp.production.workcenter.line</field>
         <field name="view_type">form</field>
         <!--<field name="domain">[('production_state','in',('ready','confirmed','in_production'))]</field>-->
-        <field name="view_mode">gantt,tree,form,graph,calendar</field>
+        <field name="view_mode">gantt,tree,form,calendar,pivot,graph</field>
         <field name="view_id" ref="workcenter_line_gantt_production"/>
         <field name="help" type="html">
           <p class="oe_view_nocontent_create">
@@ -1403,7 +1429,7 @@
         <field name="type">ir.actions.act_window</field>
         <field name="res_model">mrp.production.workcenter.line</field>
         <field name="view_type">form</field>
-        <field name="view_mode">kanban,tree,form</field>
+        <field name="view_mode">kanban,tree,form,calendar,pivot,graph</field>
         <field name="search_view_id" ref="view_mrp_production_workcenter_form_view_filter"/>
         <field name="domain">[('state', 'in', ('draft', 'startworking', 'pending'))]</field>
         <field name="help" type="html">

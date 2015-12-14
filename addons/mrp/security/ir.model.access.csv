@@ -68,3 +68,4 @@ access_mrp_property_group_manager,mrp.property.group,model_mrp_property_group,st
 access_mrp_property_manager,mrp.property,model_mrp_property,stock.group_stock_manager,1,1,1,1
 access_mrp_property_group,mrp.property.group,model_mrp_property_group,base.group_user,1,0,0,0
 access_mrp_property,mrp.property,model_mrp_property,base.group_user,1,0,0,0
+access_mrp_production_workcenter_line_time_manager,mrp.production.workcenter.line.time manager,model_mrp_production_workcenter_line_time,mrp.group_mrp_manager,1,0,0,0

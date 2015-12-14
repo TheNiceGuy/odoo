@@ -163,6 +163,10 @@ class stock_config_settings(osv.osv_memory):
         'module_delivery_temando': fields.boolean("Temando integration"),
         'module_delivery_ups': fields.boolean("UPS integration"),
         'module_delivery_usps': fields.boolean("USPS integration"),
+        'module_mrp_plm': fields.selection([
+        (0, "No product lifecycle management"),
+        (1, "Manage engineering changes, versions and documents")
+        ], string="PLM"),
     }
 
     def onchange_adv_location(self, cr, uid, ids, group_stock_adv_location, context=None):

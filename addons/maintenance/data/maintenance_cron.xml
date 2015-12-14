@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding='UTF-8'?>
 <odoo>
-	<record model="ir.cron" id="account_asset_cron">
+	<record model="ir.cron" id="maintenance_requests_cron">
         <field name="name">Generate preventive maintenance requests</field>
         <field name="interval_number">1</field>
         <field name="interval_type">days</field>
