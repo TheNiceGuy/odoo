@@ -11,7 +11,7 @@ class MrpRouting(models.Model):
     _name = 'mrp.routing'
 
     _description = 'Routings'
-    name = fields.Char(required=True)
+    name = fields.Char(required=True, string="Routing Name")
     active = fields.Boolean(default=True, help="If the active field is set to False, it will allow you to hide the routing without removing it.")
     code = fields.Char('Reference', copy=False, readonly=True, default='New')
     note = fields.Text(string='Description')
@@ -40,7 +40,7 @@ class MrpRoutingWorkcenter(models.Model):
     _order = 'sequence, id'
 
     workcenter_id = fields.Many2one('mrp.workcenter', string='Work Center', required=True)
-    name = fields.Char(required=True)
+    name = fields.Char(required=True, string="Operation")
     sequence = fields.Integer(default=100, help="Gives the sequence order when displaying a list of routing Work Centers.")
     cycle_nbr = fields.Float(string='Number of Cycles', required=True, default=1.0, help="Number of iterations this work center has to do in the specified operation of the routing.")
     hour_nbr = fields.Float(string='Number of Hours', required=True, help="Time in hours for this Work Center to achieve the operation of the specified routing.")
