@@ -308,7 +308,7 @@
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">mrp.production.workcenter.line</field>
             <field name="view_type">form</field>
-            <field name="view_mode">tree,form</field>
+            <field name="view_mode">tree,form,gantt,pivot,graph,calendar</field>
             <!--<field name="context">{'default_workcenter_id': }</field>-->
             <field name="domain">[('workcenter_id', '=', active_id), ('state', '!=', 'done')]</field>
             <field name="help" type="html">
@@ -740,7 +740,7 @@
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">mrp.production.workcenter.line</field>
             <field name="view_type">form</field>
-            <field name="view_mode">tree,form,gantt,calendar,graph</field>
+            <field name="view_mode">tree,form,gantt,calendar,pivot,graph</field>
             <field name="domain">[('production_id', '=', active_id)]</field>
             <field name="help" type="html">
               <p class="oe_view_nocontent_create">
@@ -1288,6 +1288,30 @@
         </field>
     </record>
 
+    <record id="workcenter_line_graph" model="ir.ui.view">
+        <field name="name">mrp.production.workcenter.line.graph</field>
+        <field name="model">mrp.production.workcenter.line</field>
+        <field name="arch" type="xml">
+            <graph string="Operations">
+                <field name="workcenter_id"/>
+                <field name="production_id"/>
+                <field name="qty" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="workcenter_line_pivot" model="ir.ui.view">
+        <field name="name">mrp.production.workcenter.line.pivot</field>
+        <field name="model">mrp.production.workcenter.line</field>
+        <field name="arch" type="xml">
+            <pivot string="Operations">
+                <field name="workcenter_id"/>
+                <field name="production_id"/>
+                <field name="qty" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
 
     <record id="workcenter_line_gantt_production" model="ir.ui.view">
         <field name="name">mrp.production.workcenter.line.gantt.production</field>
@@ -1353,7 +1377,7 @@
         <field name="type">ir.actions.act_window</field>
         <field name="res_model">mrp.production.workcenter.line</field>
         <field name="view_type">form</field>
-        <field name="view_mode">gantt,tree,form,calendar,graph</field>
+        <field name="view_mode">gantt,tree,form,calendar,pivot,graph</field>
         <field name="search_view_id" ref="view_mrp_production_workcenter_form_view_filter"/>
         <field name="view_id" ref="workcenter_line_gantt_workcenter"/>
         <field name="help" type="html">
@@ -1376,7 +1400,7 @@
         <field name="res_model">mrp.production.workcenter.line</field>
         <field name="view_type">form</field>
         <!--<field name="domain">[('production_state','in',('ready','confirmed','in_production'))]</field>-->
-        <field name="view_mode">gantt,tree,form,graph,calendar</field>
+        <field name="view_mode">gantt,tree,form,calendar,pivot,graph</field>
         <field name="view_id" ref="workcenter_line_gantt_production"/>
         <field name="help" type="html">
           <p class="oe_view_nocontent_create">
@@ -1396,7 +1420,7 @@
         <field name="type">ir.actions.act_window</field>
         <field name="res_model">mrp.production.workcenter.line</field>
         <field name="view_type">form</field>
-        <field name="view_mode">kanban,tree,form</field>
+        <field name="view_mode">kanban,tree,form,calendar,pivot,graph</field>
         <field name="search_view_id" ref="view_mrp_production_workcenter_form_view_filter"/>
         <field name="domain">[('state', 'in', ('draft', 'startworking', 'pending'))]</field>
         <field name="help" type="html">
