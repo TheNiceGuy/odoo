@@ -423,8 +423,8 @@
         <menuitem id="menu_view_resource_search_mrp"
             action="mrp_workcenter_action"
             groups="group_mrp_routings"
-            parent="menu_mrp_configuration"
-            sequence="40"/>
+            parent="menu_mrp_bom"
+            sequence="100"/>
         <menuitem id="menu_mrp_dashboard"
             name="Dashboard"
             action="mrp_workcenter_kanban_action"
