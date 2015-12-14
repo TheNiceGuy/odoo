@@ -3,6 +3,8 @@
 from openerp import api, fields, models
 from openerp import _
 from openerp.exceptions import UserError
+from datetime import date, datetime, timedelta
+from openerp.tools.misc import DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_DATETIME_FORMAT
 
 
 class EquipmentStage(models.Model):
@@ -107,8 +109,8 @@ class Equipment(models.Model):
 
     name = fields.Char('Asset Name', required=True, translate=True)
     technician_user_id = fields.Many2one('res.users', string='Technician', track_visibility='onchange', oldname='user_id')
-    owner_user_id = fields.Many2one('res.users', string='Assigned to', track_visibility='onchange')
-    category_id = fields.Many2one('equipment.category', string='Asset Category', track_visibility='onchange')
+    owner_user_id = fields.Many2one('res.users', string='Owner', track_visibility='onchange')
+    category_id = fields.Many2one('maintenance.equipment.category', string='Asset Category', track_visibility='onchange')
     partner_id = fields.Many2one('res.partner', string='Vendor', domain="[('supplier', '=', 1)]")
     partner_ref = fields.Char('Vendor Reference')
     location = fields.Char('Location')
@@ -123,6 +125,21 @@ class Equipment(models.Model):
     maintenance_ids = fields.One2many('equipment.request', 'equipment_id')
     maintenance_count = fields.Integer(compute='_compute_maintenance_count', string="Maintenance", store=True)
     maintenance_open_count = fields.Integer(compute='_compute_maintenance_count', string="Current Maintenance", store=True)
+    period = fields.Integer('Days between each preventive maintenance')
+    next_action_date = fields.Date(compute='_compute_next_maintenance', string='Date of the next preventive maintenance', store=True)
+    maintenance_team_id = fields.Many2one('maintenance.team', string='Maintenance Team')
+    maintenance_duration = fields.Float(help="Maintenance Duration in minutes and seconds.")
+
+    @api.depends('period', 'maintenance_open_count', 'maintenance_ids.request_date')
+    def _compute_next_maintenance(self):
+        for equipment in self:
+            create_date = equipment.create_date and datetime.strptime(equipment.create_date, DEFAULT_SERVER_DATETIME_FORMAT)
+            if equipment.period:
+                next_date = create_date
+                if equipment.maintenance_ids:
+                    maintenance = equipment.maintenance_ids.sorted(lambda x: x.request_date)[0]
+                    next_date = maintenance.request_date and datetime.strptime(maintenance.request_date, DEFAULT_SERVER_DATE_FORMAT) or create_date
+                equipment.next_action_date = next_date and (next_date + timedelta(days=equipment.period)).strftime(DEFAULT_SERVER_DATE_FORMAT)
 
     @api.one
     @api.depends('maintenance_ids.stage_id.done')
@@ -173,6 +190,18 @@ class Equipment(models.Model):
             fold[category.id] = category.fold
         return result, fold
 
+    @api.model
+    def _cron_generate_requests(self):
+        for equipment in self.search([]):
+            if equipment.period and equipment.next_action_date == date.today().strftime(DEFAULT_SERVER_DATE_FORMAT):
+                self.env['maintenance.request'].create({
+                    'name': _('Preventive Maintenance - %s' % equipment.next_action_date),
+                    'request_date': equipment.next_action_date,
+                    'category_id': equipment.category_id.id,
+                    'equipment_id': equipment.id,
+                    'maintenance_type': 'preventive',
+                })
+
     _group_by_full = {
         'category_id': _read_group_category_ids
     }
@@ -199,17 +228,21 @@ class EquipmentRequest(models.Model):
     name = fields.Char('Subjects', required=True)
     description = fields.Text('Description')
     request_date = fields.Date('Request Date', track_visibility='onchange', default=fields.Date.context_today)
-    category_id = fields.Many2one('equipment.category', string='Category')
-    equipment_id = fields.Many2one('equipment', string='Asset', select=True)
-    from_user_id = fields.Many2one('res.users', string='Created by', default=lambda s: s.env.uid)
-    technician_user_id = fields.Many2one('res.users', string='Assigned to', track_visibility='onchange', oldname='user_id')
-    stage_id = fields.Many2one('equipment.stage', string='Stage', track_visibility='onchange', default=_default_stage)
+    equipment_id = fields.Many2one('maintenance.equipment', string='Asset', select=True)
+    category_id = fields.Many2one('maintenance.equipment.category', related='equipment_id.category_id', string='Category', store=True, readonly=True)
+    owner_user_id = fields.Many2one('res.users', string='Created by', default=lambda s: s.env.uid, oldname="from_user_id")
+    technician_user_id = fields.Many2one('res.users', string='Owner', track_visibility='onchange', oldname='user_id')
+    stage_id = fields.Many2one('maintenance.stage', string='Stage', track_visibility='onchange', default=_default_stage)
     priority = fields.Selection([('0', 'Very Low'), ('1', 'Low'), ('2', 'Normal'), ('3', 'High')], string='Priority')
     color = fields.Integer('Color Index')
     close_date = fields.Date('Close Date')
     kanban_state = fields.Selection([('normal', 'In Progress'), ('blocked', 'Blocked'), ('done', 'Ready for next stage')],
                                     string='Kanban State', required=True, default='normal', track_visibility='onchange')
-    active = fields.Boolean(default=True, help="Set active to false to hide the maintenance request without deleting it.")
+    archive = fields.Boolean(default=False, help="Set archive to true to hide the maintenance request without deleting it.")
+    maintenance_type = fields.Selection([('corrective', 'Corrective'), ('preventive', 'Preventive')], string='Maintenance Type', default="corrective")
+    schedule_date = fields.Datetime('Schedule Date')
+    maintenance_team_id = fields.Many2one('maintenance.team', string='Maintenance Team', required=True)
+    duration = fields.Float(help="Duration in minutes and seconds.")
 
     @api.multi
     def archive_equipment_request(self):
@@ -221,18 +254,21 @@ class EquipmentRequest(models.Model):
         first_stage_obj = self.env['equipment.stage'].search([], order="sequence asc", limit=1)
         self.write({'active': True, 'stage_id': first_stage_obj.id})
 
-    @api.onchange('from_user_id')
-    def onchange_department_or_employee_id(self):
-        domain = [('owner_user_id', '=', self.from_user_id.id)]
-        equipment = self.env['hr.equipment'].search(domain, limit=2)
-        if len(equipment) == 1:
-            self.equipment_id = equipment
-        return {'domain': {'equipment_id': domain}}
+    # @api.onchange('owner_user_id')
+    # def onchange_department_or_employee_id(self):
+    #     domain = [('owner_user_id', '=', self.owner_user_id.id)]
+    #     equipment = self.env['maintenance.equipment'].search(domain, limit=2)
+    #     if len(equipment) == 1:
+    #         self.equipment_id = equipment
+    #     return {'domain': {'equipment_id': domain}}
 
     @api.onchange('equipment_id')
     def onchange_equipment_id(self):
-        self.technician_user_id = self.equipment_id.technician_user_id if self.equipment_id.technician_user_id else self.equipment_id.category_id.technician_user_id
-        self.category_id = self.equipment_id.category_id
+        if self.equipment_id:
+            self.technician_user_id = self.equipment_id.technician_user_id if self.equipment_id.technician_user_id else self.equipment_id.category_id.technician_user_id
+            self.category_id = self.equipment_id.category_id
+            if self.equipment_id.maintenance_team_id:
+                self.maintenance_team_id = self.equipment_id.maintenance_team_id.id
 
     @api.onchange('category_id')
     def onchange_category_id(self):
@@ -243,9 +279,11 @@ class EquipmentRequest(models.Model):
     def create(self, vals):
         # context: no_log, because subtype already handle this
         self = self.with_context(mail_create_nolog=True)
-        result = super(EquipmentRequest, self).create(vals)
-        if result.from_user_id:
-            result.message_subscribe_users(user_ids=[result.from_user_id.id])
+        result = super(MaintenanceRequest, self).create(vals)
+        if result.owner_user_id:
+            result.message_subscribe_users(user_ids=[result.owner_user_id.id])
+        if result.equipment_id and not result.maintenance_team_id:
+            result.maintenance_team_id = result.equipment_id.maintenance_team_id
         return result
 
     @api.multi
@@ -254,9 +292,9 @@ class EquipmentRequest(models.Model):
         # the stage (stage_id) of the Maintenance Request changes.
         if vals and 'kanban_state' not in vals and 'stage_id' in vals:
             vals['kanban_state'] = 'normal'
-        if 'from_user_id' in vals:
-            self.message_subscribe_users(user_ids=[vals['from_user_id']])
-        return super(EquipmentRequest, self).write(vals)
+        if 'owner_user_id' in vals:
+            self.message_subscribe_users(user_ids=[vals['owner_user_id']])
+        return super(MaintenanceRequest, self).write(vals)
 
     @api.multi
     def _read_group_stage_ids(self, domain, read_group_order=None, access_rights_uid=None):

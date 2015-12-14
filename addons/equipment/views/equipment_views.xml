@@ -11,17 +11,17 @@
                 <field name="category_id"/>
                 <field name="technician_user_id"/>
                 <field name="equipment_id"/>
-                <field name="from_user_id"/>
+                <field name="owner_user_id"/>
                 <field name="stage_id"/>
                 <separator/>
-                <filter string="My Requests" domain="[('from_user_id', '=', uid)]" class="o_equipment_request_my_requests_filter"/>
+                <filter string="My Requests" domain="[('owner_user_id', '=', uid)]" class="o_equipment_request_my_requests_filter"/>
                 <separator/>
                 <filter string="Unread Messages" name="message_needaction" domain="[('message_needaction','=',True)]"/>
                 <group  expand='0' string='Group by...'>
                     <filter string='Assigned' domain="[]" context="{'group_by': 'technician_user_id'}"/>
                     <filter string='Category' domain="[]" context="{'group_by' : 'category_id'}"/>
                     <filter string='Stages' domain="[]" context="{'group_by' : 'stage_id'}"/>
-                    <filter string='Created by' domain="[]" context="{'group_by' : 'from_user_id'}" class="o_equipment_request_created_by_filter"/>
+                    <filter string='Created by' domain="[]" context="{'group_by' : 'owner_user_id'}" class="o_equipment_request_created_by_filter"/>
                 </group>
             </search>
         </field>
@@ -49,16 +49,23 @@
                     </div>
                     <group>
                         <group>
-                            <field name="from_user_id" string="Sender"/>
-                            <field name="equipment_id"  context="{'default_category_id':category_id}"/>
+                            <field name="owner_user_id" string="Requested by"/>
+                            <field name="equipment_id"  context="{'default_category_id':category_id}" string="Equipment"/>
                             <field name="category_id" groups="base.group_equipment_manager"/>
                             <field name="request_date" groups="base.group_no_one"/>
                             <field name="close_date" groups="base.group_no_one"/>
                             <field name="active" invisible="1"/>
                         </group>
                         <group>
+                            <field name="maintenance_team_id"/>
+                            <field name="maintenance_type"/>
                             <field name="technician_user_id" string="Repair Responsible"/>
                             <field name="priority" widget="priority"/>
+                            <field name="schedule_date"/>
+                            <label for="duration"/>
+                            <div>
+                                <field name="duration" class="oe_inline"/> hours
+                            </div>
                         </group>
                     </group>
                     <field name='description' placeholder="Internal Note ......."/>
@@ -106,7 +113,7 @@
                             <div class="oe_kanban_content" tooltip="kanban-tooltip">
                                 <div>
                                     <b><field name="name"/></b> <br/>
-                                    <span t-if="record.from_user_id.raw_value"><field name="from_user_id"/><br/></span>
+                                    <span t-if="record.owner_user_id.raw_value"><field name="owner_user_id"/><br/></span>
                                     <span class="oe_grey" t-if="record.equipment_id.raw_value"><field name="equipment_id"/><br/></span>
                                 </div>
                                 <div class="oe_kanban_footer_left" style="margin-top:2px;">
@@ -140,18 +147,52 @@
                 <field name="name"/>
                 <field name="request_date" groups="base.group_no_one"/>
                 <field name="technician_user_id"/>
-                <field name="from_user_id"/>
+                <field name="owner_user_id"/>
                 <field name="category_id" groups="base.group_equipment_manager"/>
                 <field name="stage_id"/>
             </tree>
         </field>
     </record>
 
+    <record id="equipment_request_view_graph" model="ir.ui.view">
+        <field name="name">equipment.request.graph</field>
+        <field name="model">maintenance.request</field>
+        <field name="arch" type="xml">
+            <graph string="maintenance Request">
+                <field name="technician_user_id"/>
+                <field name="stage_id"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="equipment_request_view_pivot" model="ir.ui.view">
+        <field name="name">equipment.request.pivot</field>
+        <field name="model">maintenance.request</field>
+        <field name="arch" type="xml">
+            <pivot string="maintenance Request">
+                <field name="technician_user_id"/>
+                <field name="stage_id"/>
+            </pivot>
+        </field>
+    </record>
+
+
+    <record id="equipment_view_calendar" model="ir.ui.view">
+        <field name="name">equipment.request.calendar</field>
+        <field name="model">maintenance.request</field>
+        <field name="arch" type="xml">
+            <calendar date_start="schedule_date" color="technician_user_id">
+                <field name="name"/>
+                <field name="technician_user_id"/>
+            </calendar>
+        </field>
+    </record>
+
     <!-- equiment.request : actions -->
     <record id="equipment_request_action" model="ir.actions.act_window">
         <field name="name">Maintenance Requests</field>
-        <field name="res_model">equipment.request</field>
-        <field name="view_mode">kanban,tree,form</field>
+        <field name="res_model">maintenance.request</field>
+        <field name="view_mode">kanban,tree,form,pivot,graph,calendar</field>
         <field name="view_id" ref="equipment_request_view_kanban"/>
         <field name="help" type="html">
             <p class="oe_view_nocontent_create">
@@ -164,8 +205,8 @@
 
     <record id="equipment_request_action_link" model="ir.actions.act_window">
         <field name="name">Maintenance Requests</field>
-        <field name="res_model">equipment.request</field>
-        <field name="view_mode">kanban,tree,form</field>
+        <field name="res_model">maintenance.request</field>
+        <field name="view_mode">kanban,tree,form,pivot,graph,calendar</field>
         <field name="search_view_id" ref="equipment_request_view_search"/>
         <field name="view_id" ref="equipment_request_view_kanban"/>
         <field name="context">{
@@ -183,13 +224,31 @@
 
     <record id="equipment_request_action_from_equipment" model="ir.actions.act_window">
         <field name="name">Maintenance Requests</field>
-        <field name="res_model">equipment.request</field>
-        <field name="src_model">equipment</field>
-        <field name="view_mode">kanban,tree,form</field>
+        <field name="res_model">maintenance.request</field>
+        <field name="src_model">maintenance.equipment</field>
+        <field name="view_mode">kanban,tree,form,pivot,graph,calendar</field>
         <field name="context">{
             'default_equipment_id': active_id,
         }</field>
         <field name="domain">[('equipment_id', '=', active_id)]</field>
+    </record>
+
+    <record id="equipment_todo_request_action_from_dashboard" model="ir.actions.act_window">
+        <field name="name">Maintenance Requests</field>
+        <field name="res_model">maintenance.request</field>
+        <field name="view_mode">kanban,tree,form,pivot,graph,calendar</field>
+        <field name="context">{
+            'default_maintenance_team_id': active_id,
+            'search_default_todo': 1,
+        }</field>
+        <field name="domain">[('maintenance_team_id', '=', active_id), ('maintenance_type', '=', context.get('maintenance_type'))]</field>
+    </record>
+
+    <record id="equipment_request_action_cal" model="ir.actions.act_window">
+        <field name="name">Maintenance Requests</field>
+        <field name="res_model">maintenance.request</field>
+        <field name="view_mode">calendar,tree,form,pivot,graph</field>
+        <field name="view_id" ref="equipment_view_calendar"/>
     </record>
 
     <!-- equiment : views -->
@@ -210,16 +269,15 @@
                     <div class="oe_title">
                         <label for="name" class="oe_edit_only"/>
                         <h1><field name="name" string="Name" placeholder="Equipment Name"/></h1>
-                        <label for="category_id" class="oe_edit_only"/>
-                        <field name="category_id" options="{&quot;no_open&quot;: True}"/>
-                        <label for="serial_no" class="oe_edit_only"/>
-                        <field name="serial_no"/>
                     </div>
                     <group>
                         <group>
+                            <field name="category_id" options="{&quot;no_open&quot;: True}"/>
                             <field name="owner_user_id"/>
+                            <field name="location" string="Used in location"/>
                         </group>
                         <group>
+                            <field name="maintenance_team_id"/>
                             <field name="technician_user_id"/>
                             <field name="assign_date" groups="base.group_no_one"/>
                             <field name="scrap_date" groups="base.group_no_one"/>
@@ -235,10 +293,25 @@
                                     <field name="partner_id"/>
                                     <field name="partner_ref"/>
                                     <field name="model"/>
+                                    <field name="serial_no"/>
                                 </group><group>
                                     <field name="cost" groups="base.group_equipment_manager"/>
                                     <field name="warranty"/>
-                                    <field name="location"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Maintenance">
+                            <group>
+                                <group name="maintenance">
+                                    <field name="next_action_date" class="oe_read_only" string="Next Preventive Maintenance"/>
+                                    <label for="period" string="Preventive Maintenance Frequency"/>
+                                    <div>
+                                        <field name="period"/> days
+                                    </div>
+                                    <label for="maintenance_duration" string="Maintenance Duration"/>
+                                    <div>
+                                        <field name="maintenance_duration"/> hours
+                                    </div>
                                 </group>
                             </group>
                         </page>
@@ -259,12 +332,13 @@
             <kanban default_group_by="category_id">
                 <field name="name"/>
                 <field name="color"/>
-                <field name="technician_user_id"/>
                 <field name="category_id"/>
                 <field name="serial_no"/>
                 <field name="model"/>
                 <field name="maintenance_ids"/>
                 <field name="maintenance_open_count"/>
+                <field name="next_action_date"/>
+                <field name="technician_user_id"/>
                 <templates>
                     <t t-name="kanban-tooltip">
                         <ul class="oe_kanban_tooltip">
@@ -289,14 +363,15 @@
                                 <div><b><field name="name"/><span t-if="record.model.raw_value"> (<field name="model"/>)</span></b></div>
                                 <div class="mt4">
                                     <div t-if="record.serial_no.raw_value"><field name="serial_no"/></div>
-                                    <div class="o_equipment_unassigned" t-if="!record.owner_user_id.raw_value">Unassigned</div>
-                                    <div t-if="record.owner_user_id.raw_value"><field name="owner_user_id"/></div>
                                 </div>
                                 <div class="oe_kanban_bottom_right">
-                                    <img t-att-src="kanban_image('res.users', 'image_small', record.owner_user_id.raw_value)" t-att-title="record.owner_user_id.value" width="27" height="27" class="oe_kanban_avatar"/>
+                                    <img t-att-src="kanban_image('res.users', 'image_small', record.technician_user_id.raw_value)" t-att-title="record.technician_user_id.value" width="27" height="27" class="oe_kanban_avatar"/>
                                 </div>
                                 <div class="oe_kanban_footer_left mt4 label label-danger" t-if="record.maintenance_open_count.raw_value" >
                                     <t t-raw="record.maintenance_open_count.raw_value"/> Request
+                                </div>
+                                <div class="oe_kanban_footer_left mt4 label label-default" t-if="record.maintenance_open_count.raw_value == 0 and record.next_action_date.raw_value" >
+                                    <t t-raw="moment(record.next_action_date.raw_value).format('MMMM Do')"/>
                                 </div>
                             </div>
                             <div class="oe_clear"></div>
@@ -314,7 +389,7 @@
             <tree string="Assign To User"  decoration-bf="message_needaction==True">
                 <field name="message_needaction" invisible="1"/>
                 <field name="name"/>
-                <field name="owner_user_id" string="Owner"/>
+                <field name="owner_user_id"/>
                 <field name="assign_date" groups="base.group_no_one"/>
                 <field name="serial_no"/>
                 <field name="technician_user_id"/>

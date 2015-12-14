@@ -78,6 +78,15 @@
     </record>
     <record id="equipment_printer" model="equipment.category">
         <field name="name">Printers</field>
+        <field name="alias_id" ref="mail_alias_equipment"/>
+    </record>
+
+    <record id="equipment_team_maintenance" model="maintenance.team">
+        <field name="name">Internal Maintenance</field>
+    </record>
+
+    <record id="equipment_team_metrology" model="maintenance.team">
+        <field name="name">Metrology</field>
     </record>
 
 </data>

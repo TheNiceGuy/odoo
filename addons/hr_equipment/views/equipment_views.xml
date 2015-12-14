@@ -7,7 +7,7 @@
         <field name="model">equipment.request</field>
         <field name="inherit_id" ref="equipment.equipment_request_view_search"/>
         <field name="arch" type="xml">
-            <xpath expr="field[@name='from_user_id']" position="replace">
+            <xpath expr="field[@name='owner_user_id']" position="replace">
                 <field name="employee_id"/>
             </xpath>
             <xpath expr="//filter[@class='o_equipment_request_my_requests_filter']" position="replace">
@@ -24,7 +24,7 @@
         <field name="model">equipment.request</field>
         <field name="inherit_id" ref="equipment.equipment_request_view_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='from_user_id']" position="replace">
+            <xpath expr="//field[@name='owner_user_id']" position="replace">
                 <field name="employee_id" string="Sender"/>
             </xpath>
         </field>
@@ -35,7 +35,7 @@
         <field name="model">equipment.request</field>
         <field name="inherit_id" ref="equipment.equipment_request_view_kanban"/>
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='from_user_id']/.." position="replace">
+            <xpath expr="//field[@name='owner_user_id']/.." position="replace">
                 <span t-if="record.employee_id.raw_value"><field name="employee_id"/><br/></span>
                 <span t-if="record.department_id.raw_value"><field name="department_id"/><br/></span>
             </xpath>
@@ -47,7 +47,7 @@
         <field name="model">equipment.request</field>
         <field name="inherit_id" ref="equipment.equipment_request_view_tree"/>
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='from_user_id']" position="replace">
+            <xpath expr="//field[@name='owner_user_id']" position="replace">
                 <field name="employee_id"/>
             </xpath>
         </field>
@@ -72,14 +72,11 @@
         <field name="model">equipment</field>
         <field name="inherit_id" ref="equipment.equipment_view_kanban"/>
         <field name="arch" type="xml">
-            <xpath expr="//div[@class='o_equipment_unassigned']" position="attributes">
-                <attribute name='t-if'>record.employee_id.raw_value and !record.department_id.raw_value</attribute>
+            <xpath expr="//field[@name='technician_user_id']" position="replace">
+                <field name="employee_id"/>
+                <field name="department_id"/>
             </xpath>
-            <xpath expr="//field[@name='owner_user_id']/.." position="replace">
-                <div t-if="record.employee_id.raw_value"><field name="employee_id"/></div>
-                <div t-if="record.department_id.raw_value"><field name="department_id"/></div>
-            </xpath>
-            <xpath expr="//img[@t-att-title='record.owner_user_id.value']" position='replace'>
+            <xpath expr="//img[@t-att-title='record.technician_user_id.value']" position='replace'>
                 <img t-att-src="kanban_image('hr.employee', 'image_small', record.employee_id.raw_value)" t-att-title="record.employee_id.value" width="27" height="27" class="oe_kanban_avatar"/>
             </xpath>
         </field>

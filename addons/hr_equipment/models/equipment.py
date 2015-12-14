@@ -55,7 +55,14 @@ class HrEquipmentRequest(models.Model):
 
     employee_id = fields.Many2one('hr.employee', string='Employee', default=_default_employee_get)
     department_id = fields.Many2one('hr.department', string='Department')
-    from_user_id = fields.Many2one(compute='_compute_from')
+    owner_user_id = fields.Many2one(compute='_compute_owner', store=True)
+
+    @api.depends('employee_id', 'department_id')
+    def _compute_owner(self):
+        if self.equipment_id.equipment_assign_to == 'employee':
+            self.owner_user_id = self.employee_id.user_id.id
+        elif self.equipment_id.equipment_assign_to == 'department':
+            self.owner_user_id = self.department_id.manager_id.user_id.id
 
     @api.onchange('employee_id', 'department_id')
     def onchange_department_or_employee_id(self):
