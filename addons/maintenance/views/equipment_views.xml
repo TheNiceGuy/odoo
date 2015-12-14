@@ -244,18 +244,16 @@
                     <div class="oe_title">
                         <label for="name" class="oe_edit_only"/>
                         <h1><field name="name" string="Name" placeholder="Equipment Name"/></h1>
-                        <label for="category_id" class="oe_edit_only"/>
-                        <field name="category_id" options="{&quot;no_open&quot;: True}"/>
-                        <label for="serial_no" class="oe_edit_only"/>
-                        <field name="serial_no"/>
                     </div>
                     <group>
                         <group>
+                            <field name="category_id" options="{&quot;no_open&quot;: True}"/>
                             <field name="owner_user_id"/>
+                            <field name="location" string="Used in location"/>
                         </group>
                         <group>
-                            <field name="technician_user_id"/>
                             <field name="maintenance_team_id"/>
+                            <field name="technician_user_id"/>
                             <field name="assign_date" groups="base.group_no_one"/>
                             <field name="scrap_date" groups="base.group_no_one"/>
                         </group>
@@ -270,10 +268,10 @@
                                     <field name="partner_id"/>
                                     <field name="partner_ref"/>
                                     <field name="model"/>
+                                    <field name="serial_no"/>
                                 </group><group>
                                     <field name="cost" groups="base.group_equipment_manager"/>
                                     <field name="warranty"/>
-                                    <field name="location"/>
                                 </group>
                             </group>
                         </page>
