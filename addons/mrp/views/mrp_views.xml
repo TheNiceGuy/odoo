@@ -169,8 +169,8 @@
             <field name="model">mrp.workcenter</field>
             <field name="arch" type="xml">
                 <tree string="Work Center">
-                    <field name="code"/>
                     <field name="name"/>
+                    <field name="code"/>
                     <field name="resource_type"/>
                     <field name="company_id" groups="base.group_multi_company"/>
                 </tree>
