@@ -57,7 +57,6 @@ class TestEquipment(TransactionCase):
             'technician_user_id': self.user.id,
             'from_user_id': self.user.id,
             'equipment_id': equipment_01.id,
-            'category_id': self.ref('maintenance.equipment_monitor'),
             'color': 7,
             'stage_id': self.ref('maintenance.stage_0')
         })

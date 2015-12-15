@@ -224,8 +224,8 @@ class MaintenanceRequest(models.Model):
     name = fields.Char('Subjects', required=True)
     description = fields.Text('Description')
     request_date = fields.Date('Request Date', track_visibility='onchange', default=fields.Date.context_today)
-    category_id = fields.Many2one('maintenance.equipment.category', string='Category')
     equipment_id = fields.Many2one('maintenance.equipment', string='Asset', select=True)
+    category_id = fields.Many2one('maintenance.equipment.category', related='equipment_id.category_id', string='Category Related', store=True)
     from_user_id = fields.Many2one('res.users', string='Created by', default=lambda s: s.env.uid)
     technician_user_id = fields.Many2one('res.users', string='Assigned to', track_visibility='onchange', oldname='user_id')
     stage_id = fields.Many2one('maintenance.stage', string='Stage', track_visibility='onchange', default=_default_stage)
@@ -237,6 +237,7 @@ class MaintenanceRequest(models.Model):
     archive = fields.Boolean(default=False, help="Set archive to true to hide the maintenance request without deleting it.")
     maintenance_type = fields.Selection([('corrective', 'corrective'), ('preventive', 'preventive')], string='Maintenance Type')
     maintenance_team_id = fields.Many2one('maintenance.team', string='Maintenance Team')
+    duration = fields.Float(help="Duration in minutes and seconds.")
 
     @api.multi
     def archive_equipment_request(self):
