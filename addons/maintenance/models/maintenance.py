@@ -235,7 +235,7 @@ class MaintenanceRequest(models.Model):
     kanban_state = fields.Selection([('normal', 'In Progress'), ('blocked', 'Blocked'), ('done', 'Ready for next stage')],
                                     string='Kanban State', required=True, default='normal', track_visibility='onchange')
     archive = fields.Boolean(default=False, help="Set archive to true to hide the maintenance request without deleting it.")
-    maintenance_type = fields.Selection([('corrective', 'corrective'), ('preventive', 'preventive')], string='Maintenance Type')
+    maintenance_type = fields.Selection([('corrective', 'corrective'), ('preventive', 'preventive')], string='Maintenance Type', default="corrective")
     maintenance_team_id = fields.Many2one('maintenance.team', string='Maintenance Team')
     duration = fields.Float(help="Duration in minutes and seconds.")
 
