@@ -128,6 +128,7 @@ class MaintenanceEquipment(models.Model):
     period = fields.Integer('Days between each preventive maintenance')
     next_action_date = fields.Datetime('Date of the next preventive maintenance')
     maintenance_team_id = fields.Many2one('maintenance.team', string='Maintenance Team')
+    maintenance_duration = fields.Float(help="Maintenance Duration in minutes and seconds.")
 
     @api.one
     @api.depends('maintenance_ids.stage_id.done')
