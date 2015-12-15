@@ -634,9 +634,23 @@ class MrpProductionWorkcenterLine(models.Model):
     _order = 'sequence'
     _inherit = ['mail.thread']
 
+    @api.multi
+    @api.depends('time_ids')
+    def _compute_started(self):
+        for workorder in self:
+            running = [x.date_start for x in workorder.time_ids if x.state == 'running']
+            if running:
+                workorder.started_since = running[0]
+
+    @api.multi
+    @api.depends('time_ids')
+    def _compute_delay(self):
+        for workorder in self:
+            workorder.delay = sum([x.duration for x in workorder.time_ids if x.state == "done"])
+
     name = fields.Char(string='Work Order', required=True)
     workcenter_id = fields.Many2one('mrp.workcenter', string='Work Center', required=True)
-    hour = fields.Float(string='Number of Hours', digits=(16, 2))
+    hour = fields.Float(string='Expected Duration', digits=(16, 2))
     sequence = fields.Integer(required=True, default=1, help="Gives the sequence order when displaying a list of work orders.")
     production_id = fields.Many2one('mrp.production', string='Manufacturing Order', track_visibility='onchange', index=True, ondelete='cascade', required=True)
     state = fields.Selection([('confirmed', 'Confirmed'), ('planned', 'Planned'), ('cancel', 'Cancelled'), ('pause', 'Pending'), ('progress', 'In Progress'), ('done', 'Finished')], default='confirmed')
@@ -644,15 +658,16 @@ class MrpProductionWorkcenterLine(models.Model):
     date_planned_end = fields.Datetime('Scheduled Date Finished')
     date_start = fields.Datetime('Effective Start Date')
     date_finished = fields.Datetime('Effective End Date')
-    delay = fields.Float('Working Hours', readonly=True)
+    delay = fields.Float('Real Duration', compute='_compute_delay', readonly=True)
     operation_id = fields.Many2one('mrp.routing.workcenter', 'Operation') #Should be used differently as BoM can change in the meantime
     consume_line_ids = fields.Many2one('mrp.production.consume.line', 'workorder_id')
     production_state = fields.Selection(related='production_id.state', readonly=True)
     product = fields.Many2one('product.product', related='production_id.product_id', string="Product", readonly=True)
     qty = fields.Float(related='production_id.product_qty', string='Qty', readonly=True, store=True) #store really needed?
     uom = fields.Many2one('product.uom', related='production_id.product_uom_id', string='Unit of Measure')
+    started_since = fields.Datetime('Started Since', compute='_compute_started')
+    time_ids = fields.One2many('mrp.production.workcenter.line.time', 'workorder_id')
     
-
     @api.multi
     def button_draft(self):
         self.write({'state': 'confirmed'})
@@ -663,18 +678,41 @@ class MrpProductionWorkcenterLine(models.Model):
 
     @api.multi
     def button_start(self):
+        timeline = self.env['mrp.production.workcenter.line.time']
         for workorder in self:
             if workorder.production_id.state != 'progress':
                 workorder.production_id.state = 'progress'
+            timeline.create({'workorder_id': workorder.id,
+                             'state': 'running',
+                             'date_start': datetime.now(),
+                             'user_id': self.env.user.id})
         self.write({'state': 'progress',
-                    'date_start': datetime.now()})
+                    'date_start': datetime.now(),
+                    })
         
     @api.multi
+    def end_previous(self):
+        timeline_obj = self.env['mrp.production.workcenter.line.time']
+        for workorder in self:
+            timeline = timeline_obj.search([('workorder_id', '=', workorder.id), ('state', '=', 'running')], limit=1)
+            timed = datetime.now() - fields.Datetime.from_string(timeline.date_start)
+            hours = timed.total_seconds() / 3600.0
+            timeline.write({'state': 'done',
+                            'duration': hours})
+
+    @api.multi
     def button_resume(self):
+        timeline_obj = self.env['mrp.production.workcenter.line.time']
+        for workorder in self:
+            timeline = timeline_obj.create({'workorder_id': workorder.id,
+                                            'state': 'running',
+                                            'date_start': datetime.now(),
+                                            'user_id': self.env.user.id})
         self.write({'state':'progress'})
 
     @api.multi
     def button_pause(self):
+        self.end_previous()
         self.write({'state': 'pause'})
 
     @api.multi
@@ -683,8 +721,20 @@ class MrpProductionWorkcenterLine(models.Model):
 
     @api.multi
     def button_done(self):
+        self.end_previous()
         self.write({'state': 'done',
                     'date_finished': datetime.now()})
+
+
+class MrpProductionWorkcenterLineTime(models.Model):
+    _name='mrp.production.workcenter.line.time'
+    _description = 'Work Order Timesheet Line'
+    
+    workorder_id = fields.Many2one('mrp.production.workcenter.line', 'Work Order')
+    date_start = fields.Datetime('Start Date')
+    duration = fields.Float('Duration')
+    user_id = fields.Many2one('res.users', string="User")
+    state = fields.Selection([('running', 'Running'), ('done', 'Done')], string="Status", default="running")
 
 
 class MrpProductionConsumeLine(models.Model):
