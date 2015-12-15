@@ -278,14 +278,6 @@ class MrpProduction(models.Model):
         return dt_end
 
     @api.multi
-    def action_compute(self, properties=None):
-        """ Computes bills of material of a product.
-        :param properties: List containing dictionaries of properties.
-        :return: No. of products.
-        """
-        return len(self._action_compute_lines(properties=properties))
-
-    @api.multi
     def action_cancel(self):
         """ Cancels the production order and related stock moves.
         :return: True
