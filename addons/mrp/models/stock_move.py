@@ -42,7 +42,7 @@ class StockMove(models.Model):
                         'picking_id': self.picking_id.id if self.picking_id else False,
                         'product_id': line['product_id'],
                         'product_uom': line['product_uom_id'],
-                        'product_uom_qty': line['product_qty'],
+                        'product_uom_qty': line['product_uom_qty'],
                         'state': 'draft',  # will be confirmed below
                         'name': line['name'],
                         'procurement_id': self.procurement_id.id,
@@ -58,7 +58,7 @@ class StockMove(models.Model):
                             'company_id': self.company_id and self.company_id.id or False,
                             'date_planned': self.date,
                             'product_id': line['product_id'],
-                            'product_qty': line['product_qty'],
+                            'product_qty': line['product_uom_qty'],
                             'product_uom_id': line['product_uom_id'],
                             'group_id': self.group_id.id,
                             'priority': self.priority,
