@@ -22,10 +22,22 @@ class MrpConfigSettings(models.TransientModel):
              'Without this module: A + B + C -> D.\n'
              'With this module: A + B + C -> D + E.\n'
              '-This installs the module mrp_byproduct.')
+    module_mrp_plm = fields.Selection([
+        (0, "No product lifecycle management"),
+        (1, "Manage engineering changes, versions and documents")
+        ], string="PLM")
+    module_mrp_maintenance = fields.Selection([
+        (0, "No maintenance machine and work centers"),
+        (1, "Preventive and Corrective maintenance management")
+        ], string="Maintenance")
+    module_quality_mrp = fields.Selection([
+        (0, "No quality control"),
+        (1, "Manage quality control points, checks and measures")
+        ], string="Quality")
     group_mrp_routings = fields.Selection([
         (0, "Manage production by manufacturing orders"),
         (1, "Manage production by work orders")
-        ], "Routings",
+        ], "Routings & Planning",
         implied_group='mrp.group_mrp_routings',
         help='Work Order Operations allow you to create and manage the manufacturing operations that should be followed '
              'within your work centers in order to produce a product. They are attached to bills of materials '
