@@ -39,9 +39,10 @@ class MrpBom(models.Model):
     ready_to_produce = fields.Selection([('all_available', 'All components'), ('asap', 'The components of 1st operation')], string='Ready when are available', required=True, default='asap',)
     product_rounding = fields.Float(string='Product Rounding', help="Rounding applied on the product quantity.")
     picking_type_id = fields.Many2one('stock.picking.type', string='Picking Type', domain=[('code', '=', 'manufacturing')], help="When a procurement has a ‘produce’ route with a picking type set, it will try to create a Manufacturing Order for that product using a BOM of the same picking type. That allows to define pull rules for products with different routing (different BOMs)")
-    product_efficiency = fields.Float(string='Manufacturing Efficiency', default=1.0, required=True, help="A factor of 0.9 means a loss of 10% during the production process.")
+    product_efficiency = fields.Float(string='Manufacturing Efficiency', default=100.0, required=True, help="A factor of 0.9 means a loss of 10% during the production process.")
     property_ids = fields.Many2many('mrp.property', string='Properties')
     company_id = fields.Many2one('res.company', string='Company', required=True, default=lambda self: self.env['res.company']._company_default_get('mrp.bom'))
+    operation_id = fields.Many2one('mrp.routing.workcenter', string='Produced at Operation')
 
 
     @api.model
@@ -116,7 +117,7 @@ class MrpBom(models.Model):
         master_bom = master_bom or self
 
         def _factor(factor, product_efficiency, product_rounding):
-            factor = factor / (product_efficiency or 1.0)
+            factor = factor / (product_efficiency or 100.0)
             if product_rounding:
                 factor = float_round(factor,
                                      precision_rounding=product_rounding,

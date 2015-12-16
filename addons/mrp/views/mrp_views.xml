@@ -546,6 +546,7 @@
                                 <field name="product_qty"/>
                                 <field name="product_uom_id" options="{'no_open':True,'no_create':True}" groups="product.group_uom"/>
                             </div>
+                            <field name="routing_id" groups="mrp.group_mrp_routings"/>
                         </group>
                         <group>
                             <field name="name"/>
@@ -579,12 +580,15 @@
                             <group>
                                 <group>
                                     <field name="product_rounding"/>
-                                    <field name="product_efficiency"/>
+                                    <label for="product_efficiency"/>
+                                    <div>
+                                        <field name="product_efficiency"/> %
+                                    </div>
+                                    <field name="operation_id" domain="[('routing_id', '=', routing_id)]"/>
                                 </group>
                                 <group>
-                                    <field name="ready_to_produce"/>
+                                    <field name="ready_to_produce" string="Manufacturing Readiness"/>
                                     <field name="picking_type_id"/>
-                                    <field name="routing_id" groups="mrp.group_mrp_routings"/>
                                 </group>
                             </group>
                             <separator string="Properties" groups="product.group_mrp_properties"/>
