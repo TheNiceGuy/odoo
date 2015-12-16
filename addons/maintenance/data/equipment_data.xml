@@ -83,12 +83,8 @@
         <field name="alias_id" ref="mail_alias_equipment"/>
     </record>
 
-    <record id="equipment_team_operator" model="maintenance.team">
-        <field name="name">Operator</field>
-    </record>
-
     <record id="equipment_team_maintenance" model="maintenance.team">
-        <field name="name">Maintenance</field>
+        <field name="name">Internal Maintenance</field>
     </record>
 
     <record id="equipment_team_metrology" model="maintenance.team">
