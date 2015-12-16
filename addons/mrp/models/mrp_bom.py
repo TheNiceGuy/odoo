@@ -233,9 +233,7 @@ class MrpBomLine(models.Model):
     property_ids = fields.Many2many('mrp.property', string='Properties')  # Not used
     bom_id = fields.Many2one('mrp.bom', string='Parent BoM', ondelete='cascade', index=True, required=True)
     attribute_value_ids = fields.Many2many('product.attribute.value', string='Variants', help="BOM Product Variants needed form apply this line.")
-    operation_id = fields.Many2one('mrp.routing.workcenter', string='Consumed in Operation Sequence #',
-                                   domain="[('routing_id', '=', routing_id)]", 
-                                   help="The operation where the components are consumed, or the finished products created.")
+    operation_id = fields.Many2one('mrp.routing.workcenter', string='Consumed in Operation', help="The operation where the components are consumed, or the finished products created.")
     child_line_ids = fields.One2many('mrp.bom.line', compute='_get_child_bom_lines', string='BOM lines of the referred bom')
 
     _sql_constraints = [
