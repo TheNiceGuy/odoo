@@ -6,3 +6,4 @@ access_equipment_category_user,equipment.category.user,model_maintenance_equipme
 access_equipment_category_admin_user,equipment.category system user,model_maintenance_equipment_category,base.group_equipment_manager,1,1,1,1
 access_maintenance_stage_user,maintenance.stage.user,model_maintenance_stage,base.group_user,1,0,0,0
 access_maintenance_stage_admin_user,equipment.request.stage system user,model_maintenance_stage,base.group_equipment_manager,1,1,1,1
+access_maintenance_team_user,maintenance.team.user,model_maintenance_team,base.group_user,1,0,0,0
