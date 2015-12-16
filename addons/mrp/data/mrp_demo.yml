@@ -4,5 +4,5 @@
       if not account_id:
           account_id = self.pool.get('account.account').search(cr, uid, [('user_type_id', '=', ref('account.data_account_type_expenses'))])
       if account_id:
-          self._update(cr, uid, 'mrp.workcenter', 'mrp', {'costs_general_account_id': account_id[0]}, 'mrp_workcenter_0')
+          self._update(cr, uid, 'mrp.workcenter', 'mrp', {'analytic_account_id': account_id[0]}, 'mrp_workcenter_0')
 -

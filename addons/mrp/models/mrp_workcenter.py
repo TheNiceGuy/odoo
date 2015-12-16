@@ -27,25 +27,15 @@ class MrpWorkcenter(models.Model):
     time_start = fields.Float(string='Time before prod.', help="Time in hours for the setup.")
     time_stop = fields.Float(string='Time after prod.', help="Time in hours for the cleaning.")
     costs_hour = fields.Float(string='Cost per hour', help="Specify Cost of Work Center per hour.")
-    costs_hour_account_id = fields.Many2one('account.analytic.account', string='Hour Account',
+    analytic_account_id = fields.Many2one('account.analytic.account', string='Analytic Account',
                                             help="Fill this only if you want automatic analytic accounting entries on production orders.")
     costs_cycle = fields.Float(string='Cost per cycle', help="Specify Cost of Work Center per cycle.")
-    costs_cycle_account_id = fields.Many2one('account.analytic.account', string='Cycle Account',
-                                             help="Fill this only if you want automatic analytic accounting entries on production orders.")
-    costs_general_account_id = fields.Many2one('account.account', string='General Account', domain=[('deprecated', '=', False)])
     resource_id = fields.Many2one('resource.resource', string='Resource', ondelete='cascade', required=True)
-    product_id = fields.Many2one('product.product', string='Work Center Product', help="Fill this product to easily track your production costs in the analytic accounting.")
     resource_type = fields.Selection([('user', 'Human'), ('material', 'Material')], string='Resource Type', required=True, default='material') #TODO: to be removed
     order_ids = fields.One2many('mrp.production.workcenter.line', 'workcenter_id', string="Orders")
     routing_line_ids = fields.One2many('mrp.routing.workcenter', 'workcenter_id', "Routing Lines")
     nb_orders = fields.Integer('Computed Orders', compute='_compute_orders')
     color = fields.Integer('Color')
-
-
-    @api.onchange('product_id')
-    def on_change_product_cost(self):
-        if self.product_id:
-            self.costs_hour = self.product_id.standard_price
 
     @api.multi
     @api.constrains('capacity_per_cycle')

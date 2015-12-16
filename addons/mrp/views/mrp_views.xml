@@ -181,41 +181,40 @@
             <field name="model">mrp.workcenter</field>
             <field name="arch" type="xml">
                 <form string="Work Center">
-                    <group col="4">
+                    <sheet>
                         <group>
-                            <field name="name"/>
-                            <field name="resource_type"/>
-                            <field name="calendar_id" widget="selection"/>
-                        </group>
-                        <group>
-                            <field name="code"/>
-                            <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
-                            <field name="active"/>
-                        </group>
-                    </group>
-                    <notebook>
-                        <page string="General Information">
                             <group>
-                                <group string="Capacity Information">
-                                    <field name="time_efficiency"/>
-                                    <field name="capacity_per_cycle"/>
-                                    <field name="time_cycle" widget="float_time"/>
-                                    <field name="time_start" widget="float_time"/>
-                                    <field name="time_stop" widget="float_time"/>
-                                </group>
-                                <group string="Costing Information">
-                                    <field name="product_id"/>
-                                    <field name="costs_hour"/>
-                                    <field name="costs_hour_account_id" groups="analytic.group_analytic_accounting"/>
-                                    <field name="costs_cycle"/>
-                                    <field name="costs_cycle_account_id" groups="analytic.group_analytic_accounting"/>
-                                    <field name="costs_general_account_id" attrs="{ 'required':['|',('costs_cycle_account_id', '=', True),('costs_hour_account_id', '=', True)]}" groups="analytic.group_analytic_accounting"/>
-                                </group>
+                                <field name="name"/>
+                                <field name="resource_type"/>
+                                <field name="calendar_id" widget="selection"/>
                             </group>
-                            <separator string="Description"/>
-                            <field name="note" nolabel="1"/>
-                        </page>
-                    </notebook>
+                            <group>
+                                <field name="code"/>
+                                <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
+                                <field name="active"/>
+                            </group>
+                        </group>
+                        <notebook>
+                            <page string="General Information">
+                                <group>
+                                    <group string="Capacity Information">
+                                        <field name="time_efficiency"/>
+                                        <field name="capacity_per_cycle"/>
+                                        <field name="time_cycle" widget="float_time"/>
+                                        <field name="time_start" widget="float_time"/>
+                                        <field name="time_stop" widget="float_time"/>
+                                    </group>
+                                    <group string="Costing Information">
+                                        <field name="costs_hour"/>
+                                        <field name="costs_cycle"/>
+                                        <field name="analytic_account_id" groups="analytic.group_analytic_accounting"/>
+                                    </group>
+                                </group>
+                                <separator string="Description"/>
+                                <field name="note" nolabel="1"/>
+                            </page>
+                        </notebook>
+                    </sheet>
                 </form>
             </field>
         </record>

@@ -244,7 +244,7 @@ class MrpProduction(models.Model):
             old = None
             for wci in range(len(po.workcenter_line_ids)):
                 wc  = po.workcenter_line_ids[wci]
-                if (old is None) or (wc.sequence>old):
+                if (old is None) or (wc.sequence > old):
                     dt = dt_end
                 if context.get('__last_update'):
                     del context['__last_update']
@@ -545,10 +545,10 @@ class MrpProduction(models.Model):
         amount = 0.0
         for wc_line in self.workcenter_line_ids:
             wc = wc_line.workcenter_id
-            if wc.costs_general_account_id:
+            if wc.analytic_account_id:
                 # Cost per hour
                 value = wc_line.hour * wc.costs_hour
-                account = wc.costs_hour_account_id.id
+                account = wc.analytic_account_id.id
                 if value and account:
                     amount += value
                     # we user SUPERUSER_ID as we do not garantee an mrp user
@@ -558,26 +558,22 @@ class MrpProduction(models.Model):
                         'name': wc_line.name + ' (H)',
                         'amount': value,
                         'account_id': account,
-                        'general_account_id': wc.costs_general_account_id.id,
+                        'general_account_id': wc.analytic_account_id.id,
                         'ref': wc.code,
-                        'product_id': wc.product_id.id,
                         'unit_amount': wc_line.hour,
-                        'product_uom_id': wc.product_id and wc.product_id.uom_id.id or False
                     })
                 # Cost per cycle
                 value = wc_line.cycle * wc.costs_cycle
-                account = wc.costs_cycle_account_id.id
+                account = wc.analytic_account_id.id
                 if value and account:
                     amount += value
                     AccountAnalyticLine.sudo().create({
                         'name': wc_line.name + ' (C)',
                         'amount': value,
                         'account_id': account,
-                        'general_account_id': wc.costs_general_account_id.id,
+                        'general_account_id': wc.analytic_account_id.id,
                         'ref': wc.code,
-                        'product_id': wc.product_id.id,
                         'unit_amount': wc_line.cycle,
-                        'product_uom_id': wc.product_id and wc.product_id.uom_id.id or False
                     })
         return amount
 
