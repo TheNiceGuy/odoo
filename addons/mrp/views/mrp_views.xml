@@ -570,8 +570,7 @@
                                     <field name="product_efficiency" groups="mrp.group_rounding_efficiency"/>
                                     <field name="attribute_value_ids" widget="many2many_tags" domain="[('product_ids.product_tmpl_id', '=', parent.product_tmpl_id)]" groups="product.group_product_variant"/>
                                     <field name="property_ids" widget="many2many_tags" groups="product.group_mrp_properties"/>
-                                    <field name="routing_id" invisible="1"/>
-                                    <field name="operation_id" groups="mrp.group_mrp_routings" attrs="{'invisible': [('routing_id', '=', False)]}"/>
+                                    <field name="operation_id" groups="mrp.group_mrp_routings" domain="[('routing_id', '=', parent.routing_id)]"/>
                                 </tree>
                             </field>
                         </page>
