@@ -23,7 +23,7 @@ class MrpProduction(models.Model):
                 account = wc.costs_hour_account_id.id
                 if value and account:
                     amount += value
-                    # we user SUPERUSER_ID as we do not garantee an mrp user
+                    # we user SUPERUSER_ID as we do not guarantee an mrp user
                     # has access to account analytic lines but still should be
                     # able to produce orders
                     AccountAnalyticLine.sudo().create({
@@ -34,21 +34,6 @@ class MrpProduction(models.Model):
                         'ref': wc.code,
                         'product_id': wc.product_id.id,
                         'unit_amount': wc_line.hour,
-                        'product_uom_id': wc.product_id and wc.product_id.uom_id.id or False
-                    })
-                # Cost per cycle
-                value = wc_line.cycle * wc.costs_cycle
-                account = wc.costs_cycle_account_id.id
-                if value and account:
-                    amount += value
-                    AccountAnalyticLine.sudo().create({
-                        'name': wc_line.name + ' (C)',
-                        'amount': value,
-                        'account_id': account,
-                        'general_account_id': wc.costs_general_account_id.id,
-                        'ref': wc.code,
-                        'product_id': wc.product_id.id,
-                        'unit_amount': wc_line.cycle,
                         'product_uom_id': wc.product_id and wc.product_id.uom_id.id or False
                     })
         return amount
