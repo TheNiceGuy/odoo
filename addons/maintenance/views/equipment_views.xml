@@ -64,6 +64,7 @@
                             <field name="maintenance_type"/>
                             <field name="technician_user_id" string="Repair Responsible"/>
                             <field name="priority" widget="priority"/>
+                            <field name="schedule_date"/>
                             <label for="duration"/>
                             <div>
                                 <field name="duration" class="oe_inline"/> hours
@@ -156,11 +157,34 @@
         </field>
     </record>
 
+    <record id="equipment_request_view_graph" model="ir.ui.view">
+        <field name="name">equipment.request.graph</field>
+        <field name="model">maintenance.request</field>
+        <field name="arch" type="xml">
+            <graph string="maintenance Request">
+                <field name="technician_user_id"/>
+                <field name="stage_id"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="equipment_request_view_pivot" model="ir.ui.view">
+        <field name="name">equipment.request.pivot</field>
+        <field name="model">maintenance.request</field>
+        <field name="arch" type="xml">
+            <pivot string="maintenance Request">
+                <field name="technician_user_id"/>
+                <field name="stage_id"/>
+            </pivot>
+        </field>
+    </record>
+
+
     <record id="equipment_view_calendar" model="ir.ui.view">
         <field name="name">equipment.request.calendar</field>
         <field name="model">maintenance.request</field>
         <field name="arch" type="xml">
-            <calendar date_start="request_date" color="kanban_state">
+            <calendar date_start="schedule_date" color="technician_user_id">
                 <field name="name"/>
                 <field name="technician_user_id"/>
             </calendar>
@@ -171,7 +195,7 @@
     <record id="equipment_request_action" model="ir.actions.act_window">
         <field name="name">Maintenance Requests</field>
         <field name="res_model">maintenance.request</field>
-        <field name="view_mode">kanban,tree,form</field>
+        <field name="view_mode">kanban,tree,form,pivot,graph,calendar</field>
         <field name="view_id" ref="equipment_request_view_kanban"/>
         <field name="help" type="html">
             <p class="oe_view_nocontent_create">
@@ -185,7 +209,7 @@
     <record id="equipment_request_action_link" model="ir.actions.act_window">
         <field name="name">Maintenance Requests</field>
         <field name="res_model">maintenance.request</field>
-        <field name="view_mode">kanban,tree,form</field>
+        <field name="view_mode">kanban,tree,form,pivot,graph,calendar</field>
         <field name="search_view_id" ref="equipment_request_view_search"/>
         <field name="view_id" ref="equipment_request_view_kanban"/>
         <field name="context">{
@@ -205,7 +229,7 @@
         <field name="name">Maintenance Requests</field>
         <field name="res_model">maintenance.request</field>
         <field name="src_model">maintenance.equipment</field>
-        <field name="view_mode">kanban,tree,form</field>
+        <field name="view_mode">kanban,tree,form,pivot,graph,calendar</field>
         <field name="context">{
             'default_equipment_id': active_id,
         }</field>
@@ -215,7 +239,7 @@
     <record id="equipment_todo_request_action_from_dashboard" model="ir.actions.act_window">
         <field name="name">Maintenance Requests</field>
         <field name="res_model">maintenance.request</field>
-        <field name="view_mode">kanban,tree,form</field>
+        <field name="view_mode">kanban,tree,form,pivot,graph,calendar</field>
         <field name="context">{
             'default_maintenance_team_id': active_id,
             'search_default_todo': 1,
@@ -226,7 +250,7 @@
     <record id="equipment_request_action_cal" model="ir.actions.act_window">
         <field name="name">Maintenance Requests</field>
         <field name="res_model">maintenance.request</field>
-        <field name="view_mode">calendar,tree,form</field>
+        <field name="view_mode">calendar,tree,form,pivot,graph</field>
         <field name="view_id" ref="equipment_view_calendar"/>
     </record>
 
