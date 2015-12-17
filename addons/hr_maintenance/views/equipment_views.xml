@@ -72,9 +72,9 @@
         <field name="model">maintenance.equipment</field>
         <field name="inherit_id" ref="maintenance.equipment_view_kanban"/>
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='technician_user_id']/.." position="replace">
-                <div t-if="record.employee_id.raw_value"><field name="employee_id"/></div>
-                <div t-if="record.department_id.raw_value"><field name="department_id"/></div>
+            <xpath expr="//field[@name='technician_user_id']" position="replace">
+                <field name="employee_id"/>
+                <field name="department_id"/>
             </xpath>
             <xpath expr="//img[@t-att-title='record.technician_user_id.value']" position='replace'>
                 <img t-att-src="kanban_image('hr.employee', 'image_small', record.employee_id.raw_value)" t-att-title="record.employee_id.value" width="27" height="27" class="oe_kanban_avatar"/>

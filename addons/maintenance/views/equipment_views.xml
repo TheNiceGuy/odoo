@@ -341,6 +341,7 @@
                 <field name="maintenance_ids"/>
                 <field name="maintenance_open_count"/>
                 <field name="next_action_date"/>
+                <field name="technician_user_id"/>
                 <templates>
                     <t t-name="kanban-tooltip">
                         <ul class="oe_kanban_tooltip">
@@ -365,7 +366,6 @@
                                 <div><b><field name="name"/><span t-if="record.model.raw_value"> (<field name="model"/>)</span></b></div>
                                 <div class="mt4">
                                     <div t-if="record.serial_no.raw_value"><field name="serial_no"/></div>
-                                    <div t-if="record.technician_user_id.raw_value"><field name="technician_user_id"/></div>
                                 </div>
                                 <div class="oe_kanban_bottom_right">
                                     <img t-att-src="kanban_image('res.users', 'image_small', record.technician_user_id.raw_value)" t-att-title="record.technician_user_id.value" width="27" height="27" class="oe_kanban_avatar"/>

@@ -237,7 +237,7 @@ class MaintenanceRequest(models.Model):
     archive = fields.Boolean(default=False, help="Set archive to true to hide the maintenance request without deleting it.")
     maintenance_type = fields.Selection([('corrective', 'Corrective'), ('preventive', 'Preventive')], string='Maintenance Type', default="corrective")
     schedule_date = fields.Datetime('Schedule Date')
-    maintenance_team_id = fields.Many2one('maintenance.team', string='Maintenance Team')
+    maintenance_team_id = fields.Many2one('maintenance.team', string='Maintenance Team', required=True)
     duration = fields.Float(help="Duration in minutes and seconds.")
 
     @api.multi
@@ -260,9 +260,10 @@ class MaintenanceRequest(models.Model):
 
     @api.onchange('equipment_id')
     def onchange_equipment_id(self):
-        self.technician_user_id = self.equipment_id.technician_user_id if self.equipment_id.technician_user_id else self.equipment_id.category_id.technician_user_id
-        self.category_id = self.equipment_id.category_id
-        self.maintenance_team_id = self.equipment_id.maintenance_team_id
+        if self.equipment_id:
+            self.technician_user_id = self.equipment_id.technician_user_id if self.equipment_id.technician_user_id else self.equipment_id.category_id.technician_user_id
+            self.category_id = self.equipment_id.category_id
+            self.maintenance_team_id = self.equipment_id.maintenance_team_id
 
     @api.onchange('category_id')
     def onchange_category_id(self):
