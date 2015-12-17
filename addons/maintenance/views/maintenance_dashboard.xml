@@ -34,8 +34,24 @@
                                         </button>
                                     </div>
                                     <div class="col-xs-6 o_kanban_primary_right">
-                                            <span><t t-esc="record.todo_request_count_prev.value"/> Preventive</span>
-                                            <span><t t-esc="record.todo_request_count.value - record.todo_request_count_prev.value"/> Corrective</span>
+                                        <div class="row">
+                                            <div class="col-xs-9">
+                                                <a name="%(equipment_todo_request_action_from_dashboard)d" type="action">
+                                                    Preventive
+                                                </a>
+                                            </div>
+                                            <div class="col-xs-3">
+                                                <t t-esc="record.todo_request_count_prev.value"/>
+                                            </div>
+                                            <div class="col-xs-9">
+                                                <a name="%(equipment_todo_request_action_from_dashboard)d" type="action">
+                                                    Corrective
+                                                </a>
+                                            </div>
+                                            <div class="col-xs-3">
+                                                <t t-esc="record.todo_request_count.value - record.todo_request_count_prev.value"/>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

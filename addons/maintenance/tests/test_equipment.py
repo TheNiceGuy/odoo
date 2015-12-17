@@ -55,7 +55,7 @@ class TestEquipment(TransactionCase):
         maintenance_request_01 = self.maintenance_request.sudo(self.user).create({
             'name': 'Resolution is bad',
             'technician_user_id': self.user.id,
-            'from_user_id': self.user.id,
+            'owner_user_id': self.user.id,
             'equipment_id': equipment_01.id,
             'color': 7,
             'stage_id': self.ref('maintenance.stage_0')

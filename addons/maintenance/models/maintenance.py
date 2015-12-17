@@ -109,7 +109,7 @@ class MaintenanceEquipment(models.Model):
 
     name = fields.Char('Asset Name', required=True, translate=True)
     technician_user_id = fields.Many2one('res.users', string='Technician', track_visibility='onchange', oldname='user_id')
-    owner_user_id = fields.Many2one('res.users', string='Assigned to', track_visibility='onchange')
+    owner_user_id = fields.Many2one('res.users', string='Owner', track_visibility='onchange')
     category_id = fields.Many2one('maintenance.equipment.category', string='Asset Category', track_visibility='onchange')
     partner_id = fields.Many2one('res.partner', string='Vendor', domain="[('supplier', '=', 1)]")
     partner_ref = fields.Char('Vendor Reference')
@@ -225,9 +225,9 @@ class MaintenanceRequest(models.Model):
     description = fields.Text('Description')
     request_date = fields.Date('Request Date', track_visibility='onchange', default=fields.Date.context_today)
     equipment_id = fields.Many2one('maintenance.equipment', string='Asset', select=True)
-    category_id = fields.Many2one('maintenance.equipment.category', related='equipment_id.category_id', string='Category Related', store=True)
-    from_user_id = fields.Many2one('res.users', string='Created by', default=lambda s: s.env.uid)
-    technician_user_id = fields.Many2one('res.users', string='Assigned to', track_visibility='onchange', oldname='user_id')
+    category_id = fields.Many2one('maintenance.equipment.category', related='equipment_id.category_id', string='Category', store=True, readonly=True)
+    owner_user_id = fields.Many2one('res.users', string='Created by', default=lambda s: s.env.uid, oldname="from_user_id")
+    technician_user_id = fields.Many2one('res.users', string='Owner', track_visibility='onchange', oldname='user_id')
     stage_id = fields.Many2one('maintenance.stage', string='Stage', track_visibility='onchange', default=_default_stage)
     priority = fields.Selection([('0', 'Very Low'), ('1', 'Low'), ('2', 'Normal'), ('3', 'High')], string='Priority')
     color = fields.Integer('Color Index')
@@ -250,9 +250,9 @@ class MaintenanceRequest(models.Model):
         first_stage_obj = self.env['equipment.stage'].search([], order="sequence asc", limit=1)
         self.write({'archive': False, 'stage_id': first_stage_obj.id})
 
-    # @api.onchange('from_user_id')
+    # @api.onchange('owner_user_id')
     # def onchange_department_or_employee_id(self):
-    #     domain = [('owner_user_id', '=', self.from_user_id.id)]
+    #     domain = [('owner_user_id', '=', self.owner_user_id.id)]
     #     equipment = self.env['maintenance.equipment'].search(domain, limit=2)
     #     if len(equipment) == 1:
     #         self.equipment_id = equipment
@@ -274,8 +274,8 @@ class MaintenanceRequest(models.Model):
         # context: no_log, because subtype already handle this
         self = self.with_context(mail_create_nolog=True)
         result = super(MaintenanceRequest, self).create(vals)
-        if result.from_user_id:
-            result.message_subscribe_users(user_ids=[result.from_user_id.id])
+        if result.owner_user_id:
+            result.message_subscribe_users(user_ids=[result.owner_user_id.id])
         if result.equipment_id and not result.maintenance_team_id:
             result.maintenance_team_id = result.equipment_id.maintenance_team_id
         return result
@@ -286,8 +286,8 @@ class MaintenanceRequest(models.Model):
         # the stage (stage_id) of the Maintenance Request changes.
         if vals and 'kanban_state' not in vals and 'stage_id' in vals:
             vals['kanban_state'] = 'normal'
-        if 'from_user_id' in vals:
-            self.message_subscribe_users(user_ids=[vals['from_user_id']])
+        if 'owner_user_id' in vals:
+            self.message_subscribe_users(user_ids=[vals['owner_user_id']])
         return super(MaintenanceRequest, self).write(vals)
 
     @api.multi
