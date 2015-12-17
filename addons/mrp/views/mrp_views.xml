@@ -1182,6 +1182,7 @@
                 <button name="button_pause" type="object" string="Pending" states="progress"/>
                 <button name="button_draft" type="object" string="Set Draft" states="cancel"/>
                 <button name="button_cancel" type="object" string="Cancel" states="confirmed,planned,progress"/>
+                <button name="%(stock.picking_scrap)d" type="action" string="Scrap" attrs="{'invisible': [('state', 'in', ('confirmed', 'cancel'))]}"/>
                 <field name="state" widget="statusbar" statusbar_visible="confirmed,progress,done"/>
             </header>
             <sheet string="Work Orders">

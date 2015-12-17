@@ -7,7 +7,7 @@ from openerp.exceptions import UserError
 class StockPickingScrap(models.TransientModel):
     _name = 'stock.picking.scrap'
 
-    picking_id = fields.Many2one('stock.picking', 'Picking', default=(lambda x: x.env.context.get('active_id')), readonly=True)
+    picking_id = fields.Many2one('stock.picking', 'Picking', default=(lambda x: (x.env.context.get('active_id'))), readonly=True) #x.env.context.get('active_model') == 'mrp.production.workcenter.line') and 
     location_id = fields.Many2one('stock.location', 'Source Location')
     scrap_location_id = fields.Many2one('stock.location', domain="[('scrap_location', '=', True)]", 
                                         default=(lambda x: x.env['stock.location'].search([('scrap_location', '=', True)], limit=1)))

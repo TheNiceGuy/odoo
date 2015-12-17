@@ -6,6 +6,24 @@ from openerp.tools import float_compare
 import openerp.addons.decimal_precision as dp
 
 
+class StockPickingScrap(models.TransientModel):
+    _inherit = "stock.picking.scrap"
+    
+    @api.onchange('picking_id', 'workorder_id', 'location_id', 'type')
+    def onchange_type(self):
+        if self.picking_id:
+            return super(StockPickingScrap, self).onchange_type()
+        if self.workorder_id and self.type == 'reserved':
+            quants = self.env['stock.quant']
+            for move in self.workorder_id.move_line_ids:
+                if move.state == 'done':
+                    quants |= move.quant_ids
+                else:
+                    quants |= move.reserved_quant_ids
+            scrap_lines = self._translate_quants_to_lines(quants)
+            self.line_ids = scrap_lines
+
+
 class StockMoveConsume(models.TransientModel):
     _name = "stock.move.consume"
     _description = "Consume Products"

@@ -652,7 +652,8 @@ class MrpProductionWorkcenterLine(models.Model):
     date_finished = fields.Datetime('Effective End Date')
     delay = fields.Float('Real Duration', compute='_compute_delay', readonly=True)
     operation_id = fields.Many2one('mrp.routing.workcenter', 'Operation') #Should be used differently as BoM can change in the meantime
-    consume_line_ids = fields.Many2one('mrp.production.consume.line', 'workorder_id')
+    consume_line_ids = fields.One2many('mrp.production.consume.line', 'workorder_id')
+    move_line_ids = fields.One2many('stock.move', 'workorder_id', 'Moves')
     production_state = fields.Selection(related='production_id.state', readonly=True)
     product = fields.Many2one('product.product', related='production_id.product_id', string="Product", readonly=True)
     qty = fields.Float(related='production_id.product_qty', string='Qty', readonly=True, store=True) #store really needed?
