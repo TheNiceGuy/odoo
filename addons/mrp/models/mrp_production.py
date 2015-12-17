@@ -78,6 +78,19 @@ class MrpProduction(models.Model):
                 order.date_planned_start = order.date_planned_start_store
                 order.date_planned_finished = order.date_planned_finished_store
 
+    @api.multi
+    @api.depends('workcenter_line_ids')
+    def _compute_nb_orders(self):
+        for mo in self:
+            total_mo = 0
+            done_mo = 0
+            for wo in mo.workcenter_line_ids:
+                total_mo += 1
+                if wo.state == 'done':
+                    done_mo += 1
+            mo.nb_orders = total_mo
+            mo.nb_done = done_mo
+
 
     name = fields.Char(string='Reference', required=True, readonly=True, states={'confirmed': [('readonly', False)]}, copy=False,
                        default=lambda self: self.env['ir.sequence'].next_by_code('mrp.production') or '/')
@@ -121,6 +134,8 @@ class MrpProduction(models.Model):
     workcenter_line_ids = fields.One2many('mrp.production.workcenter.line', 'production_id', string='Work Centers Utilisation',
                                           readonly=True, states={'draft': [('readonly', False)]}, oldname='workcenter_lines')
     
+    nb_orders = fields.Integer('Number of Orders', compute='_compute_nb_orders')
+    nb_done = fields.Integer('Number of Orders Done', compute='_compute_nb_orders')
     state = fields.Selection([('confirmed', 'Confirmed'), ('planned', 'Planned'), ('progress', 'In Progress'), ('done', 'Done'), ('cancel', 'Cancelled')], 'State', default='confirmed', copy=False)
     availability = fields.Selection([('assigned', 'Available'), ('partially_available', 'Partially available'), ('none', 'Nothing Yet')], compute='_compute_availability', default="none")
 

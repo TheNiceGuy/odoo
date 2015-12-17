@@ -9,11 +9,20 @@ import openerp.addons.decimal_precision as dp
 class StockPickingScrap(models.TransientModel):
     _inherit = "stock.picking.scrap"
     
+    workorder_id = fields.Many2one('mrp.production.workcenter.line', 'Work Order')
+    
+    @api.model
+    def default_get(self, fields):
+        res = super(StockPickingScrap, self).default_get(fields)
+        if self.env.context.get('active_model') == 'mrp.production.workcenter.line':
+            res.update({'workorder_id': self.env.context.get("active_id"),})
+        return res
+    
     @api.onchange('picking_id', 'workorder_id', 'location_id', 'type')
     def onchange_type(self):
-        if self.picking_id:
+        if (self.env.context.get('active_model') == 'stock.picking') and self.picking_id:
             return super(StockPickingScrap, self).onchange_type()
-        if self.workorder_id and self.type == 'reserved':
+        if (self.env.context.get('active_model') == 'mrp.production.workcenter.line') and self.workorder_id and (self.type == 'reserved'):
             quants = self.env['stock.quant']
             for move in self.workorder_id.move_line_ids:
                 if move.state == 'done':

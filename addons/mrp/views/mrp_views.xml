@@ -761,7 +761,10 @@
                 </header>
                 <sheet>
                     <div class="oe_button_box">
-                        <button name="%(action_mrp_workorder_production_specific)d" type="action" string="Work Orders" attrs="{'invisible': [('workcenter_line_ids', '=', [])]}"/>
+                        <button name="%(action_mrp_workorder_production_specific)d" type="action" attrs="{'invisible': [('workcenter_line_ids', '=', [])]}">
+                            <span class="o_stat_value"><field name="nb_done" widget="statinfo" nolabel="1"/> / <field name="nb_orders" widget="statinfo" nolabel="1"/></span><br/>
+                            <span class="o_stat_text">Work Orders</span>
+                        </button>
                         <field name="workcenter_line_ids" invisible="1"/>
                     </div>
                     <div class="oe_title">
