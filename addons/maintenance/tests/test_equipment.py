@@ -58,7 +58,8 @@ class TestEquipment(TransactionCase):
             'owner_user_id': self.user.id,
             'equipment_id': equipment_01.id,
             'color': 7,
-            'stage_id': self.ref('maintenance.stage_0')
+            'stage_id': self.ref('maintenance.stage_0'),
+            'maintenance_team_id': self.ref('maintenance.equipment_team_maintenance')
         })
 
         # I check that maintenance_request is created or not
