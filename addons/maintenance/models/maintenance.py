@@ -3,8 +3,8 @@
 from openerp import api, fields, models
 from openerp import _
 from openerp.exceptions import UserError
-from datetime import date, timedelta
-from openerp.tools.misc import DEFAULT_SERVER_DATE_FORMAT
+from datetime import date, datetime, timedelta
+from openerp.tools.misc import DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_DATETIME_FORMAT
 
 
 class MaintenanceStage(models.Model):
@@ -126,9 +126,20 @@ class MaintenanceEquipment(models.Model):
     maintenance_count = fields.Integer(compute='_compute_maintenance_count', string="Maintenance", store=True)
     maintenance_open_count = fields.Integer(compute='_compute_maintenance_count', string="Current Maintenance", store=True)
     period = fields.Integer('Days between each preventive maintenance')
-    next_action_date = fields.Datetime('Date of the next preventive maintenance')
+    next_action_date = fields.Date(compute='_compute_next_maintenance', string='Date of the next preventive maintenance', store=True)
     maintenance_team_id = fields.Many2one('maintenance.team', string='Maintenance Team')
     maintenance_duration = fields.Float(help="Maintenance Duration in minutes and seconds.")
+
+    @api.depends('period', 'maintenance_open_count', 'maintenance_ids.request_date')
+    def _compute_next_maintenance(self):
+        for equipment in self:
+            create_date = equipment.create_date and datetime.strptime(equipment.create_date, DEFAULT_SERVER_DATETIME_FORMAT)
+            if equipment.period:
+                next_date = create_date
+                if equipment.maintenance_ids:
+                    maintenance = equipment.maintenance_ids.sorted(lambda x: x.request_date)[0]
+                    next_date = maintenance.request_date and datetime.strptime(maintenance.request_date, DEFAULT_SERVER_DATE_FORMAT) or create_date
+                equipment.next_action_date = next_date and (next_date + timedelta(days=equipment.period)).strftime(DEFAULT_SERVER_DATE_FORMAT)
 
     @api.one
     @api.depends('maintenance_ids.stage_id.done')
@@ -150,10 +161,6 @@ class MaintenanceEquipment(models.Model):
         # subscribe employee or department manager when equipment assign to him.
         if equipment.owner_user_id:
             equipment.message_subscribe_users(user_ids=equipment.owner_user_id.ids)
-        if equipment.period:
-            today = date.today()
-            next_action_date = today + timedelta(days=equipment.period)
-            equipment.next_action_date = next_action_date.strftime(DEFAULT_SERVER_DATE_FORMAT)
         return equipment
 
     @api.multi
@@ -194,9 +201,6 @@ class MaintenanceEquipment(models.Model):
                     'equipment_id': equipment.id,
                     'maintenance_type': 'preventive',
                 })
-                today = date.today()
-                next_action_date = today + timedelta(days=equipment.period)
-                equipment.next_action_date = next_action_date.strftime(DEFAULT_SERVER_DATE_FORMAT)
 
     _group_by_full = {
         'category_id': _read_group_category_ids
