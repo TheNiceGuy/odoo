@@ -36,7 +36,7 @@
                                     <div class="col-xs-6 o_kanban_primary_right">
                                         <div class="row">
                                             <div class="col-xs-9">
-                                                <a name="%(equipment_todo_request_action_from_dashboard)d" type="action">
+                                                <a name="%(equipment_todo_request_action_from_dashboard)d" type="action" context="{'maintenance_type': 'preventive'}">
                                                     Preventive
                                                 </a>
                                             </div>
@@ -44,7 +44,7 @@
                                                 <t t-esc="record.todo_request_count_prev.value"/>
                                             </div>
                                             <div class="col-xs-9">
-                                                <a name="%(equipment_todo_request_action_from_dashboard)d" type="action">
+                                                <a name="%(equipment_todo_request_action_from_dashboard)d" type="action" context="{'maintenance_type': 'corrective'}">
                                                     Corrective
                                                 </a>
                                             </div>
