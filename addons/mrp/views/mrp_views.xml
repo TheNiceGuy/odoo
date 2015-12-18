@@ -182,6 +182,12 @@
             <field name="arch" type="xml">
                 <form string="Work Center">
                     <sheet>
+                        <div class="oe_button_box" name="button_box">
+                            <button class="oe_stat_button" name="toggle_active" type="object" icon="fa-archive">
+                                <field name="active" widget="boolean_button"
+                                    options='{"terminology": "archive"}'/>
+                            </button>
+                        </div>
                         <group>
                             <group>
                                 <field name="name"/>
@@ -191,7 +197,6 @@
                             <group>
                                 <field name="code"/>
                                 <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
-                                <field name="active"/>
                             </group>
                         </group>
                         <notebook>
