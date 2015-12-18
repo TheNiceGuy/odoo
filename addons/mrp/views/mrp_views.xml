@@ -181,32 +181,39 @@
             <field name="model">mrp.workcenter</field>
             <field name="arch" type="xml">
                 <form string="Work Center">
-                    <group col="4">
+                    <sheet>
+                        <div class="oe_button_box" name="button_box">
+                            <button class="oe_stat_button" name="toggle_active" type="object" icon="fa-archive">
+                                <field name="active" widget="boolean_button"
+                                    options='{"terminology": "archive"}'/>
+                            </button>
+                        </div>
                         <group>
-                            <field name="name"/>
-                            <field name="resource_type"/>
-                            <field name="calendar_id" widget="selection"/>
-                        </group>
-                        <group>
-                            <field name="code"/>
-                            <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
-                            <field name="active"/>
-                        </group>
-                    </group>
-                    <notebook>
-                        <page string="General Information">
                             <group>
-                                <group string="Capacity Information" name="capacity">
-                                    <field name="time_efficiency"/>
-                                    <field name="capacity"/>
-                                    <field name="time_start" widget="float_time"/>
-                                    <field name="time_stop" widget="float_time"/>
-                                </group>
+                                <field name="name"/>
+                                <field name="resource_type"/>
+                                <field name="calendar_id" widget="selection"/>
                             </group>
-                            <separator string="Description"/>
-                            <field name="note" nolabel="1"/>
-                        </page>
-                    </notebook>
+                            <group>
+                                <field name="code"/>
+                                <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
+                            </group>
+                        </group>
+                        <notebook>
+                            <page string="General Information">
+                                <group>
+                                    <group string="Capacity Information" name="capacity">
+                                        <field name="time_efficiency"/>
+                                        <field name="capacity"/>
+                                        <field name="time_start" widget="float_time"/>
+                                        <field name="time_stop" widget="float_time"/>
+                                    </group>
+                                </group>
+                                <separator string="Description"/>
+                                <field name="note" nolabel="1"/>
+                            </page>
+                        </notebook>
+                    </sheet>
                 </form>
             </field>
         </record>

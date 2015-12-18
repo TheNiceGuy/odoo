@@ -25,17 +25,11 @@ class MrpWorkcenter(models.Model):
     time_start = fields.Float(string='Time before prod.', help="Time in hours for the setup.")
     time_stop = fields.Float(string='Time after prod.', help="Time in hours for the cleaning.")
     resource_id = fields.Many2one('resource.resource', string='Resource', ondelete='cascade', required=True)
-    product_id = fields.Many2one('product.product', string='Work Center Product', help="Fill this product to easily track your production costs in the analytic accounting.")
     resource_type = fields.Selection([('user', 'Human'), ('material', 'Material')], string='Resource Type', required=True, default='material') #TODO: to be removed
     order_ids = fields.One2many('mrp.production.workcenter.line', 'workcenter_id', string="Orders")
     routing_line_ids = fields.One2many('mrp.routing.workcenter', 'workcenter_id', "Routing Lines")
     nb_orders = fields.Integer('Computed Orders', compute='_compute_orders')
     color = fields.Integer('Color')
-
-    @api.onchange('product_id')
-    def on_change_product_cost(self):
-        if self.product_id:
-            self.costs_hour = self.product_id.standard_price
 
     @api.multi
     @api.constrains('capacity')
