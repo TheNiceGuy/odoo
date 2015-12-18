@@ -32,8 +32,6 @@ class MrpProduction(models.Model):
                         'account_id': account,
                         'general_account_id': wc.costs_general_account_id.id,
                         'ref': wc.code,
-                        'product_id': wc.product_id.id,
                         'unit_amount': wc_line.hour,
-                        'product_uom_id': wc.product_id and wc.product_id.uom_id.id or False
                     })
         return amount
