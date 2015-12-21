@@ -47,3 +47,4 @@ class MrpRoutingWorkcenter(models.Model):
                                  "If Routings is indicated then,the third tab of a production order (Work Centers) will be automatically pre-completed.")
     note = fields.Text(string='Description')
     company_id = fields.Many2one('res.company', related='routing_id.company_id', string='Company', store=True, readonly=True)
+    worksheet = fields.Binary('worksheet')

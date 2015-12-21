@@ -45,12 +45,25 @@ class MrpProduction(models.Model):
                 order.availability = 'none'
                 continue
             assigned_list = [x.state == 'assigned' for x in order.move_line_ids] #might do partial available moves too
-            if all(assigned_list):
-                order.availability = 'assigned'
-            elif any(assigned_list): #Or should be availability of first work order?
-                order.availability = 'partially_available'
+            if order.bom_id.ready_to_produce == 'all_available':
+                if all(assigned_list):
+                    order.availability = 'assigned'
+                else:
+                    order.availability = 'waiting'
             else:
-                order.availability = 'none'
+                if all(assigned_list):
+                    order.availability = 'assigned'
+                    continue
+                #TODO: We can skip this,but partially available is only possible when field on bom allows it
+                if order.workcenter_line_ids and order.workcenter_line_ids[0].consume_line_ids:
+                    if all([x.state=='assigned' for x in order.consume_line_ids]):
+                        order.availability = 'partially_available'
+                    else:
+                        order.availability = 'waiting'
+                elif any(assigned_list): #Or should be availability of first work order?
+                    order.availability = 'partially_available'
+                else:
+                    order.availability = 'none'
 
     @api.multi
     def _inverse_date_planned(self):
@@ -132,12 +145,12 @@ class MrpProduction(models.Model):
                                         domain=[('state', 'in', ('done', 'cancel'))], readonly=True)
     consume_line_ids = fields.One2many('mrp.production.consume.line', 'production_id', string='To Consume')
     workcenter_line_ids = fields.One2many('mrp.production.workcenter.line', 'production_id', string='Work Centers Utilisation',
-                                          readonly=True, states={'draft': [('readonly', False)]}, oldname='workcenter_lines')
-    
+                                          readonly=True, oldname='workcenter_lines')
     nb_orders = fields.Integer('Number of Orders', compute='_compute_nb_orders')
     nb_done = fields.Integer('Number of Orders Done', compute='_compute_nb_orders')
+
     state = fields.Selection([('confirmed', 'Confirmed'), ('planned', 'Planned'), ('progress', 'In Progress'), ('done', 'Done'), ('cancel', 'Cancelled')], 'State', default='confirmed', copy=False)
-    availability = fields.Selection([('assigned', 'Available'), ('partially_available', 'Partially available'), ('none', 'Nothing Yet')], compute='_compute_availability', default="none")
+    availability = fields.Selection([('assigned', 'Available'), ('partially_available', 'Partially available'), ('none', 'None'), ('waiting', 'Waiting')], compute='_compute_availability', default="none")
 
 #     state = fields.Selection(
 #         [('draft', 'New'), ('cancel', 'Cancelled'), ('confirmed', 'Awaiting Raw Materials'),
@@ -655,26 +668,41 @@ class MrpProductionWorkcenterLine(models.Model):
         for workorder in self:
             workorder.delay = sum([x.duration for x in workorder.time_ids if x.state == "done"])
 
+    @api.multi
+    @api.depends('consume_line_ids')
+    def _compute_availability(self):
+        for workorder in self:
+            if workorder.consume_line_ids:
+                if any([x.state != 'assigned' for x in workorder.move_line_ids if not x.scrapped]):
+                    workorder.availability = 'waiting'
+                else:
+                    workorder.availability = 'assigned'
+            else:
+                workorder.availability = workorder.production_id.availability == 'assigned' and 'assigned' or 'waiting'
+
     name = fields.Char(string='Work Order', required=True)
     workcenter_id = fields.Many2one('mrp.workcenter', string='Work Center', required=True)
     hour = fields.Float(string='Expected Duration', digits=(16, 2))
     sequence = fields.Integer(required=True, default=1, help="Gives the sequence order when displaying a list of work orders.")
     production_id = fields.Many2one('mrp.production', string='Manufacturing Order', track_visibility='onchange', index=True, ondelete='cascade', required=True)
-    state = fields.Selection([('confirmed', 'Confirmed'), ('planned', 'Planned'), ('cancel', 'Cancelled'), ('pause', 'Pending'), ('progress', 'In Progress'), ('done', 'Finished')], default='confirmed')
+    state = fields.Selection([('confirmed', 'Confirmed'), ('ready', 'Ready'), ('cancel', 'Cancelled'), ('pause', 'Pending'), ('progress', 'In Progress'), ('done', 'Finished')], default='confirmed')
     date_planned_start = fields.Datetime('Scheduled Date Start')
     date_planned_end = fields.Datetime('Scheduled Date Finished')
     date_start = fields.Datetime('Effective Start Date')
     date_finished = fields.Datetime('Effective End Date')
     delay = fields.Float('Real Duration', compute='_compute_delay', readonly=True)
+    qty_produced = fields.Float('Qty Produced', help="The number of products already handled by this work order", default=0.0) #TODO: decimal precision
     operation_id = fields.Many2one('mrp.routing.workcenter', 'Operation') #Should be used differently as BoM can change in the meantime
-    consume_line_ids = fields.One2many('mrp.production.consume.line', 'workorder_id')
     move_line_ids = fields.One2many('stock.move', 'workorder_id', 'Moves')
+    consume_line_ids = fields.One2many('mrp.production.consume.line', 'workorder_id')
+    availability = fields.Selection([('waiting', 'Waiting'), ('assigned', 'Available')], 'Stock Availability', store=True, compute='_compute_availability')
     production_state = fields.Selection(related='production_id.state', readonly=True)
     product = fields.Many2one('product.product', related='production_id.product_id', string="Product", readonly=True)
     qty = fields.Float(related='production_id.product_qty', string='Qty', readonly=True, store=True) #store really needed?
     uom = fields.Many2one('product.uom', related='production_id.product_uom_id', string='Unit of Measure')
     started_since = fields.Datetime('Started Since', compute='_compute_started')
     time_ids = fields.One2many('mrp.production.workcenter.line.time', 'workorder_id')
+    worksheet = fields.Binary('Worksheet', related='operation_id.worksheet')
     
     @api.multi
     def button_draft(self):
@@ -755,3 +783,22 @@ class MrpProductionConsumeLine(models.Model):
     lot_id = fields.Many2one('stock.production.lot', string='Lot')
     production_id = fields.Many2one('mrp.production', string='Production Order')
     workorder_id = fields.Many2one('mrp.production.workcenter.line', string='Work Order')
+    
+    
+class MrpUnbuild(models.Model):
+    _name = "mrp.unbuild"
+    _description = "Unbuild Order"
+    
+    name = fields.Char(string='Reference', required=True, readonly=True, copy=False,
+                       default=lambda self: self.env['ir.sequence'].next_by_code('mrp.unbuild') or '/')
+    product_id = fields.Many2one('product.product', string="Product")
+    product_qty = fields.Float('Product Quantity')
+    bom_id = fields.Many2one('mrp.bom', 'Bill of Material') #Add domain
+    lot_id = fields.Many2one('stock.production.lot', 'Lot')
+    location_id = fields.Many2one('stock.location', 'Location')
+    consume_line_id = fields.Many2one('stock.move', readonly=True)
+    produce_line_ids = fields.One2many('stock.move', 'unbuild_id', readonly=True)
+    state = fields.Selection([('confirmed', 'Confirmed'), ('done', 'Done')], "State")
+    
+    #TODO: need quants defined here
+    

@@ -14,6 +14,7 @@ class StockMove(models.Model):
     consumed_for_id = fields.Many2one('stock.move', string='Consumed for', help='Technical field used to make the traceability of produced products', oldname='consumed_for')
     operation_id = fields.Many2one('mrp.routing.workcenter', string="Operation To Consume")
     workorder_id = fields.Many2one('mrp.production.workcenter.line', string="Work Order To Consume")
+    unbuild_id = fields.Many2one('mrp.unbuild', "Unbuild Order")
 
     @api.model
     def check_tracking(self, move, lot_id):
