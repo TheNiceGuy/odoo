@@ -755,3 +755,14 @@ class MrpProductionConsumeLine(models.Model):
     lot_id = fields.Many2one('stock.production.lot', string='Lot')
     production_id = fields.Many2one('mrp.production', string='Production Order')
     workorder_id = fields.Many2one('mrp.production.workcenter.line', string='Work Order')
+    
+    
+class MrpUnbuild(models.Model):
+    _name = "mrp.unbuild"
+    _description = "Unbuild Order"
+    
+    product_id = fields.Many2one('product.product', string="Product")
+    product_qty = fields.Integer('Product Quantity')
+    bom_id = fields.Many2one('mrp.bom', 'Bill of Material') #Add domain
+    lot_id = fields.Many2one('stock.production.lot', 'Lot')
+    #TODO: need quants defined here
