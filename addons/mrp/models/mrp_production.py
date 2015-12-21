@@ -251,6 +251,7 @@ class MrpProduction(models.Model):
             date_planned = datetime.now() + relativedelta(days=self.product_id.produce_delay or 0.0) + relativedelta(days=self.company_id.manufacturing_lead)
             self.date_planned = fields.Datetime.to_string(date_planned)
             self.date_planned_finished = date_planned
+            return {'domain': {'product_uom_id': [('category_id', '=', self.product_id.uom_id.category_id.id)]}}
 
     @api.onchange('bom_id')
     def onchange_bom_id(self):
@@ -381,16 +382,16 @@ class MrpProduction(models.Model):
         for move in self.move_line_ids:
             if move.reserved_quant_ids:
                 for quant in move.reserved_quant_ids:
-                    key = (move.workorder_id.id, move.product_id.id, quant.lot_id.id)
+                    key = (move.workorder_id.id, move.product_id.id, quant.lot_id.id, move.product_uom.id)
                     consume_dict.setdefault(key, 0.0)
                     consume_dict[key] += quant.qty
             elif move.state == 'assigned':
-                key = (move.workorder_id.id, move.product_id.id, False)
+                key = (move.workorder_id.id, move.product_id.id, False, move.product_uom.id)
                 consume_dict.setdefault(key, 0.0)
                 consume_dict[key] += move.product_qty
         consume_lines=[]
         for key in consume_dict:
-            consume_lines.append({'product_id': key[1], 'product_qty': consume_dict[key], 'lot_id': key[2], 'workorder_id': key[0]})
+            consume_lines.append({'product_id': key[1], 'product_qty': consume_dict[key], 'production_lot_ids': key[2], 'workorder_id': key[0], 'product_uom_id': key[3]})
         return consume_lines
 
     @api.multi
@@ -444,7 +445,7 @@ class MrpProduction(models.Model):
                 consume_lines = []
                 for cons in self.consume_line_ids:
                     if cons.qty_done > 0.0:
-                        consume_lines.append({'product_id': cons.product_id.id, 'lot_id': cons.lot_id.id, 'product_qty': cons.qty_done})
+                        consume_lines.append({'product_id': cons.product_id.id, 'production_lot_ids': cons.production_lot_ids.ids, 'product_qty': cons.qty_done})
             else:
                 consume_lines = self._calculate_qty(production_qty_uom)
             for consume in consume_lines:
@@ -774,15 +775,102 @@ class MrpProductionWorkcenterLineTime(models.Model):
 
 
 class MrpProductionConsumeLine(models.Model):
-    _name="mrp.production.consume.line"
+    _name = "mrp.production.consume.line"
     _description = "Consume Lines"
 
     product_id = fields.Many2one('product.product', string='Product')
-    product_qty = fields.Float(string='Quantity to Consume (in default UoM)', digits=dp.get_precision('Product Unit of Measure'))
+    product_uom_id = fields.Many2one('product.uom', string='Unit of Measure')
+    product_qty = fields.Float(string='Quantity to Consume', digits=dp.get_precision('Product Unit of Measure'))
+    production_lot_ids = fields.One2many('production.operation.lot', 'operation_id', string='Related Packing Operations')
     qty_done = fields.Float(string='Quantity Consumed', digits=dp.get_precision('Product Unit of Measure'))
-    lot_id = fields.Many2one('stock.production.lot', string='Lot')
     production_id = fields.Many2one('mrp.production', string='Production Order')
     workorder_id = fields.Many2one('mrp.production.workcenter.line', string='Work Order')
+    lots_visible = fields.Boolean(compute='_compute_lots_visible')
+
+    @api.multi
+    def _compute_lots_visible(self):
+        for consume_line in self:
+            if consume_line.production_lot_ids:
+                consume_line.lots_visible = True
+                continue
+            consume_line.lots_visible = (consume_line.product_id.tracking != 'none')
+
+    @api.multi
+    def save(self):
+        for pack in self:
+            if pack.product_id.tracking != 'none':
+                qty_done = sum([x.qty for x in pack.production_lot_ids])
+                pack.qty_done = qty_done
+        return {'type': 'ir.actions.act_window_close'}
+
+    @api.multi
+    def split_lot(self):
+        self.ensure_one()
+        ctx = {}
+        serial = (self.product_id.tracking == 'serial')
+        view = self.env.ref('mrp.mrp_production_consume_line_lot_form').id
+        show_reserved = any([x for x in self.production_lot_ids if x.qty_todo > 0.0])
+        ctx.update({'serial': serial,
+                    'show_reserved': show_reserved,})
+        return {
+            'name': _('Lot Details'),
+            'type': 'ir.actions.act_window',
+            'view_type': 'form',
+            'view_mode': 'form',
+            'res_model': 'mrp.production.consume.line',
+            'views': [(view, 'form')],
+            'view_id': view,
+            'target': 'new',
+            'res_id': self.id,
+            'context': ctx,
+        }
+
+
+class ProductionOperationLot(models.Model):
+    _name = "production.operation.lot"
+    _description = "Specifies lot/serial number for production operations that need it"
+
+    @api.multi
+    def _get_plus(self):
+        for operation in self:
+            operation.plus_visible = True
+            if operation.operation_id.product_id.tracking == 'serial':
+                operation.plus_visible = (operation.qty == 0.0)
+            else:
+                operation.plus_visible = (operation.qty_todo == 0.0) or (operation.qty < operation.qty_todo)
+
+    operation_id = fields.Many2one('mrp.production.consume.line')
+    qty = fields.Float(string='Done', default=1)
+    lot_id = fields.Many2one('stock.production.lot', string='Lot/Serial Number')
+    lot_name = fields.Char(string='Lot Name')
+    qty_todo = fields.Float(string='To Do', default=0.0)
+    plus_visible = fields.Boolean(compute=_get_plus)
+
+    @api.constrains('lot_id', 'lot_name')
+    def _check_lot(self):
+        for packlot in self:
+            if not packlot.lot_name and not packlot.lot_id:
+                raise UserError(_('Lot name and lot id required ..'))
+        return True
+
+    _sql_constraints = [
+        ('qty', 'CHECK(qty >= 0.0)','Quantity must be greater than or equal to 0.0!'),
+        ('uniq_lot_id', 'unique(operation_id, lot_id)', 'You have already mentioned this lot in another line'),
+        ('uniq_lot_name', 'unique(operation_id, lot_name)', 'You have already mentioned this lot name in another line')]
+
+    # @api.multi
+    # def do_plus(self):
+    #     self.ensure_one()
+    #     self.qty += 1
+    #     self.operation_id.qty_done = sum([x.qty for x in self.operation_id.production_lot_ids])
+    #     return self.operation_id.split_lot()
+
+    # @api.multi
+    # def do_minus(self):
+    #     self.ensure_one()
+    #     self.qty -= 1
+    #     self.operation_id.qty_done = sum([x.qty for x in self.operation_id.production_lot_ids])
+    #     return self.operation_id.split_lot()
     
     
 class MrpUnbuild(models.Model):
