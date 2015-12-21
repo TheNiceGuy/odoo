@@ -25,9 +25,9 @@ class MrpBom(models.Model):
     active = fields.Boolean(string='Active', default=True, help="If the active field is set to False, it will allow you to hide the bills of material without removing it.")
     bom_type = fields.Selection([('normal', 'Manufacture this product'), ('phantom', 'Ship this product as a set of components (kit)')], string='BoM Type', required=True, default='normal',
                                 help="Set: When processing a sales order for this product, the delivery order will contain the raw materials, instead of the finished product.", oldname='type')
-    product_tmpl_id = fields.Many2one('product.template', string='Product', domain="[('type', '!=', ['product', 'consu'])]", required=True)
+    product_tmpl_id = fields.Many2one('product.template', string='Product', domain="[('type', 'not in', ['product', 'consu'])]", required=True)
     product_id = fields.Many2one('product.product', string='Product Variant',
-                                 domain="['&', ('product_tmpl_id','=',product_tmpl_id), ('type','!=', ['product', 'consu'])]",
+                                 domain="['&', ('product_tmpl_id','=',product_tmpl_id), ('type','not in', ['product', 'consu'])]",
                                  help="If a product variant is defined the BOM is available only for this product.")
     bom_line_ids = fields.One2many('mrp.bom.line', 'bom_id', string='BoM Lines', copy=True)
     categ_id = fields.Many2one('product.category', related='product_tmpl_id.categ_id', string='Product Category', readonly=True, store=True)
@@ -36,7 +36,7 @@ class MrpBom(models.Model):
     sequence = fields.Integer(string='Sequence', help="Gives The sequence order when displaying a list of bills of material.")
     routing_id = fields.Many2one('mrp.routing', string='Routing', help="The list of operations (list of work centers) to produce the finished product. "
                                  "The routing is mainly used to compute work center costs during operations and to plan future loads on work centers based on production planning.")
-    ready_to_produce = fields.Selection([('all_available', 'All components'), ('asap', 'The components of 1st operation')], string='Ready when are available', required=True, default='asap',)
+    ready_to_produce = fields.Selection([('all_available', 'All components available'), ('asap', 'The components of 1st operation')], string='Ready when are available', required=True, default='asap',)
     product_rounding = fields.Float(string='Product Rounding', help="Rounding applied on the product quantity.")
     picking_type_id = fields.Many2one('stock.picking.type', string='Picking Type', domain=[('code', '=', 'manufacturing')], help="When a procurement has a ‘produce’ route with a picking type set, it will try to create a Manufacturing Order for that product using a BOM of the same picking type. That allows to define pull rules for products with different routing (different BOMs)")
     product_efficiency = fields.Float(string='Manufacturing Efficiency', default=1.0, required=True, help="A factor of 0.9 means a loss of 10% during the production process.")

@@ -190,12 +190,12 @@
                         </div>
                         <group>
                             <group>
-                                <field name="name"/>
-                                <field name="resource_type"/>
-                                <field name="calendar_id" widget="selection"/>
+                                <field name="name" string="Work Center Name"/>
+                                <field name="resource_type" widget="radio"/>
                             </group>
                             <group>
                                 <field name="code"/>
+                                <field name="calendar_id" widget="selection"/>
                                 <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
                             </group>
                         </group>
@@ -203,14 +203,17 @@
                             <page string="General Information">
                                 <group>
                                     <group string="Capacity Information" name="capacity">
-                                        <field name="time_efficiency"/>
+                                        <label for="time_efficiency"/>
+                                        <div class="o_row">
+                                            <field name="time_efficiency"/> %
+                                        </div>
                                         <field name="capacity"/>
                                         <field name="time_start" widget="float_time"/>
                                         <field name="time_stop" widget="float_time"/>
                                     </group>
                                 </group>
                                 <separator string="Description"/>
-                                <field name="note" nolabel="1"/>
+                                <field name="note" nolabel="1" placeholder="Description of workcenter and how time/efficiency is compound..."/>
                             </page>
                         </notebook>
                     </sheet>
@@ -589,14 +592,14 @@
                                 <group>
                                     <field name="product_rounding"/>
                                     <label for="product_efficiency"/>
-                                    <div>
+                                    <div class="o_row">
                                         <field name="product_efficiency"/> %
                                     </div>
-                                    <field name="operation_id" domain="[('routing_id', '=', routing_id)]"/>
+                                    <field name="operation_id" domain="[('routing_id', '=', routing_id)]" groups="mrp.group_mrp_routings"/>
                                 </group>
                                 <group>
                                     <field name="ready_to_produce" string="Manufacturing Readiness"/>
-                                    <field name="picking_type_id"/>
+                                    <field name="picking_type_id" string="Operation"/>
                                 </group>
                             </group>
                             <separator string="Properties" groups="product.group_mrp_properties"/>
@@ -807,9 +810,10 @@
                         <group>
                             <field name="date_planned"/>
                             <label for="date_planned_start" string="Planned Date"/>
-                            <div class="oe_inline">
-                                <field name="date_planned_start"/> to 
-                                <field name="date_planned_finished"/>
+                            <div class="o_row">
+                                <field name="date_planned_start"/>
+                                <label string="to" attrs="{'invisible': [('date_planned_finished', '=', False)]}"/>
+                                <field name="date_planned_finished" attrs="{'invisible': [('date_planned_start', '=', False)]}"/>
                             </div>
                             <field name="user_id"/>
                             <field name="origin"/>
@@ -823,13 +827,15 @@
                         </group>
                     </group>
                     <notebook>
-                        <page string="Consume Lines">
+                        <page string="Consumed Materials">
                             <field name="consume_line_ids">
                                 <tree editable="bottom">
                                     <field name="product_id"/>
-                                    <field name="lot_id"/>
                                     <field name="product_qty"/>
                                     <field name="qty_done"/>
+                                    <button name="split_lot" string="Lot Split" type="object" icon="fa-list" groups="stock.group_production_lot" attrs="{'invisible': [('lots_visible', '=', False)]}"/>
+
+                                    <field name="product_uom_id"/>
                                 </tree>
                             </field>
                         </page>
@@ -850,6 +856,46 @@
                 </form>
             </field>
         </record>
+
+        <record id="mrp_production_consume_line_lot_form" model="ir.ui.view">
+            <field name="name">mrp.production.consume.line.lots.form</field>
+            <field name="model">mrp.production.consume.line</field>
+            <field eval="20" name="priority"/>
+            <field name="arch" type="xml">
+                <form>
+                    <group>
+                        <field name="product_id" readonly="1"/>
+                        <label for="qty_done"/>
+                        <span>
+                            <field name="qty_done" class="oe_inline" readonly="1"/> of
+                            <field name="product_qty" class="oe_inline" readonly="1"/>
+                            <field name="product_uom_id" class="oe_inline" groups="product.group_uom" readonly="1"/>
+                        </span>
+                    </group>
+                    <group>
+                        <field name="production_lot_ids" nolabel="1">
+                            <tree editable="bottom" decoration-success="qty_todo==qty" decoration-danger="(qty_todo &gt; 0) and (qty&gt;qty_todo)">
+                                <field name="lot_id"
+                                        domain="[('product_id', '=', parent.product_id)]"
+                                        context="{'product_id': parent.product_id}"/>
+                                <field name="qty_todo" readonly="1"/>
+                                <field name="qty" invisible="context.get('serial')"/>
+<!--                                 <button name="do_minus" type="object" icon="fa-minus-square"/>
+                                <button name="do_plus" type="object" icon="fa-plus-square"/> -->
+                                <field name="plus_visible" invisible="1"/>
+                            </tree>
+                        </field>
+                    </group>
+                    <footer>
+                        <button name="save" type="object" string="Save" class="oe_highlight"/>
+                        <button string="Discard" special="cancel"/>
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+
+
         <record id="mrp_production_tree_view" model="ir.ui.view">
             <field name="name">mrp.production.tree</field>
             <field name="model">mrp.production</field>
@@ -1222,7 +1268,11 @@
                                 <field name="date_planned_start"/> to 
                                 <field name="date_planned_end"/>
                             </div>
-                            <field name="hour" widget="float_time"/>
+                            <label for="hour" string="Expected Duration"/>
+                            <div>
+                                <field name="hour" widget="float_time" class="oe_inline"/>
+                                hours
+                            </div>
                         </group>
                         <group>
                             <label for="date_start" string="Effective Date"/>
@@ -1231,7 +1281,11 @@
                                 to
                                 <field name="date_finished" readonly="1"/>
                             </div>
-                            <field name="delay" widget="float_time"/>
+                            <label for="delay" string="Real Duration"/>
+                            <div>
+                                <field name="delay" widget="float_time" class="oe_inline"/>
+                                hours
+                            </div>
                             <field name="started_since" attrs="{'invisible': [('state', '!=', 'progress')]}"/>
                         </group>
                     </group>
@@ -1450,7 +1504,6 @@
         <field name="view_type">form</field>
         <field name="view_mode">kanban,tree,form,calendar,pivot,graph</field>
         <field name="search_view_id" ref="view_mrp_production_workcenter_form_view_filter"/>
-        <field name="domain">[('state', 'in', ('draft', 'startworking', 'pending'))]</field>
         <field name="help" type="html">
           <p class="oe_view_nocontent_create">
             Click to start a new work order.

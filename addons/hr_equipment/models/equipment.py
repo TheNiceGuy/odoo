@@ -8,7 +8,7 @@ class HrEquipment(models.Model):
     employee_id = fields.Many2one('hr.employee', string='Assigned to Employee', track_visibility='onchange')
     department_id = fields.Many2one('hr.department', string='Assigned to Department', track_visibility='onchange')
     equipment_assign_to = fields.Selection(
-        [('department', 'Department'), ('employee', 'Employee')],
+        [('department', 'Department'), ('employee', 'Employee') ,('other', 'Other')],
         string='Used By',
         required=True,
         default='employee')
@@ -16,6 +16,7 @@ class HrEquipment(models.Model):
 
     @api.depends('employee_id', 'department_id', 'equipment_assign_to')
     def _compute_owner(self):
+        self.owner_user_id = False
         if self.equipment_assign_to == 'employee':
             self.owner_user_id = self.employee_id.user_id.id
         elif self.equipment_assign_to == 'department':

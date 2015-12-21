@@ -14,6 +14,8 @@
                 <field name="owner_user_id"/>
                 <field name="stage_id"/>
                 <separator/>
+                <filter string="Unscheduled Maintenance" domain="[('schedule_date', '=', False)]" name="unscheduled"/>
+                <separator/>
                 <filter string="My Requests" domain="[('owner_user_id', '=', uid)]" class="o_equipment_request_my_requests_filter"/>
                 <separator/>
                 <filter string="Unread Messages" name="message_needaction" domain="[('message_needaction','=',True)]"/>
@@ -54,13 +56,13 @@
                             <field name="category_id" groups="base.group_equipment_manager"/>
                             <field name="request_date" groups="base.group_no_one"/>
                             <field name="close_date" groups="base.group_no_one"/>
-                            <field name="active" invisible="1"/>
+                            <field name="archive" invisible="1"/>
+                            <field name="priority" widget="priority"/>
                         </group>
                         <group>
                             <field name="maintenance_team_id"/>
                             <field name="maintenance_type"/>
                             <field name="technician_user_id" string="Repair Responsible"/>
-                            <field name="priority" widget="priority"/>
                             <field name="schedule_date"/>
                             <label for="duration"/>
                             <div>
@@ -247,7 +249,7 @@
     <record id="equipment_request_action_cal" model="ir.actions.act_window">
         <field name="name">Maintenance Requests</field>
         <field name="res_model">maintenance.request</field>
-        <field name="view_mode">calendar,tree,form,pivot,graph</field>
+        <field name="view_mode">calendar,kanban,tree,form,pivot,graph</field>
         <field name="view_id" ref="equipment_view_calendar"/>
     </record>
 
@@ -274,13 +276,13 @@
                         <group>
                             <field name="category_id" options="{&quot;no_open&quot;: True}"/>
                             <field name="owner_user_id"/>
-                            <field name="location" string="Used in location"/>
                         </group>
                         <group>
                             <field name="maintenance_team_id"/>
                             <field name="technician_user_id"/>
                             <field name="assign_date" groups="base.group_no_one"/>
                             <field name="scrap_date" groups="base.group_no_one"/>
+                            <field name="location" string="Used in location"/>
                         </group>
                     </group>
                     <notebook>
@@ -305,11 +307,11 @@
                                 <group name="maintenance">
                                     <field name="next_action_date" class="oe_read_only" string="Next Preventive Maintenance"/>
                                     <label for="period" string="Preventive Maintenance Frequency"/>
-                                    <div>
+                                    <div class="o_row">
                                         <field name="period"/> days
                                     </div>
                                     <label for="maintenance_duration" string="Maintenance Duration"/>
-                                    <div>
+                                    <div class="o_row">
                                         <field name="maintenance_duration"/> hours
                                     </div>
                                 </group>
