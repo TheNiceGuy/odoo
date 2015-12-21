@@ -1218,18 +1218,19 @@
                     <group>
                         <group>
                             <label for="date_planned_start" string="Planned Date"/>
-                            <div class="oe_inline">
-                                <field name="date_planned_start"/> to 
-                                <field name="date_planned_end"/>
+                            <div class="o_row">
+                                <field name="date_planned_start"/>
+                                <label string="to" attrs="{'invisible': [('date_planned_start','=', False)]}"/>
+                                <field name="date_planned_end" attrs="{'invisible': [('date_planned_start','=', False)]}"/>
                             </div>
                             <field name="hour" widget="float_time"/>
                         </group>
                         <group>
                             <label for="date_start" string="Effective Date"/>
-                            <div class="oe_inline">
+                            <div class="o_row">
                                 <field name="date_start" readonly="1"/>
-                                to
-                                <field name="date_finished" readonly="1"/>
+                                <label string="to" attrs="{'invisible': [('date_finished','=', False)]}"/>
+                                <field name="date_finished" readonly="1" attrs="{'invisible': [('date_start','=', False)]}"/>
                             </div>
                             <field name="delay" widget="float_time"/>
                             <field name="started_since" attrs="{'invisible': [('state', '!=', 'progress')]}"/>
@@ -1473,12 +1474,12 @@
             parent="menu_mrp_manufacturing"/>
 
     <menuitem id="menu_mrp_workorder_production"
-              name="Work Orders by Production Order"
+              name="By Production Order"
               action="action_mrp_workorder_production"
               parent="menu_mrp_planning"/>
 
     <menuitem id="menu_mrp_workorder_workcenter"
-              name="Work Orders by Workcenter"
+              name="By Workcenter"
               action="action_mrp_workorder_workcenter"
               parent="menu_mrp_planning"/>
 
