@@ -4,7 +4,7 @@
 from openerp import api, fields, models, _
 from openerp.exceptions import UserError
 
-class StockPickingScrap(models.TransientModel):
+class StockScrap(models.TransientModel):
     _name = 'stock.scrap'
 
     picking_id = fields.Many2one('stock.picking', 'Picking', default=(lambda x: (x.env.context.get('active_id'))), readonly=True) #x.env.context.get('active_model') == 'mrp.production.workcenter.line') and 
@@ -51,7 +51,7 @@ class StockPickingScrap(models.TransientModel):
         return True
 
 
-class StockPickingScrapLine(models.TransientModel):
+class StockScrapLine(models.TransientModel):
     _name = 'stock.scrap.line'
 
     scrap_id = fields.Many2one('stock.scrap', 'Wizard', readonly=True)

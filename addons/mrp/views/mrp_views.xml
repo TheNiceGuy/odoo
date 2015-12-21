@@ -262,6 +262,9 @@
                                 <field name="hour_nbr" widget="float_time"/>
                                 <field name="company_id" options="{'no_create': True}" groups="base.group_multi_company"/>
                             </group>
+                            <group>
+                                <field name="worksheet" widget="image"/>
+                            </group>
                         </group>
                         <label for="note"/>
                         <field name="note"/>
@@ -948,7 +951,7 @@
             <field name="arch" type="xml">
                 <search string="Search Production">
                     <field name="name" string="Production" filter_domain="['|',('name','ilike',self),('origin','ilike',self)]"/>
-                    <filter string="To Do" name="todo" domain="[('state','=','draft')]"
+                    <filter string="To Do" name="todo" domain="[('state','=','confirmed')]"
                         help="Manufacturing Orders which are in draft state."/>
                     <filter string="Pending" name="pending" domain="[('state','=','confirmed')]"
                         help="Manufacturing Orders which are waiting for raw materials."/>
@@ -1202,22 +1205,15 @@
                     <field colspan="2" name="name"/>
                     <field name="workcenter_id"/>
                     <field name="production_id"/>
-                    <field name="production_state" string="Material Availability"/>
+                    <field name="availability"/>
+                    
                     <field name="sequence" invisible="1"/>
                 </group>
                 <notebook>
-                <page string="Information">
-                    <group>
-                        <group string="Product to Produce">
-                            <field name="product"/>
-                            <label for="product_qty" string="Qty"/>
-                            <div class="o_row">
-                                <field name="qty"/>
-                                <field name="uom" widget="selection"/>
-                            </div>
-                        </group>
-                    </group>
+                <page string="Worksheet" attrs="{'invisible': [('worksheet', '=', False)]}">
+                    <field name="worksheet" widget="image"/>
                 </page>
+                
                 <page string="Time Tracking">
                     <group>
                         <group>
@@ -1260,6 +1256,18 @@
                                 </group>
                             </form>
                         </field>
+                    </group>
+                </page>
+                <page string="Miscellaneous">
+                    <group>
+                        <group string="Product to Produce">
+                            <field name="product"/>
+                            <label for="product_qty" string="Qty"/>
+                            <div class="o_row">
+                                <field name="qty"/>
+                                <field name="uom" widget="selection"/>
+                            </div>
+                        </group>
                     </group>
                 </page>
                 </notebook>
@@ -1389,7 +1397,7 @@
 
 
 
-    <!-- Action for All Operations   -->
+    <!-- Actions for Work Orders  -->
 
 
     <record model="ir.actions.act_window" id="action_mrp_workorder_workcenter">
@@ -1457,6 +1465,8 @@
         </field>
     </record>
 
+
+
     <menuitem id="menu_mrp_workorder_todo"
             name="Work Orders"
             action="mrp_workorder_todo"
@@ -1485,4 +1495,60 @@
           action="mrp_workorder_todo"
           sequence="10"/>
 
+
+    <!--  Unbuild and scrap menu -->
+
+        <record id="mrp_unbuild_form_view" model="ir.ui.view">
+            <field name="name">mrp.unbuild.form</field>
+            <field name="model">mrp.unbuild</field>
+            <field name="arch" type="xml">
+                <form string="Unbuild Orders">
+                    <group>
+                        <field name="name"/>
+                        <group>
+                            <field name="product_id"/>
+                            <field name="product_qty"/>
+                        </group>
+                        <group>
+                            <field name="location_id"/>
+                            <field name="lot_id"/>
+                            <field name="bom_id"/>
+                        </group>
+                    </group>
+                </form>
+            </field>
+        </record>
+
+
+    <record model="ir.actions.act_window" id="mrp_unbuild">
+        <field name="name">Unbuild Action</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">mrp.unbuild</field>
+        <field name="view_type">form</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+          <p class="oe_view_nocontent_create">
+            Click to start a new Unbuild Order
+          </p><p>
+            Unbuild orders can be used to unbuild stuff you make. 
+          </p>
+        </field>
+    </record>
+
+    <menuitem id="menu_mrp_unbuild"
+          name="Unbuild Orders"
+          parent="menu_mrp_manufacturing"
+          action="mrp_unbuild"
+          sequence="20"/>
+
+    <!-- <record model="ir.actions.act_window" id="mrp_scrap">
+        <field name="name">Scrap</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">stock.scrap</field>
+    </record> -->
+    <menuitem id="menu_mrp_scrap"
+            name="Scrap"
+            parent="menu_mrp_manufacturing"
+            action="stock.picking_scrap"
+            sequence="25"/>
 </odoo>
