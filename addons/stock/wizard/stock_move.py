@@ -5,14 +5,14 @@ from openerp import api, fields, models, _
 from openerp.exceptions import UserError
 
 class StockPickingScrap(models.TransientModel):
-    _name = 'stock.picking.scrap'
+    _name = 'stock.scrap'
 
     picking_id = fields.Many2one('stock.picking', 'Picking', default=(lambda x: (x.env.context.get('active_id'))), readonly=True) #x.env.context.get('active_model') == 'mrp.production.workcenter.line') and 
     location_id = fields.Many2one('stock.location', 'Source Location')
     scrap_location_id = fields.Many2one('stock.location', domain="[('scrap_location', '=', True)]", 
                                         default=(lambda x: x.env['stock.location'].search([('scrap_location', '=', True)], limit=1)))
     type = fields.Selection([('reserved', 'Reserved or Done'), ('demand', 'Useful for Picking'), ('location', 'Everything in Source Location')], default='reserved')
-    line_ids = fields.One2many('stock.picking.scrap.line', 'scrap_id')
+    line_ids = fields.One2many('stock.scrap.line', 'scrap_id')
 
     def _translate_quants_to_lines(self, quants):
         grouped_quants = {}
@@ -52,9 +52,9 @@ class StockPickingScrap(models.TransientModel):
 
 
 class StockPickingScrapLine(models.TransientModel):
-    _name = 'stock.picking.scrap.line'
+    _name = 'stock.scrap.line'
 
-    scrap_id = fields.Many2one('stock.picking.scrap', 'Wizard', readonly=True)
+    scrap_id = fields.Many2one('stock.scrap', 'Wizard', readonly=True)
     location_id = fields.Many2one('stock.location', 'Location', readonly=True)
     product_id = fields.Many2one('product.product', 'Product', readonly=True)
     package_id = fields.Many2one('stock.quant.package', 'Package', readonly=True)

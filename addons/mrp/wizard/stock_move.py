@@ -7,7 +7,7 @@ import openerp.addons.decimal_precision as dp
 
 
 class StockPickingScrap(models.TransientModel):
-    _inherit = "stock.picking.scrap"
+    _inherit = "stock.scrap"
     
     workorder_id = fields.Many2one('mrp.production.workcenter.line', 'Work Order')
     

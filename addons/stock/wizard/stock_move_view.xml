@@ -6,7 +6,7 @@
 
        <record id="view_stock_picking_scrap_wizard" model="ir.ui.view">
             <field name="name">Scrap Move</field>
-            <field name="model">stock.picking.scrap</field>
+            <field name="model">stock.scrap</field>
             <field name="arch" type="xml">
                 <form string="Scrap Products">
                     <group>
@@ -39,7 +39,7 @@
         <record id="picking_scrap" model="ir.actions.act_window">
             <field name="name">Scrap</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">stock.picking.scrap</field>
+            <field name="res_model">stock.scrap</field>
             <field name="view_id" ref="view_stock_picking_scrap_wizard"/>
             <field name="view_type">form</field>
             <field name="view_mode">form</field>
