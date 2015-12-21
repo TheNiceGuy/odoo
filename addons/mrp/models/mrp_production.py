@@ -381,16 +381,16 @@ class MrpProduction(models.Model):
         for move in self.move_line_ids:
             if move.reserved_quant_ids:
                 for quant in move.reserved_quant_ids:
-                    key = (move.workorder_id.id, move.product_id.id, quant.lot_id.id)
+                    key = (move.workorder_id.id, move.product_id.id, quant.lot_id.id, move.product_uom.id)
                     consume_dict.setdefault(key, 0.0)
                     consume_dict[key] += quant.qty
             elif move.state == 'assigned':
-                key = (move.workorder_id.id, move.product_id.id, False)
+                key = (move.workorder_id.id, move.product_id.id, False, move.product_uom.id)
                 consume_dict.setdefault(key, 0.0)
                 consume_dict[key] += move.product_qty
         consume_lines=[]
         for key in consume_dict:
-            consume_lines.append({'product_id': key[1], 'product_qty': consume_dict[key], 'lot_id': key[2], 'workorder_id': key[0]})
+            consume_lines.append({'product_id': key[1], 'product_qty': consume_dict[key], 'lot_id': key[2], 'workorder_id': key[0], 'product_uom_id': key[3]})
         return consume_lines
 
     @api.multi
@@ -778,7 +778,8 @@ class MrpProductionConsumeLine(models.Model):
     _description = "Consume Lines"
 
     product_id = fields.Many2one('product.product', string='Product')
-    product_qty = fields.Float(string='Quantity to Consume (in default UoM)', digits=dp.get_precision('Product Unit of Measure'))
+    product_uom_id = fields.Many2one('product.uom', string='Unit of Measure')
+    product_qty = fields.Float(string='Quantity to Consume', digits=dp.get_precision('Product Unit of Measure'))
     qty_done = fields.Float(string='Quantity Consumed', digits=dp.get_precision('Product Unit of Measure'))
     lot_id = fields.Many2one('stock.production.lot', string='Lot')
     production_id = fields.Many2one('mrp.production', string='Production Order')
