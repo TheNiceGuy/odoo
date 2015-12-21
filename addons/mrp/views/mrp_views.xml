@@ -835,7 +835,6 @@
                                     <field name="qty_done"/>
                                     <field name="lots_visible" invisible="1"/>
                                     <button name="split_lot" string="Lot Split" type="object" icon="fa-list" groups="stock.group_production_lot" attrs="{'invisible': [('lots_visible', '=', False)]}"/>
-
                                     <field name="product_uom_id"/>
                                 </tree>
                             </field>
