@@ -36,7 +36,7 @@ class MrpBom(models.Model):
     sequence = fields.Integer(string='Sequence', help="Gives The sequence order when displaying a list of bills of material.")
     routing_id = fields.Many2one('mrp.routing', string='Routing', help="The list of operations (list of work centers) to produce the finished product. "
                                  "The routing is mainly used to compute work center costs during operations and to plan future loads on work centers based on production planning.")
-    ready_to_produce = fields.Selection([('all_available', 'All components'), ('asap', 'The components of 1st operation')], string='Ready when are available', required=True, default='asap',)
+    ready_to_produce = fields.Selection([('all_available', 'All components available'), ('asap', 'The components of 1st operation')], string='Ready when are available', required=True, default='asap',)
     product_rounding = fields.Float(string='Product Rounding', help="Rounding applied on the product quantity.")
     picking_type_id = fields.Many2one('stock.picking.type', string='Picking Type', domain=[('code', '=', 'manufacturing')], help="When a procurement has a ‘produce’ route with a picking type set, it will try to create a Manufacturing Order for that product using a BOM of the same picking type. That allows to define pull rules for products with different routing (different BOMs)")
     product_efficiency = fields.Float(string='Manufacturing Efficiency', default=1.0, required=True, help="A factor of 0.9 means a loss of 10% during the production process.")

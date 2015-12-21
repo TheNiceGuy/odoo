@@ -589,14 +589,14 @@
                                 <group>
                                     <field name="product_rounding"/>
                                     <label for="product_efficiency"/>
-                                    <div>
+                                    <div class="o_row">
                                         <field name="product_efficiency"/> %
                                     </div>
-                                    <field name="operation_id" domain="[('routing_id', '=', routing_id)]"/>
+                                    <field name="operation_id" domain="[('routing_id', '=', routing_id)]" groups="mrp.group_mrp_routings"/>
                                 </group>
                                 <group>
                                     <field name="ready_to_produce" string="Manufacturing Readiness"/>
-                                    <field name="picking_type_id"/>
+                                    <field name="picking_type_id" string="Operation"/>
                                 </group>
                             </group>
                             <separator string="Properties" groups="product.group_mrp_properties"/>
