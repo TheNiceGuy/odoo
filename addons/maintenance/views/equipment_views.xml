@@ -252,7 +252,7 @@
     <record id="equipment_request_action_cal" model="ir.actions.act_window">
         <field name="name">Maintenance Requests</field>
         <field name="res_model">maintenance.request</field>
-        <field name="view_mode">calendar,tree,form,pivot,graph</field>
+        <field name="view_mode">calendar,kanban,tree,form,pivot,graph</field>
         <field name="view_id" ref="equipment_view_calendar"/>
     </record>
 
