@@ -1389,7 +1389,7 @@
 
 
 
-    <!-- Action for All Operations   -->
+    <!-- Actions for Work Orders  -->
 
 
     <record model="ir.actions.act_window" id="action_mrp_workorder_workcenter">
@@ -1457,6 +1457,8 @@
         </field>
     </record>
 
+
+
     <menuitem id="menu_mrp_workorder_todo"
             name="Work Orders"
             action="mrp_workorder_todo"
@@ -1485,4 +1487,63 @@
           action="mrp_workorder_todo"
           sequence="10"/>
 
+
+    <!--  Unbuild and scrap menu -->
+
+        <record id="mrp_unbuild_form_view" model="ir.ui.view">
+            <field name="name">mrp.unbuild.form</field>
+            <field name="model">mrp.unbuild</field>
+            <field name="arch" type="xml">
+                <form string="Unbuild Orders">
+                    <group>
+                        <field name="name"/>
+                        <group>
+                            <field name="product_id"/>
+                            <field name="product_qty"/>
+                        </group>
+                        <group>
+                            <field name="lot_id"/>
+                            <field name="bom_id"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="consume_line_id"/>
+                        <field name="produce_line_ids"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+
+
+    <record model="ir.actions.act_window" id="mrp_unbuild">
+        <field name="name">Unbuild Action</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">mrp.unbuild</field>
+        <field name="view_type">form</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+          <p class="oe_view_nocontent_create">
+            Click to start a new Unbuild Order
+          </p><p>
+            Unbuild orders can be used to unbuild stuff you make. 
+          </p>
+        </field>
+    </record>
+
+    <menuitem id="menu_mrp_unbuild"
+          name="Unbuild Orders"
+          parent="menu_mrp_manufacturing"
+          action="mrp_unbuild"
+          sequence="20"/>
+
+    <!-- <record model="ir.actions.act_window" id="mrp_scrap">
+        <field name="name">Scrap</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">stock.scrap</field>
+    </record> -->
+    <menuitem id="menu_mrp_scrap"
+            name="Scrap"
+            parent="menu_mrp_manufacturing"
+            action="stock.picking_scrap"
+            sequence="25"/>
 </odoo>

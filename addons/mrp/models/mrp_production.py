@@ -761,8 +761,16 @@ class MrpUnbuild(models.Model):
     _name = "mrp.unbuild"
     _description = "Unbuild Order"
     
+    name = fields.Char(string='Reference', required=True, readonly=True, copy=False,
+                       default=lambda self: self.env['ir.sequence'].next_by_code('mrp.unbuild') or '/')
     product_id = fields.Many2one('product.product', string="Product")
-    product_qty = fields.Integer('Product Quantity')
+    product_qty = fields.Float('Product Quantity')
     bom_id = fields.Many2one('mrp.bom', 'Bill of Material') #Add domain
     lot_id = fields.Many2one('stock.production.lot', 'Lot')
+    consume_line_id = fields.Many2one('stock.move', readonly=True)
+    produce_line_ids = fields.One2many('stock.move', 'unbuild_id', readonly=True)
+    state = fields.Selection([('confirmed', 'Confirmed'), ('done', 'Done')], "State")
+    
     #TODO: need quants defined here
+    
+    
