@@ -190,12 +190,12 @@
                         </div>
                         <group>
                             <group>
-                                <field name="name"/>
-                                <field name="resource_type"/>
-                                <field name="calendar_id" widget="selection"/>
+                                <field name="name" string="Work Center Name"/>
+                                <field name="resource_type" widget="radio"/>
                             </group>
                             <group>
                                 <field name="code"/>
+                                <field name="calendar_id" widget="selection"/>
                                 <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
                             </group>
                         </group>
@@ -203,14 +203,17 @@
                             <page string="General Information">
                                 <group>
                                     <group string="Capacity Information" name="capacity">
-                                        <field name="time_efficiency"/>
+                                        <label for="time_efficiency"/>
+                                        <div class="o_row">
+                                            <field name="time_efficiency"/> %
+                                        </div>
                                         <field name="capacity"/>
                                         <field name="time_start" widget="float_time"/>
                                         <field name="time_stop" widget="float_time"/>
                                     </group>
                                 </group>
                                 <separator string="Description"/>
-                                <field name="note" nolabel="1"/>
+                                <field name="note" nolabel="1" placeholder="Description of workcenter and how time/efficiency is compound..."/>
                             </page>
                         </notebook>
                     </sheet>
