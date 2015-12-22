@@ -58,12 +58,12 @@
                             <field name="request_date" groups="base.group_no_one"/>
                             <field name="close_date" groups="base.group_no_one"/>
                             <field name="archive" invisible="1"/>
+                            <field name="priority" widget="priority"/>
                         </group>
                         <group>
                             <field name="maintenance_team_id"/>
                             <field name="maintenance_type"/>
                             <field name="technician_user_id" string="Repair Responsible"/>
-                            <field name="priority" widget="priority"/>
                             <field name="schedule_date"/>
                             <label for="duration"/>
                             <div>
