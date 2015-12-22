@@ -107,10 +107,10 @@ class MaintenanceEquipment(models.Model):
             recs = self.search([('name', operator, name)] + args, limit=limit)
         return recs.name_get()
 
-    name = fields.Char('Asset Name', required=True, translate=True)
+    name = fields.Char('Equipment Name', required=True, translate=True)
     technician_user_id = fields.Many2one('res.users', string='Technician', track_visibility='onchange', oldname='user_id')
     owner_user_id = fields.Many2one('res.users', string='Owner', track_visibility='onchange')
-    category_id = fields.Many2one('maintenance.equipment.category', string='Asset Category', track_visibility='onchange')
+    category_id = fields.Many2one('maintenance.equipment.category', string='Equipment Category', track_visibility='onchange')
     partner_id = fields.Many2one('res.partner', string='Vendor', domain="[('supplier', '=', 1)]")
     partner_ref = fields.Char('Vendor Reference')
     location = fields.Char('Location')
