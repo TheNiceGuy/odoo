@@ -1228,7 +1228,11 @@
                                 <label string="to" attrs="{'invisible': [('date_planned_start','=', False)]}"/>
                                 <field name="date_planned_end" attrs="{'invisible': [('date_planned_start','=', False)]}"/>
                             </div>
-                            <field name="hour" widget="float_time"/>
+                            <label for="hour" string="Expected Duration"/>
+                            <div>
+                                <field name="hour" widget="float_time" class="oe_inline"/>
+                                hours
+                            </div>
                         </group>
                         <group>
                             <label for="date_start" string="Effective Date"/>
@@ -1237,7 +1241,11 @@
                                 <label string="to" attrs="{'invisible': [('date_finished','=', False)]}"/>
                                 <field name="date_finished" readonly="1" attrs="{'invisible': [('date_start','=', False)]}"/>
                             </div>
-                            <field name="delay" widget="float_time"/>
+                            <label for="delay" string="Real Duration"/>
+                            <div>
+                                <field name="delay" widget="float_time" class="oe_inline"/>
+                                hours
+                            </div>
                             <field name="started_since" attrs="{'invisible': [('state', '!=', 'progress')]}"/>
                         </group>
                     </group>
