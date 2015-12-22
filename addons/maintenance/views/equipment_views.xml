@@ -279,13 +279,13 @@
                         <group>
                             <field name="category_id" options="{&quot;no_open&quot;: True}"/>
                             <field name="owner_user_id"/>
-                            <field name="location" string="Used in location"/>
                         </group>
                         <group>
                             <field name="maintenance_team_id"/>
                             <field name="technician_user_id"/>
                             <field name="assign_date" groups="base.group_no_one"/>
                             <field name="scrap_date" groups="base.group_no_one"/>
+                            <field name="location" string="Used in location"/>
                         </group>
                     </group>
                     <notebook>
@@ -310,11 +310,11 @@
                                 <group name="maintenance">
                                     <field name="next_action_date" class="oe_read_only" string="Next Preventive Maintenance"/>
                                     <label for="period" string="Preventive Maintenance Frequency"/>
-                                    <div>
+                                    <div class="o_row">
                                         <field name="period"/> days
                                     </div>
                                     <label for="maintenance_duration" string="Maintenance Duration"/>
-                                    <div>
+                                    <div class="o_row">
                                         <field name="maintenance_duration"/> hours
                                     </div>
                                 </group>
