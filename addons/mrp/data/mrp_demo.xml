@@ -30,7 +30,7 @@
             <field name="capacity">5</field>
             <field name="time_start">0.1</field>
             <field name="time_stop">0.1</field>
-            <field name="time_efficiency">0.87</field>
+            <field name="time_efficiency">87</field>
             <field name="calendar_id" ref="resource.timesheet_group1"/>
         </record>
 
