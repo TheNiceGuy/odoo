@@ -294,7 +294,10 @@ class MaintenanceRequest(models.Model):
             vals['kanban_state'] = 'normal'
         if 'owner_user_id' in vals:
             self.message_subscribe_users(user_ids=[vals['owner_user_id']])
-        return super(MaintenanceRequest, self).write(vals)
+        result = super(MaintenanceRequest, self).write(vals)
+        if self.stage_id.done and 'stage_id' in vals:
+            self.write({'close_date': fields.Date.today()})
+        return result
 
     @api.multi
     def _read_group_stage_ids(self, domain, read_group_order=None, access_rights_uid=None):
