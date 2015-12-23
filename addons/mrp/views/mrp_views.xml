@@ -1210,7 +1210,7 @@
                     <field name="sequence" invisible="1"/>
                 </group>
                 <notebook>
-                <page string="Worksheet" attrs="{'invisible': [('worksheet', '=', False)]">
+                <page string="Worksheet" attrs="{'invisible': [('worksheet', '=', False)]}">
                     <field name="worksheet" widget="image"/>
                 </page>
                 
