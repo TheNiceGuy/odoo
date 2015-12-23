@@ -684,12 +684,13 @@ class MrpProductionWorkcenterLine(models.Model):
     hour = fields.Float(string='Expected Duration', digits=(16, 2))
     sequence = fields.Integer(required=True, default=1, help="Gives the sequence order when displaying a list of work orders.")
     production_id = fields.Many2one('mrp.production', string='Manufacturing Order', track_visibility='onchange', index=True, ondelete='cascade', required=True)
-    state = fields.Selection([('confirmed', 'Confirmed'), ('planned', 'Planned'), ('cancel', 'Cancelled'), ('pause', 'Pending'), ('progress', 'In Progress'), ('done', 'Finished')], default='confirmed')
+    state = fields.Selection([('confirmed', 'Confirmed'), ('ready', 'Ready'), ('cancel', 'Cancelled'), ('pause', 'Pending'), ('progress', 'In Progress'), ('done', 'Finished')], default='confirmed')
     date_planned_start = fields.Datetime('Scheduled Date Start')
     date_planned_end = fields.Datetime('Scheduled Date Finished')
     date_start = fields.Datetime('Effective Start Date')
     date_finished = fields.Datetime('Effective End Date')
     delay = fields.Float('Real Duration', compute='_compute_delay', readonly=True)
+    qty_produced = fields.Float('Qty Produced', help="The number of products already handled by this work order", default=0.0) #TODO: decimal precision
     operation_id = fields.Many2one('mrp.routing.workcenter', 'Operation') #Should be used differently as BoM can change in the meantime
     move_line_ids = fields.One2many('stock.move', 'workorder_id', 'Moves')
     consume_line_ids = fields.One2many('mrp.production.consume.line', 'workorder_id')
@@ -700,6 +701,7 @@ class MrpProductionWorkcenterLine(models.Model):
     uom = fields.Many2one('product.uom', related='production_id.product_uom_id', string='Unit of Measure')
     started_since = fields.Datetime('Started Since', compute='_compute_started')
     time_ids = fields.One2many('mrp.production.workcenter.line.time', 'workorder_id')
+    worksheet = fields.Binary('Worksheet', related='operation_id.worksheet')
     
     @api.multi
     def button_draft(self):
@@ -792,10 +794,10 @@ class MrpUnbuild(models.Model):
     product_qty = fields.Float('Product Quantity')
     bom_id = fields.Many2one('mrp.bom', 'Bill of Material') #Add domain
     lot_id = fields.Many2one('stock.production.lot', 'Lot')
+    location_id = fields.Many2one('stock.location', 'Location')
     consume_line_id = fields.Many2one('stock.move', readonly=True)
     produce_line_ids = fields.One2many('stock.move', 'unbuild_id', readonly=True)
     state = fields.Selection([('confirmed', 'Confirmed'), ('done', 'Done')], "State")
     
     #TODO: need quants defined here
-    
     

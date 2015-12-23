@@ -262,6 +262,9 @@
                                 <field name="hour_nbr" widget="float_time"/>
                                 <field name="company_id" options="{'no_create': True}" groups="base.group_multi_company"/>
                             </group>
+                            <group>
+                                <field name="worksheet" widget="image"/>
+                            </group>
                         </group>
                         <label for="note"/>
                         <field name="note"/>
@@ -1202,22 +1205,15 @@
                     <field colspan="2" name="name"/>
                     <field name="workcenter_id"/>
                     <field name="production_id"/>
-                    <field name="production_state" string="Material Availability"/>
+                    <field name="availability"/>
+                    
                     <field name="sequence" invisible="1"/>
                 </group>
                 <notebook>
-                <page string="Information">
-                    <group>
-                        <group string="Product to Produce">
-                            <field name="product"/>
-                            <label for="product_qty" string="Qty"/>
-                            <div class="o_row">
-                                <field name="qty"/>
-                                <field name="uom" widget="selection"/>
-                            </div>
-                        </group>
-                    </group>
+                <page string="Worksheet" attrs="{'invisible': [('worksheet', '=', False)]">
+                    <field name="worksheet" widget="image"/>
                 </page>
+                
                 <page string="Time Tracking">
                     <group>
                         <group>
@@ -1260,6 +1256,18 @@
                                 </group>
                             </form>
                         </field>
+                    </group>
+                </page>
+                <page string="Miscellaneous">
+                    <group>
+                        <group string="Product to Produce">
+                            <field name="product"/>
+                            <label for="product_qty" string="Qty"/>
+                            <div class="o_row">
+                                <field name="qty"/>
+                                <field name="uom" widget="selection"/>
+                            </div>
+                        </group>
                     </group>
                 </page>
                 </notebook>
@@ -1502,13 +1510,10 @@
                             <field name="product_qty"/>
                         </group>
                         <group>
+                            <field name="location_id"/>
                             <field name="lot_id"/>
                             <field name="bom_id"/>
                         </group>
-                    </group>
-                    <group>
-                        <field name="consume_line_id"/>
-                        <field name="produce_line_ids"/>
                     </group>
                 </form>
             </field>
