@@ -238,6 +238,7 @@ class MrpProduction(models.Model):
             date_planned = datetime.now() + relativedelta(days=self.product_id.produce_delay or 0.0) + relativedelta(days=self.company_id.manufacturing_lead)
             self.date_planned = fields.Datetime.to_string(date_planned)
             self.date_planned_finished = date_planned
+            return {'domain': {'product_uom_id': [('category_id', '=', self.product_id.uom_id.category_id.id)]}}
 
     @api.onchange('bom_id')
     def onchange_bom_id(self):

@@ -804,9 +804,10 @@
                         <group>
                             <field name="date_planned"/>
                             <label for="date_planned_start" string="Planned Date"/>
-                            <div class="oe_inline">
-                                <field name="date_planned_start"/> to 
-                                <field name="date_planned_finished"/>
+                            <div class="o_row">
+                                <field name="date_planned_start"/>
+                                <label string="to" attrs="{'invisible': [('date_planned_finished', '=', False)]}"/>
+                                <field name="date_planned_finished" attrs="{'invisible': [('date_planned_start', '=', False)]}"/>
                             </div>
                             <field name="user_id"/>
                             <field name="origin"/>
@@ -820,7 +821,7 @@
                         </group>
                     </group>
                     <notebook>
-                        <page string="Consume Lines">
+                        <page string="Consumed Materials">
                             <field name="consume_line_ids">
                                 <tree editable="bottom">
                                     <field name="product_id"/>
