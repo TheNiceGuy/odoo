@@ -54,7 +54,8 @@ class MrpProduction(models.Model):
                 if all(assigned_list):
                     order.availability = 'assigned'
                     continue
-                if order.workcenter_line_ids[0].consume_line_ids:
+                #TODO: We can skip this,but partially available is only possible when field on bom allows it
+                if order.workcenter_line_ids and order.workcenter_line_ids[0].consume_line_ids:
                     if all([x.state=='assigned' for x in order.consume_line_ids]):
                         order.availability = 'partially_available'
                     else:
