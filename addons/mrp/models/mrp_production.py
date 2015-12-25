@@ -230,9 +230,9 @@ class MrpProduction(models.Model):
             routing_id = False
             if bom_point:
                 routing_id = bom_point.routing_id
+                self.bom_id = bom_point.id
+                self.routing_id = routing_id.id
             self.product_uom_id = self.product_id.uom_id.id
-            self.bom_id = bom_point.id
-            self.routing_id = routing_id.id
             self.product_tmpl_id = self.product_id.product_tmpl_id.id
             self.date_planned_start = fields.Datetime.to_string(datetime.now())
             date_planned = datetime.now() + relativedelta(days=self.product_id.produce_delay or 0.0) + relativedelta(days=self.company_id.manufacturing_lead)

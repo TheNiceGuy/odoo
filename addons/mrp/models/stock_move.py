@@ -14,6 +14,7 @@ class StockMove(models.Model):
     consumed_for_id = fields.Many2one('stock.move', string='Consumed for', help='Technical field used to make the traceability of produced products', oldname='consumed_for')
     operation_id = fields.Many2one('mrp.routing.workcenter', string="Operation To Consume")
     workorder_id = fields.Many2one('mrp.production.workcenter.line', string="Work Order To Consume")
+    produce_qty = fields.Float(string='Quantity To')
 
     @api.model
     def check_tracking(self, move, lot_id):
@@ -144,7 +145,8 @@ class StockMove(models.Model):
                 res = res | new_mov
             vals = {'restrict_lot_id': restrict_lot_id,
                     'restrict_partner_id': restrict_partner_id,
-                    'consumed_for_id': consumed_for_id}
+                    'consumed_for_id': consumed_for_id,
+                    'produce_qty': quantity_rest}
             if location_id:
                 vals.update({'location_id': location_id})
             move.write(vals)
