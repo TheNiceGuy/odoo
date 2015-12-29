@@ -833,6 +833,7 @@
                                     <field name="product_id"/>
                                     <field name="product_qty"/>
                                     <field name="qty_done"/>
+                                    <field name="lots_visible" invisible="1"/>
                                     <button name="split_lot" string="Lot Split" type="object" icon="fa-list" groups="stock.group_production_lot" attrs="{'invisible': [('lots_visible', '=', False)]}"/>
 
                                     <field name="product_uom_id"/>
@@ -841,10 +842,13 @@
                         </page>
                         <page string="Finished Products">
                             <field name="move_created_ids2">
-                                <field name="product_id"/>
-                                <field name="restrict_lot_id"/>
-                                <field name="product_uom_qty"/>
-                                <field name="product_uom"/>
+                                <tree string="Finished Move">
+                                    <field name="product_id"/>
+                                    <field name="produce_qty"/>
+                                    <field name="product_uom_qty" string="Quantity Produced"/>
+                                    <field name="product_uom"/>
+                                    <field name="state" invisible="1"/>
+                                </tree>
                             </field>
                         </page>
                     </notebook>

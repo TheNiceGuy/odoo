@@ -15,6 +15,7 @@ class StockMove(models.Model):
     operation_id = fields.Many2one('mrp.routing.workcenter', string="Operation To Consume")
     workorder_id = fields.Many2one('mrp.production.workcenter.line', string="Work Order To Consume")
     unbuild_id = fields.Many2one('mrp.unbuild', "Unbuild Order")
+    produce_qty = fields.Float(string='Quantity To Produced')
 
     @api.model
     def check_tracking(self, move, lot_id):
@@ -139,13 +140,19 @@ class StockMove(models.Model):
             # Compare with numbers of move uom as we want to avoid a split with 0 qty
             quantity_rest_uom = move.product_uom_qty - self.env['product.uom']._compute_qty_obj(move.product_id.uom_id, product_qty, move.product_uom)
             if float_compare(quantity_rest_uom, 0, precision_rounding=move.product_uom.rounding) != 0:
+                bom_line_qty = {}
+                if move.state == 'assigned' and move.raw_material_production_id:
+                    for bom_line in move.production_id.bom_id.bom_line_ids:
+                        bom_line_qty[bom_line.product_id.id] = bom_line.product_qty
+                    quantity_rest = move_qty - (product_qty * bom_line_qty[move.product_id.id])
                 new_mov = self.browse(self.split(move, quantity_rest))
                 if move.production_id:
                     new_mov.write({'production_id': move.production_id.id})
                 res = res | new_mov
             vals = {'restrict_lot_id': restrict_lot_id,
                     'restrict_partner_id': restrict_partner_id,
-                    'consumed_for_id': consumed_for_id}
+                    'consumed_for_id': consumed_for_id,
+                    'produce_qty': move_qty}
             if location_id:
                 vals.update({'location_id': location_id})
             move.write(vals)
