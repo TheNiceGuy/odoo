@@ -142,7 +142,7 @@ class MrpProduction(models.Model):
     move_created_ids = fields.One2many('stock.move', 'production_id', string='Products to Produce',
                                        domain=[('state', 'not in', ('done', 'cancel'))], readonly=True)
     move_created_ids2 = fields.One2many('stock.move', 'production_id', 'Produced Products',
-                                        domain=[('state', 'in', ('done', 'cancel'))], readonly=True)
+                                        domain=[('state', 'in', ('done', 'cancel')), ('raw_material_production_id', '=', False)], readonly=True)
     consume_line_ids = fields.One2many('mrp.production.consume.line', 'production_id', string='To Consume')
     workcenter_line_ids = fields.One2many('mrp.production.workcenter.line', 'production_id', string='Work Centers Utilisation',
                                           readonly=True, oldname='workcenter_lines')
@@ -243,9 +243,9 @@ class MrpProduction(models.Model):
             routing_id = False
             if bom_point:
                 routing_id = bom_point.routing_id
+                self.bom_id = bom_point.id
+                self.routing_id = routing_id.id
             self.product_uom_id = self.product_id.uom_id.id
-            self.bom_id = bom_point.id
-            self.routing_id = routing_id.id
             self.product_tmpl_id = self.product_id.product_tmpl_id.id
             self.date_planned_start = fields.Datetime.to_string(datetime.now())
             date_planned = datetime.now() + relativedelta(days=self.product_id.produce_delay or 0.0) + relativedelta(days=self.company_id.manufacturing_lead)
