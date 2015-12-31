@@ -25,9 +25,9 @@ class MrpBom(models.Model):
     active = fields.Boolean(string='Active', default=True, help="If the active field is set to False, it will allow you to hide the bills of material without removing it.")
     bom_type = fields.Selection([('normal', 'Manufacture this product'), ('phantom', 'Ship this product as a set of components (kit)')], string='BoM Type', required=True, default='normal',
                                 help="Set: When processing a sales order for this product, the delivery order will contain the raw materials, instead of the finished product.", oldname='type')
-    product_tmpl_id = fields.Many2one('product.template', string='Product', domain="[('type', '!=', ['product', 'consu'])]", required=True)
+    product_tmpl_id = fields.Many2one('product.template', string='Product', domain="[('type', 'not in', ['product', 'consu'])]", required=True)
     product_id = fields.Many2one('product.product', string='Product Variant',
-                                 domain="['&', ('product_tmpl_id','=',product_tmpl_id), ('type','!=', ['product', 'consu'])]",
+                                 domain="['&', ('product_tmpl_id','=',product_tmpl_id), ('type','not in', ['product', 'consu'])]",
                                  help="If a product variant is defined the BOM is available only for this product.")
     bom_line_ids = fields.One2many('mrp.bom.line', 'bom_id', string='BoM Lines', copy=True)
     categ_id = fields.Many2one('product.category', related='product_tmpl_id.categ_id', string='Product Category', readonly=True, store=True)
