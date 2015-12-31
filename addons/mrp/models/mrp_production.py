@@ -903,22 +903,47 @@ class ProductionOperationLot(models.Model):
     #     self.qty -= 1
     #     self.operation_id.qty_done = sum([x.qty for x in self.operation_id.production_lot_ids])
     #     return self.operation_id.split_lot()
-    
-    
+
+
 class MrpUnbuild(models.Model):
     _name = "mrp.unbuild"
     _description = "Unbuild Order"
-    
+
     name = fields.Char(string='Reference', required=True, readonly=True, copy=False,
                        default=lambda self: self.env['ir.sequence'].next_by_code('mrp.unbuild') or '/')
-    product_id = fields.Many2one('product.product', string="Product")
+    product_id = fields.Many2one('product.product', string="Product", required=True)
     product_qty = fields.Float('Product Quantity')
-    bom_id = fields.Many2one('mrp.bom', 'Bill of Material') #Add domain
+    bom_id = fields.Many2one('mrp.bom', 'Bill of Material', required=True, domain="[('product_id','=',product_id)]")  # Add domain
+    mo_id = fields.Many2one('mrp.production', string='Manufacturing Order')
     lot_id = fields.Many2one('stock.production.lot', 'Lot')
     location_id = fields.Many2one('stock.location', 'Location')
     consume_line_id = fields.Many2one('stock.move', readonly=True)
     produce_line_ids = fields.One2many('stock.move', 'unbuild_id', readonly=True)
     state = fields.Selection([('confirmed', 'Confirmed'), ('done', 'Done')], "State")
+
+    @api.onchange('mo_id')
+    def onchange_mo_id(self):
+        if self.mo_id:
+            self.product_id = self.mo_id.product_id.id
+            self.product_qty = self.mo_id.product_qty
+            self.bom_id = self.mo_id.bom_id.id
+
+    @api.multi
+    def button_todo(self):
+        self.write({'state': 'todo'})
+
+    @api.multi
+    def button_confirm(self):
+        self.write({'state': 'confirmed'})
+
+    @api.multi
+    def button_done(self):
+        self.write({'state': 'done'})
+
+    @api.multi
+    def button_unbuild(self):
+        #TODO Need to do stuff for unbuild process.
+        self.write({'state': 'done'})
 
     #TODO: need quants defined here
 
