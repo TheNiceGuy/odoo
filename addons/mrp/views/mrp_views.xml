@@ -1581,11 +1581,8 @@
             <field name="arch" type="xml">
                 <form string="Unbuild Orders">
                     <header>
-                        <button name="button_confirm" string="Confirm" type="object" states="todo" class="oe_highlight"/>
-                        <button name="button_done" string="Done" type="object" states="confirmed" class="oe_highlight"/>
-                        <button name="button_todo" string="ToDo" type="object" states="confirmed,done"/>
                         <button name="button_unbuild" string="Unbuild" type="object" states="confirmed" class="oe_highlight"/>
-                        <field name="state" widget="statusbar" statusbar_visible="todo,confirmed,done" statusbar_colors="{&quot;confirmed&quot;:&quot;blue&quot;}"/>
+                        <field name="state" widget="statusbar" statusbar_visible="confirmed,done" statusbar_colors="{&quot;confirmed&quot;:&quot;blue&quot;}"/>
                     </header>
                     <sheet>
                         <div class="oe_title">
@@ -1595,14 +1592,29 @@
                             <group>
                                 <field name="mo_id"/>
                                 <field name="product_id"/>
-                                <field name="product_qty"/>
+                                <label for="product_qty"/>
+                                <div class="o_row">
+                                    <field name="product_qty"/>
+                                    <field name="product_uom_id" options="{'no_open':True,'no_create':True}" groups="product.group_uom"/>
+                                </div>
                             </group>
                             <group>
                                 <field name="location_id"/>
                                 <field name="lot_id"/>
                                 <field name="bom_id"/>
+                                <field name="date_unbuild"/>
                             </group>
                         </group>
+                        <notebook>
+                            <page string="Produce Product">
+                                <field name="produce_line_ids"/>
+                            </page>
+                            <page string="Consume Product">
+                                <group>
+                                    <field name="consume_line_id"/>
+                                </group>
+                            </page>
+                        </notebook>
                     </sheet>
                 </form>
             </field>
