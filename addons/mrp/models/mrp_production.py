@@ -142,7 +142,7 @@ class MrpProduction(models.Model):
     move_created_ids = fields.One2many('stock.move', 'production_id', string='Products to Produce',
                                        domain=[('state', 'not in', ('done', 'cancel'))], readonly=True)
     move_created_ids2 = fields.One2many('stock.move', 'production_id', 'Produced Products',
-                                        domain=[('state', 'in', ('done', 'cancel')), ('raw_material_production_id', '=', False)], readonly=True)
+                                        domain=[('state', 'in', ('done', 'cancel'))], readonly=True)
     consume_line_ids = fields.One2many('mrp.production.consume.line', 'production_id', string='To Consume')
     workcenter_line_ids = fields.One2many('mrp.production.workcenter.line', 'production_id', string='Work Centers Utilisation',
                                           readonly=True, oldname='workcenter_lines')
