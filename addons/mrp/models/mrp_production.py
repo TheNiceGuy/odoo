@@ -150,7 +150,7 @@ class MrpProduction(models.Model):
     nb_done = fields.Integer('Number of Orders Done', compute='_compute_nb_orders')
 
     state = fields.Selection([('confirmed', 'Confirmed'), ('planned', 'Planned'), ('progress', 'In Progress'), ('done', 'Done'), ('cancel', 'Cancelled')], 'State', default='confirmed', copy=False)
-    availability = fields.Selection([('assigned', 'Available'), ('partially_available', 'Partially available'), ('none', 'None'), ('waiting', 'Waiting')], compute='_compute_availability', default="none")
+    availability = fields.Selection([('assigned', 'Ava    ilable'), ('partially_available', 'Partially available'), ('none', 'None'), ('waiting', 'Waiting')], compute='_compute_availability', default="none")
 
 #     state = fields.Selection(
 #         [('draft', 'New'), ('cancel', 'Cancelled'), ('confirmed', 'Awaiting Raw Materials'),
@@ -709,9 +709,15 @@ class MrpProductionWorkcenterLine(models.Model):
     def button_draft(self):
         self.write({'state': 'confirmed'})
 
+    # Plan should disappear -> created when doing production
     @api.multi
     def button_plan(self):
         self.write({'state' 'planned'})
+
+    @api.multi
+    def button_produce(self):
+        # Launch number produced
+        pass
 
     @api.multi
     def button_start(self):
