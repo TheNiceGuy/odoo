@@ -165,10 +165,12 @@ class StockMove(models.Model):
         :return: Scraped lines
         """
         MrpProduction = self.env['mrp.production']
+        Stock_Move = self.env['stock.move']
         res = self - self
         for move in self:
-            new_moves = super(StockMove, move).action_scrap(product_qty, location_id, restrict_lot_id=restrict_lot_id, restrict_partner_id=restrict_partner_id)
+            new_move_ids = super(StockMove, move).action_scrap(product_qty, location_id, restrict_lot_id=restrict_lot_id, restrict_partner_id=restrict_partner_id)
             # If we are not scrapping our whole move, tracking and lot references must not be removed
+            new_moves = Stock_Move.browse(new_move_ids)
             production_ids = MrpProduction.search([('move_line_ids', 'in', [move.id])])
             for prod_id in production_ids:
                 prod_id.signal_workflow('button_produce')

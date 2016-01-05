@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+        <record id="stock_scrap_form_view" model="ir.ui.view">
+            <field name="name">stock.scrap.form</field>
+            <field name="model">stock.scrap</field>
+            <field name="arch" type="xml">
+                <form string="Scrap">
+                    <header>
+                        <button name="do_scrap" string="Scrap" type="object" states="confirmed" class="oe_highlight"/>
+                        <field name="state" widget="statusbar" statusbar_visible="confirmed,done" statusbar_colors="{&quot;done&quot;:&quot;blue&quot;}"/>
+                    </header>
+                    <sheet>
+                        <div class="oe_title">
+                            <h1><field name="name" nolabel="1"/></h1>
+                        </div>
+                        <group>
+                            <group>
+                                <field name="product_id"/>
+                                <field name="product_uom_id"/>
+                                <field name="scrap_qty"/>
+                            </group>
+                            <group>
+                                <field name="lot_id"/>
+                                <field name="picking_id"/>
+                                <field name="location_id"/>
+                                <field name="scrap_location_id" groups="stock.group_locations"/>
+                            </group>
+                        </group>
+                        <notebook>
+                            <page string="Stock Move">
+                                <group>
+                                    <group>
+                                        <field name="move_id"/>
+                                    </group>
+                                </group>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="stock_scrap_tree_view" model="ir.ui.view">
+            <field name="name">stock.scrap.tree</field>
+            <field name="model">stock.scrap</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="name"/>
+                    <field name="product_id"/>
+                    <field name="scrap_qty"/>
+                    <field name="location_id"/>
+                    <field name="scrap_location_id"/>
+                    <field name="state"/>
+                </tree>
+            </field>
+        </record>
+
+        <record model="ir.actions.act_window" id="action_stock_scrap">
+            <field name="name">Scrap</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">stock.scrap</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+
+        <record id="stock_scrap_form_view2" model="ir.ui.view">
+            <field name="name">stock.scrap.form2</field>
+            <field name="model">stock.scrap</field>
+            <field name="arch" type="xml">
+                <form string="Scrap">
+                    <group>
+                        <group>
+                            <field name="product_id" domain="[('id', 'in', context.get('product_ids', []))]"/>
+                            <field name="product_uom_id"/>
+                            <field name="scrap_qty"/>
+                        </group>
+                        <group>
+                            <field name="picking_id"/>
+                            <field name="lot_id"/>
+                            <field name="scrap_location_id" groups="stock.group_locations"/>
+                        </group>
+                    </group>
+                    <footer>
+                        <button name="do_scrap" string="Scrap" type="object" class="btn-primary"/>
+                        <button string="Cancel" class="btn-default" special="cancel" />
+                    </footer>
+                </form>
+            </field>
+        </record>
+</odoo>

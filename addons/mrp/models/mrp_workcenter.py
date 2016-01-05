@@ -25,7 +25,6 @@ class MrpWorkcenter(models.Model):
     time_start = fields.Float(string='Time before prod.', help="Time in hours for the setup.")
     time_stop = fields.Float(string='Time after prod.', help="Time in hours for the cleaning.")
     resource_id = fields.Many2one('resource.resource', string='Resource', ondelete='cascade', required=True)
-    resource_type = fields.Selection([('user', 'Human'), ('material', 'Material')], string='Resource Type', required=True, default='material') #TODO: to be removed
     order_ids = fields.One2many('mrp.production.workcenter.line', 'workcenter_id', string="Orders")
     routing_line_ids = fields.One2many('mrp.routing.workcenter', 'workcenter_id', "Routing Lines")
     nb_orders = fields.Integer('Computed Orders', compute='_compute_orders')
