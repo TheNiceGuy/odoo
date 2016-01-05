@@ -1218,7 +1218,7 @@
         <field name="name">mrp.production.workcenter.line.tree</field>
         <field name="model">mrp.production.workcenter.line</field>
         <field name="arch" type="xml">
-            <tree string="Work Orders" decoration-muted="state in ('done','cancel')" decoration-danger="date_planned_start&lt;current_date and state in ('draft', 'confirmed', 'ready')">
+            <tree string="Work Orders" decoration-success="date_planned_start&gt;=current_date and state == 'ready'" decoration-muted="state in ('done','cancel')" decoration-danger="date_planned_start&lt;current_date and state in ('draft', 'confirmed', 'ready')">
                 <field name="name"/>
                 <field name="date_planned_start"/>
                 <field name="workcenter_id" widget="selection"/>
@@ -1237,6 +1237,7 @@
         <field name="arch" type="xml">
             <form string="Production Workcenter">
             <header>
+                <button name="%(act_mrp_product_produce_wo)d" string="Produce" type="action"/>
                 <button name="button_start" type="object" string="Start" states="confirmed,planned" class="oe_highlight"/>
                 <button name="button_resume" type="object" string="Resume" states="pause" class="oe_highlight"/>
                 <button name="button_done" type="object" string="Finished" states="progress" class="oe_highlight"/>
@@ -1252,14 +1253,13 @@
                     <field name="workcenter_id"/>
                     <field name="production_id"/>
                     <field name="availability"/>
-                    
+                    <field name="qty_produced"/>
                     <field name="sequence" invisible="1"/>
                 </group>
                 <notebook>
                 <page string="Worksheet" attrs="{'invisible': [('worksheet', '=', False)]}">
                     <field name="worksheet" widget="image"/>
                 </page>
-                
                 <page string="Time Tracking">
                     <group>
                         <group>
@@ -1273,6 +1273,7 @@
                                 <field name="hour" widget="float_time" class="oe_inline"/>
                                 hours
                             </div>
+                            <field name="capacity_planned"/>
                         </group>
                         <group>
                             <label for="date_start" string="Effective Date"/>

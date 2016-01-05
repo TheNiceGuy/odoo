@@ -8,12 +8,12 @@ class MrpProduction(models.Model):
 
 
     @api.multi
-    def generate_moves_workorders(self, properties=None):
+    def generate_moves(self, properties=None):
         """ 
             Generates moves and work orders
         """
         StockMove = self.env['stock.move']
-        picking_id = super(MrpProduction, self).generate_moves_workorders(properties=properties)
+        picking_id = super(MrpProduction, self).generate_moves(properties=properties)
         for production in self.filtered(lambda p: p.bom_id):
             source = production.product_id.property_stock_production
             for sub_product in production.bom_id.subproduct_ids:

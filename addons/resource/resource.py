@@ -392,6 +392,7 @@ class resource_calendar(osv.osv):
     # Hours scheduling
     # --------------------------------------------------
 
+    
     def _schedule_hours(self, cr, uid, id, hours, day_dt=None,
                         compute_leaves=False, resource_id=None,
                         default_interval=None, context=None):
@@ -622,7 +623,7 @@ class resource_calendar(osv.osv):
         return self._interval_hours_get(cr, uid, id, dt_from, dt_to, resource_id=resource)
 
     def _interval_hours_get(self, cr, uid, id, dt_from, dt_to, resource_id=False, timezone_from_uid=None, exclude_leaves=True, context=None):
-        """ Computes working hours between two dates, taking always same hour/minuts.
+        """ Computes working hours between two dates, taking always same hour/minutes.
 
         :deprecated: OpenERP saas-3. Use get_working_hours instead. Note: since saas-3,
         now resets hour/minuts. Now counts leave hours instead of all-day leaves."""
