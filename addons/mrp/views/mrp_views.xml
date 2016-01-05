@@ -171,7 +171,6 @@
                 <tree string="Work Center">
                     <field name="name"/>
                     <field name="code"/>
-                    <field name="resource_type"/>
                     <field name="company_id" groups="base.group_multi_company"/>
                 </tree>
             </field>
@@ -191,7 +190,6 @@
                         <group>
                             <group>
                                 <field name="name" string="Work Center Name"/>
-                                <field name="resource_type" widget="radio"/>
                             </group>
                             <group>
                                 <field name="code"/>
@@ -226,10 +224,9 @@
             <field name="arch" type="xml">
                 <search string="Search for mrp workcenter">
                     <field name="name" string="Mrp Workcenter" filter_domain="['|',('name','ilike',self),('code','ilike',self)]"/>
-                    <field name="resource_type"/>
                     <filter string="Inactive" domain="[('active','=',False)]"/>
                     <group expand="0" string="Group By...">
-                        <filter string="Type" domain="[]" context="{'group_by':'resource_type'}"/>
+                        <filter string="Type" domain="[]"/>
                         <filter string="Company" domain="[]" context="{'group_by':'company_id'}" groups="base.group_multi_company"/>
                     </group>
                 </search>
@@ -772,6 +769,7 @@
                     <button name="force_assign" attrs="{'invisible': [('availability', '=', 'assigned')]}" string="Force Reservation" type="object"/>
                     <button name="button_plan" states="confirmed" type="object" string="Plan"/>
                     <button name="button_cancel" states="confirmed,planned,progress" string="Cancel Production"/>
+                    <button name="button_scrap" type="object" string="Scrap" attrs="{'invisible': [('state', 'in', ('cancel'))]}"/>
                     <field name="state" widget="statusbar" statusbar_visible="confirmed,progress,done" statusbar_colors='{"confirmed":"blue"}'/>
                 </header>
                 <sheet>
@@ -1238,13 +1236,10 @@
             <form string="Production Workcenter">
             <header>
                 <button name="%(act_mrp_product_produce_wo)d" string="Produce" type="action"/>
-                <button name="button_start" type="object" string="Start" states="confirmed,planned" class="oe_highlight"/>
-                <button name="button_resume" type="object" string="Resume" states="pause" class="oe_highlight"/>
                 <button name="button_done" type="object" string="Finished" states="progress" class="oe_highlight"/>
-                <button name="button_pause" type="object" string="Pending" states="progress"/>
                 <button name="button_draft" type="object" string="Set Draft" states="cancel"/>
                 <button name="button_cancel" type="object" string="Cancel" states="confirmed,planned,progress"/>
-                <button name="%(stock.picking_scrap)d" type="action" string="Scrap" attrs="{'invisible': [('state', 'in', ('confirmed', 'cancel'))]}"/>
+                <button name="button_scrap" type="object" string="Scrap" attrs="{'invisible': [('state', 'in', ('confirmed', 'cancel'))]}"/>
                 <field name="state" widget="statusbar" statusbar_visible="confirmed,progress,done"/>
             </header>
             <sheet string="Work Orders">
@@ -1264,9 +1259,10 @@
                     <group>
                         <group>
                             <label for="date_planned_start" string="Planned Date"/>
-                            <div class="oe_inline">
-                                <field name="date_planned_start"/> to 
-                                <field name="date_planned_end"/>
+                            <div class="o_row">
+                                <field name="date_planned_start"/>
+                                <label string="to" attrs="{'invisible': [('date_planned_start', '=', False)]}"/>
+                                <field name="date_planned_end" attrs="{'invisible': [('date_planned_start', '=', False)]}"/>
                             </div>
                             <label for="hour" string="Expected Duration"/>
                             <div>
@@ -1277,10 +1273,10 @@
                         </group>
                         <group>
                             <label for="date_start" string="Effective Date"/>
-                            <div class="oe_inline">
+                            <div class="o_row">
                                 <field name="date_start" readonly="1"/>
-                                to
-                                <field name="date_finished" readonly="1"/>
+                                <label string="to" attrs="{'invisible': [('date_start', '=', False)]}"/>
+                                <field name="date_finished" readonly="1" attrs="{'invisible': [('date_start', '=', False)]}"/>
                             </div>
                             <label for="delay" string="Real Duration"/>
                             <div>
@@ -1290,6 +1286,9 @@
                             <field name="started_since" attrs="{'invisible': [('state', '!=', 'progress')]}"/>
                         </group>
                     </group>
+                    <field name="show_state" invisible="1"/>
+                    <button name="button_start" type="object" string="START" class="btn-success" attrs="{'invisible': ['|',('state', '=', ('done')), ('show_state', '=', False)]}"/>
+                    <button name="button_pause" type="object" string="STOP" class="btn-danger" attrs="{'invisible': ['|',('state', 'in', ('confirmed', 'done')), ('show_state', '=', True)]}"/>
                     <group>
                         <field name="time_ids" readonly="1" nolabel="1">
                             <tree>
@@ -1552,34 +1551,105 @@
 
     <!--  Unbuild and scrap menu -->
 
+        <record id="mrp_unbuild_search_view" model="ir.ui.view">
+            <field name="name">mrp.unbuild.search</field>
+            <field name="model">mrp.unbuild</field>
+            <field name="arch" type="xml">
+                <search string="Search">
+                    <field name="product_id"/>
+                    <field name="state"/>
+                    <field name="mo_id"/>
+                    <group expand="0" string="Filters">
+                        <filter name="confirmed" string="Confirmed" domain="[('state', '=', 'confirmed')]"/>
+                        <filter name="done" string="Done" domain="[('state', '=', 'done')]"/>
+                    </group>
+                    <group expand='0' string='Group by...'>
+                        <filter string='Product' name="productgroup" context="{'group_by': 'product_id'}"/>
+                        <filter string="Manufacturing Order" name="mogroup" context="{'group_by': 'mo_id'}"/>
+                    </group>
+               </search>
+            </field>
+        </record>
+
         <record id="mrp_unbuild_form_view" model="ir.ui.view">
             <field name="name">mrp.unbuild.form</field>
             <field name="model">mrp.unbuild</field>
             <field name="arch" type="xml">
                 <form string="Unbuild Orders">
-                    <group>
-                        <field name="name"/>
+                    <header>
+                        <button name="button_unbuild" string="Unbuild" type="object" states="confirmed" class="oe_highlight"/>
+                        <field name="state" widget="statusbar" statusbar_visible="confirmed,done" statusbar_colors="{&quot;confirmed&quot;:&quot;blue&quot;}"/>
+                    </header>
+                    <sheet>
+                        <div class="oe_title">
+                            <h1><field name="name" placeholder="Unbuild Order" nolabel="1"/></h1>
+                        </div>
                         <group>
-                            <field name="product_id"/>
-                            <field name="product_qty"/>
+                            <group>
+                                <field name="mo_id"/>
+                                <field name="product_id"/>
+                                <label for="product_qty"/>
+                                <div class="o_row">
+                                    <field name="product_qty"/>
+                                    <field name="product_uom_id" options="{'no_open':True,'no_create':True}" groups="product.group_uom"/>
+                                </div>
+                            </group>
+                            <group>
+                                <field name="location_id"/>
+                                <field name="lot_id"/>
+                                <field name="bom_id"/>
+                                <field name="date_unbuild"/>
+                            </group>
                         </group>
-                        <group>
-                            <field name="location_id"/>
-                            <field name="lot_id"/>
-                            <field name="bom_id"/>
-                        </group>
-                    </group>
+                        <notebook>
+                            <page string="Produce Product">
+                                <field name="produce_line_ids"/>
+                            </page>
+                            <page string="Consume Product">
+                                <group>
+                                    <field name="consume_line_id"/>
+                                </group>
+                            </page>
+                        </notebook>
+                    </sheet>
                 </form>
             </field>
         </record>
 
+    <record id="stock_scrap_form_view2_inherit" model="ir.ui.view">
+        <field name="name">Scrap</field>
+        <field name="model">stock.scrap</field>
+        <field name="inherit_id" ref="stock.stock_scrap_form_view2"/>
+        <field name="arch" type="xml">
+            <field name="scrap_location_id" position="after">
+                <field name="workorder_id"/>
+            </field>
+        </field>
+    </record>
+
+        <record id="mrp_unbuild_tree_view" model="ir.ui.view">
+            <field name="name">mrp.unbuild.tree</field>
+            <field name="model">mrp.unbuild</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="name"/>
+                    <field name="product_id"/>
+                    <field name="product_qty"/>
+                    <field name="bom_id"/>
+                    <field name="state"/>
+                    <field name="lot_id"/>
+                    <field name="location_id"/>
+                </tree>
+            </field>
+        </record>
 
     <record model="ir.actions.act_window" id="mrp_unbuild">
-        <field name="name">Unbuild Action</field>
+        <field name="name">Unbuild Orders</field>
         <field name="type">ir.actions.act_window</field>
         <field name="res_model">mrp.unbuild</field>
         <field name="view_type">form</field>
         <field name="view_mode">tree,form</field>
+        <field name="context">{'search_default_confirmed': True}</field>
         <field name="help" type="html">
           <p class="oe_view_nocontent_create">
             Click to start a new Unbuild Order
@@ -1603,6 +1673,6 @@
     <menuitem id="menu_mrp_scrap"
             name="Scrap"
             parent="menu_mrp_manufacturing"
-            action="stock.picking_scrap"
+            action="stock.action_stock_scrap"
             sequence="25"/>
 </odoo>

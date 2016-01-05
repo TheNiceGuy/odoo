@@ -809,7 +809,7 @@
                     <button name="do_prepare_partial" attrs="{'invisible': ['|', ('launch_pack_operations', '=', True), '|', ('state', 'not in', ('assigned', 'partially_available')), ('pack_operation_ids', '!=', [])]}"
                             string="Reset Operations" type="object"/>
                     <field name="launch_pack_operations" invisible="1"/>
-                    <button name="%(stock.picking_scrap)d" type="action" string="Scrap" attrs="{'invisible': [('state', 'in', ('draft', 'cancel'))]}"/>
+                    <button name="button_scrap" type="object" string="Scrap" attrs="{'invisible': [('state', 'in', ('draft', 'cancel'))]}"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,confirmed,partially_available,assigned,done" statusbar_colors='{"shipping_except":"red","invoice_except":"red","waiting_date":"blue"}'/>
                 </header>
                 <sheet>

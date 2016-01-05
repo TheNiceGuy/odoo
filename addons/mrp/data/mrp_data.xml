@@ -31,6 +31,15 @@ This application supports complete integration and production scheduling for sto
             <field name="number_increment">1</field>
         </record>
 
+        <record id="sequence_mrp_unbuild" model="ir.sequence">
+            <field name="name">Unbuild</field>
+            <field name="code">mrp.unbuild</field>
+            <field name="prefix">UB/</field>
+            <field name="padding">5</field>
+            <field name="number_next">1</field>
+            <field name="number_increment">1</field>
+        </record>
+
         <!--
              Procurement rules and routes
         -->

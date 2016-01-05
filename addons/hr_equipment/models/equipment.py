@@ -16,7 +16,7 @@ class HrEquipment(models.Model):
 
     @api.depends('employee_id', 'department_id', 'equipment_assign_to')
     def _compute_owner(self):
-        self.owner_user_id = False
+        self.owner_user_id = self.env.user.id
         if self.equipment_assign_to == 'employee':
             self.owner_user_id = self.employee_id.user_id.id
         elif self.equipment_assign_to == 'department':
