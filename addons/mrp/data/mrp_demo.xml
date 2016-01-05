@@ -41,7 +41,6 @@
 
         <record id="mrp_workcenter_2" model="mrp.workcenter">
             <field name="name">Assemble</field>
-            <field name="resource_type">user</field>
             <field name="calendar_id" ref="resource.timesheet_group1"/>
         </record>
 
