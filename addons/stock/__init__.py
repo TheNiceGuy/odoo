@@ -9,5 +9,6 @@ import report
 import wizard
 import res_config
 import web_planner
+import stock_scrap
 
 import controllers

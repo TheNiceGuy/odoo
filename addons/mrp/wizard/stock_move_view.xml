@@ -4,10 +4,10 @@
 
         <record id="view_stock_picking_scrap_wizard_inherit" model="ir.ui.view">
             <field name="name">Scrap</field>
-            <field name="model">stock.scrap</field>
+            <field name="model">stock.scrap.wizard</field>
             <field name="inherit_id" ref="stock.view_stock_picking_scrap_wizard"/>
             <field name="arch" type="xml">
-                <field name="picking_id" position="after">
+                <field name="scrap_location_id" position="after">
                     <field name="workorder_id" invisible="1"/>
                 </field>
             </field>
