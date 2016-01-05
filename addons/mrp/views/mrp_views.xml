@@ -171,7 +171,6 @@
                 <tree string="Work Center">
                     <field name="name"/>
                     <field name="code"/>
-                    <field name="resource_type"/>
                     <field name="company_id" groups="base.group_multi_company"/>
                 </tree>
             </field>
@@ -191,7 +190,6 @@
                         <group>
                             <group>
                                 <field name="name" string="Work Center Name"/>
-                                <field name="resource_type" widget="radio"/>
                             </group>
                             <group>
                                 <field name="code"/>
@@ -226,10 +224,9 @@
             <field name="arch" type="xml">
                 <search string="Search for mrp workcenter">
                     <field name="name" string="Mrp Workcenter" filter_domain="['|',('name','ilike',self),('code','ilike',self)]"/>
-                    <field name="resource_type"/>
                     <filter string="Inactive" domain="[('active','=',False)]"/>
                     <group expand="0" string="Group By...">
-                        <filter string="Type" domain="[]" context="{'group_by':'resource_type'}"/>
+                        <filter string="Type" domain="[]"/>
                         <filter string="Company" domain="[]" context="{'group_by':'company_id'}" groups="base.group_multi_company"/>
                     </group>
                 </search>
