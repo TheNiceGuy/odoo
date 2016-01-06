@@ -762,6 +762,20 @@ class MrpProductionWorkcenterLine(models.Model):
         self.write({'state': 'done',
                     'date_finished': datetime.now()})
 
+    @api.multi
+    def button_scrap(self):
+        self.ensure_one()
+        return {
+            'name': _('Scrap'),
+            'view_type': 'form',
+            'view_mode': 'form',
+            'res_model': 'stock.scrap',
+            'view_id': self.env.ref('stock.stock_scrap_form_view2').id,
+            'type': 'ir.actions.act_window',
+            'context': {'default_workorder_id': self.ids[0]},
+            'target': 'new',
+        }
+
 
 class MrpProductionWorkcenterLineTime(models.Model):
     _name='mrp.production.workcenter.line.time'
@@ -887,6 +901,11 @@ class MrpUnbuild(models.Model):
     consume_line_id = fields.Many2one('stock.move', readonly=True)
     produce_line_ids = fields.One2many('stock.move', 'unbuild_id', readonly=True)
     state = fields.Selection([('confirmed', 'Confirmed'), ('done', 'Done')], "State")
-    
+
     #TODO: need quants defined here
-    
+
+
+class StockScrap(models.Model):
+    _inherit = "stock.scrap"
+
+    workorder_id = fields.Many2one('mrp.production.workcenter.line', 'Work Order')

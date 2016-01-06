@@ -1711,6 +1711,19 @@ class stock_picking(models.Model):
                 raise UserError(_('Please process some quantities to put in the pack first!'))
         return package_id
 
+    def button_scrap(self, cr, uid, ids, context=None):
+        view_id = self.pool['ir.model.data'].xmlid_to_res_id(cr, uid, 'stock.stock_scrap_form_view2')
+        return {
+            'name': _('Scrap'),
+            'view_type': 'form',
+            'view_mode': 'form',
+            'res_model': 'stock.scrap',
+            'view_id': view_id,
+            'type': 'ir.actions.act_window',
+            'context': {'default_picking_id': ids[0]},
+            'target': 'new',
+        }
+
 
 class stock_production_lot(osv.osv):
     _name = 'stock.production.lot'

@@ -6,19 +6,6 @@ from openerp.tools import float_compare
 import openerp.addons.decimal_precision as dp
 
 
-class StockScrap(models.TransientModel):
-    _inherit = "stock.scrap.wizard"
-
-    workorder_id = fields.Many2one('mrp.production.workcenter.line', 'Work Order')
-
-    @api.model
-    def default_get(self, fields):
-        res = super(StockScrap, self).default_get(fields)
-        if self.env.context.get('active_model') == 'mrp.production.workcenter.line':
-            res.update({'workorder_id': self.env.context.get("active_id")})
-        return res
-
-
 class StockMoveConsume(models.TransientModel):
     _name = "stock.move.consume"
     _description = "Consume Products"

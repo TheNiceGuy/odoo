@@ -7,7 +7,7 @@
             <field name="arch" type="xml">
                 <form string="Scrap">
                     <header>
-                        <button name="button_done" string="Done" type="object" states="confirmed" class="oe_highlight"/>
+                        <button name="do_scrap" string="Done" type="object" states="confirmed" class="oe_highlight"/>
                         <field name="state" widget="statusbar" statusbar_visible="confirmed,done" statusbar_colors="{&quot;done&quot;:&quot;blue&quot;}"/>
                     </header>
                     <sheet>
@@ -52,5 +52,29 @@
             <field name="res_model">stock.scrap</field>
             <field name="view_type">form</field>
             <field name="view_mode">tree,form</field>
+        </record>
+
+        <record id="stock_scrap_form_view2" model="ir.ui.view">
+            <field name="name">stock.scrap.form2</field>
+            <field name="model">stock.scrap</field>
+            <field name="arch" type="xml">
+                <form string="Scrap">
+                    <group>
+                        <group>
+                            <field name="product_id"/>
+                            <field name="scrap_qty"/>
+                        </group>
+                        <group>
+                            <field name="picking_id"/>
+                            <field name="lot_id"/>
+                            <field name="scrap_location_id"/>
+                        </group>
+                    </group>
+                    <footer>
+                        <button name="do_scrap" string="Scrap" type="object" class="btn-primary"/>
+                        <button string="Cancel" class="btn-default" special="cancel" />
+                    </footer>
+                </form>
+            </field>
         </record>
 </odoo>

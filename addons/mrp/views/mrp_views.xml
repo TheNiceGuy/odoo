@@ -1243,7 +1243,7 @@
                 <button name="button_pause" type="object" string="Pending" states="progress"/>
                 <button name="button_draft" type="object" string="Set Draft" states="cancel"/>
                 <button name="button_cancel" type="object" string="Cancel" states="confirmed,planned,progress"/>
-                <button name="%(stock.picking_scrap)d" type="action" string="Scrap" attrs="{'invisible': [('state', 'in', ('confirmed', 'cancel'))]}"/>
+                <button name="button_scrap" type="object" string="Scrap" attrs="{'invisible': [('state', 'in', ('confirmed', 'cancel'))]}"/>
                 <field name="state" widget="statusbar" statusbar_visible="confirmed,progress,done"/>
             </header>
             <sheet string="Work Orders">
@@ -1572,6 +1572,16 @@
             </field>
         </record>
 
+    <record id="stock_scrap_form_view2_inherit" model="ir.ui.view">
+        <field name="name">Scrap</field>
+        <field name="model">stock.scrap</field>
+        <field name="inherit_id" ref="stock.stock_scrap_form_view2"/>
+        <field name="arch" type="xml">
+            <field name="scrap_location_id" position="after">
+                <field name="workorder_id"/>
+            </field>
+        </field>
+    </record>
 
     <record model="ir.actions.act_window" id="mrp_unbuild">
         <field name="name">Unbuild Action</field>
