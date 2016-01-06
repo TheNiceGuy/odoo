@@ -150,7 +150,7 @@ class MrpProduction(models.Model):
     nb_done = fields.Integer('Number of Orders Done', compute='_compute_nb_orders')
 
     state = fields.Selection([('confirmed', 'Confirmed'), ('planned', 'Planned'), ('progress', 'In Progress'), ('done', 'Done'), ('cancel', 'Cancelled')], 'State', default='confirmed', copy=False)
-    availability = fields.Selection([('assigned', 'Ava    ilable'), ('partially_available', 'Partially available'), ('none', 'None'), ('waiting', 'Waiting')], compute='_compute_availability', default="none")
+    availability = fields.Selection([('assigned', 'Available'), ('partially_available', 'Partially available'), ('none', 'None'), ('waiting', 'Waiting')], compute='_compute_availability', default="none")
 
 #     state = fields.Selection(
 #         [('draft', 'New'), ('cancel', 'Cancelled'), ('confirmed', 'Awaiting Raw Materials'),
@@ -604,7 +604,11 @@ class MrpProduction(models.Model):
             
             #Consume lines
             results, results2 = production._prepare_lines(properties=properties)
+            firsttime = True
             for line in results2:
+                if firsttime:
+                    firsttime = False
+                    line['state'] = 'ready'
                 line['production_id'] = production.id
                 WorkOrder.create(line)
             

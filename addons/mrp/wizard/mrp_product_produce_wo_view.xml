@@ -11,12 +11,7 @@
                 <form string="Produce">
                     <group string="Produce">
                         <field name="product_qty" colspan="2"/>
-                        <field name="product_id" invisible="1"/>
-                        <field name="tracking" invisible="1"/>
-                        <field name="lot_id" domain="[('product_id', '=', product_id)]"
-                                    context="{'default_product_id':product_id}"
-                                    attrs="{'required': [('tracking', '!=', 'none'), ('mode', '=', 'consume_produce')]}"
-                                    groups="stock.group_production_lot"/>
+                        <field name="product_id"/>
                     </group>
                     <footer>
                         <button name="do_produce" type="object" string="Confirm" class="btn-primary"/>
@@ -26,14 +21,12 @@
             </field>
         </record>
 
-        <record id="act_mrp_product_product_wo" model="ir.actions.act_window">
+        <record id="act_mrp_product_produce_wo" model="ir.actions.act_window">
             <field name="name">Produce</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">mrp.product.produce</field>
+            <field name="res_model">mrp.product.produce.wo</field>
             <field name="view_type">form</field>
             <field name="view_mode">form</field>
             <field name="target">new</field>
-        </record>    
-        
-        
+        </record>
 </odoo>
