@@ -1712,6 +1712,7 @@ class stock_picking(models.Model):
         return package_id
 
     def button_scrap(self, cr, uid, ids, context=None):
+        picking = self.browse(cr, uid, ids, context=context)
         view_id = self.pool['ir.model.data'].xmlid_to_res_id(cr, uid, 'stock.stock_scrap_form_view2')
         return {
             'name': _('Scrap'),
@@ -1720,7 +1721,7 @@ class stock_picking(models.Model):
             'res_model': 'stock.scrap',
             'view_id': view_id,
             'type': 'ir.actions.act_window',
-            'context': {'default_picking_id': ids[0]},
+            'context': {'default_picking_id': ids[0], 'product_ids': picking.pack_operation_product_ids.mapped('product_id').ids},
             'target': 'new',
         }
 

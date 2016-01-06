@@ -71,7 +71,7 @@
                 <form string="Scrap">
                     <group>
                         <group>
-                            <field name="product_id"/>
+                            <field name="product_id" domain="[('id', 'in', context.get('product_ids', []))]"/>
                             <field name="product_uom_id"/>
                             <field name="scrap_qty"/>
                         </group>

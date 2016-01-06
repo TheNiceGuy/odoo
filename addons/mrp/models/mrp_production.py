@@ -648,6 +648,20 @@ class MrpProduction(models.Model):
             order.generate_production_consume_lines()
         return True
 
+    @api.multi
+    def button_scrap(self):
+        self.ensure_one()
+        return {
+            'name': _('Scrap'),
+            'view_type': 'form',
+            'view_mode': 'form',
+            'res_model': 'stock.scrap',
+            'view_id': self.env.ref('stock.stock_scrap_form_view2').id,
+            'type': 'ir.actions.act_window',
+            'context': {'product_ids': self.consume_line_ids.mapped('product_id').ids},
+            'target': 'new',
+        }
+
 
 class MrpProductionWorkcenterLine(models.Model):
     _name = 'mrp.production.workcenter.line'
@@ -772,7 +786,7 @@ class MrpProductionWorkcenterLine(models.Model):
             'res_model': 'stock.scrap',
             'view_id': self.env.ref('stock.stock_scrap_form_view2').id,
             'type': 'ir.actions.act_window',
-            'context': {'default_workorder_id': self.ids[0]},
+            'context': {'default_workorder_id': self.ids[0], 'product_ids': self.move_line_ids.mapped('product_id').ids},
             'target': 'new',
         }
 

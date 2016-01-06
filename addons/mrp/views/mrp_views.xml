@@ -772,6 +772,7 @@
                     <button name="force_assign" attrs="{'invisible': [('availability', '=', 'assigned')]}" string="Force Reservation" type="object"/>
                     <button name="button_plan" states="confirmed" type="object" string="Plan"/>
                     <button name="button_cancel" states="confirmed,planned,progress" string="Cancel Production"/>
+                    <button name="button_scrap" type="object" string="Scrap" attrs="{'invisible': [('state', 'in', ('cancel'))]}"/>
                     <field name="state" widget="statusbar" statusbar_visible="confirmed,progress,done" statusbar_colors='{"confirmed":"blue"}'/>
                 </header>
                 <sheet>
