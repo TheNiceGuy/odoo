@@ -715,11 +715,6 @@ class MrpProductionWorkcenterLine(models.Model):
         self.write({'state' 'planned'})
 
     @api.multi
-    def button_produce(self):
-        # Launch number produced
-        pass
-
-    @api.multi
     def button_start(self):
         timeline = self.env['mrp.production.workcenter.line.time']
         for workorder in self:
