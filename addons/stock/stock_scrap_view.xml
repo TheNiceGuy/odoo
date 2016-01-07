@@ -7,7 +7,7 @@
             <field name="arch" type="xml">
                 <form string="Scrap">
                     <header>
-                        <button name="do_scrap" string="Done" type="object" states="confirmed" class="oe_highlight"/>
+                        <button name="do_scrap" string="Scrap" type="object" states="confirmed" class="oe_highlight"/>
                         <field name="state" widget="statusbar" statusbar_visible="confirmed,done" statusbar_colors="{&quot;done&quot;:&quot;blue&quot;}"/>
                     </header>
                     <sheet>
@@ -24,7 +24,7 @@
                                 <field name="lot_id"/>
                                 <field name="picking_id"/>
                                 <field name="location_id"/>
-                                <field name="scrap_location_id"/>
+                                <field name="scrap_location_id" groups="stock.group_locations"/>
                             </group>
                         </group>
                         <notebook>
@@ -51,6 +51,7 @@
                     <field name="scrap_qty"/>
                     <field name="location_id"/>
                     <field name="scrap_location_id"/>
+                    <field name="state"/>
                 </tree>
             </field>
         </record>
@@ -77,7 +78,7 @@
                         <group>
                             <field name="picking_id"/>
                             <field name="lot_id"/>
-                            <field name="scrap_location_id"/>
+                            <field name="scrap_location_id" groups="stock.group_locations"/>
                         </group>
                     </group>
                     <footer>
