@@ -1235,10 +1235,7 @@
         <field name="arch" type="xml">
             <form string="Production Workcenter">
             <header>
-                <button name="button_start" type="object" string="Start" states="confirmed,planned" class="oe_highlight"/>
-                <button name="button_resume" type="object" string="Resume" states="pause" class="oe_highlight"/>
                 <button name="button_done" type="object" string="Finished" states="progress" class="oe_highlight"/>
-                <button name="button_pause" type="object" string="Pending" states="progress"/>
                 <button name="button_draft" type="object" string="Set Draft" states="cancel"/>
                 <button name="button_cancel" type="object" string="Cancel" states="confirmed,planned,progress"/>
                 <button name="button_scrap" type="object" string="Scrap" attrs="{'invisible': [('state', 'in', ('confirmed', 'cancel'))]}"/>
@@ -1258,13 +1255,14 @@
                     <field name="worksheet" widget="image"/>
                 </page>
                 
-                <page string="Time Tracking">
+                <page string="Timelines">
                     <group>
                         <group>
                             <label for="date_planned_start" string="Planned Date"/>
-                            <div class="oe_inline">
-                                <field name="date_planned_start"/> to 
-                                <field name="date_planned_end"/>
+                            <div class="o_row">
+                                <field name="date_planned_start"/>
+                                <label string="to" attrs="{'invisible': [('date_planned_start', '=', False)]}"/>
+                                <field name="date_planned_end" attrs="{'invisible': [('date_planned_start', '=', False)]}"/>
                             </div>
                             <label for="hour" string="Expected Duration"/>
                             <div>
@@ -1274,10 +1272,10 @@
                         </group>
                         <group>
                             <label for="date_start" string="Effective Date"/>
-                            <div class="oe_inline">
+                            <div class="o_row">
                                 <field name="date_start" readonly="1"/>
-                                to
-                                <field name="date_finished" readonly="1"/>
+                                <label string="to" attrs="{'invisible': [('date_start', '=', False)]}"/>
+                                <field name="date_finished" readonly="1" attrs="{'invisible': [('date_start', '=', False)]}"/>
                             </div>
                             <label for="delay" string="Real Duration"/>
                             <div>
@@ -1287,6 +1285,9 @@
                             <field name="started_since" attrs="{'invisible': [('state', '!=', 'progress')]}"/>
                         </group>
                     </group>
+                    <field name="show_state" invisible="1"/>
+                    <button name="button_start" type="object" string="START" class="btn-success" attrs="{'invisible': ['|',('state', '=', ('done')), ('show_state', '=', False)]}"/>
+                    <button name="button_pause" type="object" string="STOP" class="btn-danger" attrs="{'invisible': ['|',('state', 'in', ('confirmed', 'done')), ('show_state', '=', True)]}"/>
                     <group>
                         <field name="time_ids" readonly="1" nolabel="1">
                             <tree>
