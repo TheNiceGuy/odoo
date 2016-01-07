@@ -718,7 +718,17 @@ class MrpProductionWorkcenterLine(models.Model):
     started_since = fields.Datetime('Started Since', compute='_compute_started')
     time_ids = fields.One2many('mrp.production.workcenter.line.time', 'workorder_id')
     worksheet = fields.Binary('Worksheet', related='operation_id.worksheet')
-    
+    work_user_ids = fields.Many2many('res.users', 'workorder_user_rel', 'workorder_id', 'user_id')
+    show_state = fields.Boolean(compute='_get_current_state')
+
+
+    def _get_current_state(self):
+        for order in self:
+            if self.env.user.id in order.work_user_ids.ids:
+                order.show_state = False
+            else:
+                order.show_state = True
+
     @api.multi
     def button_draft(self):
         self.write({'state': 'confirmed'})
@@ -737,29 +747,23 @@ class MrpProductionWorkcenterLine(models.Model):
                              'state': 'running',
                              'date_start': datetime.now(),
                              'user_id': self.env.user.id})
+            if self.env.user.id not in self.work_user_ids.ids:
+                workorder.work_user_ids = [(6, 0, self.work_user_ids.ids + [self.env.user.id] )]
         self.write({'state': 'progress',
                     'date_start': datetime.now(),
                     })
-        
+
     @api.multi
     def end_previous(self):
         timeline_obj = self.env['mrp.production.workcenter.line.time']
         for workorder in self:
-            timeline = timeline_obj.search([('workorder_id', '=', workorder.id), ('state', '=', 'running')], limit=1)
+            timeline = timeline_obj.search([('workorder_id', '=', workorder.id), ('state', '=', 'running'), ('user_id', '=', self.env.user.id)], limit=1)
             timed = datetime.now() - fields.Datetime.from_string(timeline.date_start)
             hours = timed.total_seconds() / 3600.0
             timeline.write({'state': 'done',
                             'duration': hours})
-
-    @api.multi
-    def button_resume(self):
-        timeline_obj = self.env['mrp.production.workcenter.line.time']
-        for workorder in self:
-            timeline = timeline_obj.create({'workorder_id': workorder.id,
-                                            'state': 'running',
-                                            'date_start': datetime.now(),
-                                            'user_id': self.env.user.id})
-        self.write({'state':'progress'})
+            if self.env.user.id in workorder.work_user_ids.ids:
+                workorder.work_user_ids = [(3, self.env.user.id)]
 
     @api.multi
     def button_pause(self):
