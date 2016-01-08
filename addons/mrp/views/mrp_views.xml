@@ -1260,7 +1260,6 @@
                 <page string="Worksheet" attrs="{'invisible': [('worksheet', '=', False)]}">
                     <field name="worksheet" widget="image"/>
                 </page>
-                
                 <page string="Time Tracking">
                     <group>
                         <group>

@@ -206,15 +206,26 @@ class MrpProduction(models.Model):
         if 'product_id' in values and ('product_uom_id' not in values or not values['product_uom_id']):
             values['product_uom_id'] = self.env['product.product'].browse(values.get('product_id')).uom_id.id
         production = super(MrpProduction, self).create(values)
-        production.generate_moves_workorders(properties=None) #TODO: solutions for properties: procurement.property_ids
+        production.generate_moves(properties=None) #TODO: solutions for properties: procurement.property_ids
         return production
 
     @api.multi
     def button_plan(self):
         self.ensure_one()
         self.write({'state': 'planned'})
+                # Create work orders
+        #TODO: Need to find solutions for properties
+        results, results2 = self._prepare_lines(properties=None)
+        WorkOrder = self.env['mrp.production.workcenter.line']
+        firsttime = True
+        for line in results2:
+            if firsttime:
+                firsttime = False
+                line['state'] = 'ready'
+            line['production_id'] = self.id
+            WorkOrder.create(line)
         #Let us try to plan the order
-        self._compute_planned_workcenter(False) #TODO: should take into account existing orders
+        self._plan_workorder()
 
     @api.multi
     def unlink(self):
@@ -276,6 +287,65 @@ class MrpProduction(models.Model):
         return bom_point.explode(self.product_id, factor / bom_point.product_qty, properties=properties, routing_id=self.routing_id.id)
 
     @api.multi
+    def _plan_workorder(self):
+        workorder_obj = self.env['mrp.production.workcenter.line']
+        for production in self:
+            # Current number of workorder
+            # TODO: for the next workorders, need to go from the last end date planned instead of NOW
+            for workorder in production.workcenter_line_ids:
+                workcenter = workorder.workcenter_id
+                capacity = workcenter.capacity
+                now_date = fields.datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT) 
+                # Should be date of next workcenter
+                wos = workorder_obj.search([
+                    ('workcenter_id', '=', workcenter.id),
+                    ('date_planned_start', '<', now_date), 
+                    ('date_planned_end', '>', now_date)])
+                init_cap = sum([x.capacity_planned for x in wos])
+                cr = self._cr
+                cr.execute("""SELECT date, cap FROM 
+                            ((SELECT date_planned_start AS date, capacity_planned AS cap FROM mrp_production_workcenter_line WHERE workcenter_id = %s AND
+                                    date_planned_start IS NOT NULL AND date_planned_end IS NOT NULL AND date_planned_end > CURRENT_DATE)
+                            UNION
+                            (SELECT date_planned_end AS date, -capacity_planned AS cap FROM mrp_production_workcenter_line WHERE workcenter_id = %s AND
+                                    date_planned_start IS NOT NULL AND date_planned_end IS NOT NULL AND date_planned_end > CURRENT_DATE)) AS date_union 
+                            ORDER BY date""", (workcenter.id, workcenter.id,))
+                res = cr.fetchall()
+                first_date = False
+                to_date = False
+                between_capacity = init_cap
+                intervals = []
+                if between_capacity < capacity:
+                    first_date = datetime.now()
+                    from_capacity = capacity - between_capacity
+                    intervals = workcenter.calendar_id.interval_get(first_date, workorder.hour / from_capacity)
+                    to_date = intervals[0][-1][1]
+                for date, cap in res:
+                    between_capacity += cap
+                    date_fmt = datetime.strptime(date, DEFAULT_SERVER_DATETIME_FORMAT)
+                    if not first_date and (between_capacity < capacity):
+                        first_date = date_fmt
+                        from_capacity = capacity - between_capacity
+                        intervals = workcenter.calendar_id.interval_get(first_date, workorder.hour / from_capacity)
+                        to_date = intervals[0][-1][1]
+                    elif between_capacity >= capacity:
+                        first_date = False
+                        to_date = False
+                        from_capacity = 0
+                        intervals = []
+                    elif first_date and (to_date <= date_fmt):
+                        break
+                    elif first_date: #Change date when minimum capacity is not attained
+                        if from_capacity > capacity - between_capacity:
+                            from_capacity = capacity - between_capacity
+                            intervals = workcenter.calendar_id.interval_get(first_date, workorder.hour / from_capacity)
+                            to_date = intervals[0][-1][1]
+                workorder.write({'date_planned_start': first_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT),
+                                 'date_planned_end': to_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT),
+                                 'capacity_planned': from_capacity})
+
+
+    @api.multi
     def _compute_planned_workcenter(self, mini=False):
         """ Computes planned and finished dates for work order.
         @return: Calculated date
@@ -283,7 +353,7 @@ class MrpProduction(models.Model):
         dt_end = datetime.now()
         context = self.env.context or {}
         for po in self: #Maybe need to make difference between different pos
-            dt_end = datetime.strptime(po.date_planned_start, '%Y-%m-%d %H:%M:%S')
+            dt_end = po.date_planned_start and datetime.strptime(po.date_planned_start, '%Y-%m-%d %H:%M:%S') or datetime.now()
             old = None
             for wci in range(len(po.workcenter_line_ids)):
                 wc  = po.workcenter_line_ids[wci]
@@ -592,26 +662,16 @@ class MrpProduction(models.Model):
         return vals
 
     @api.multi
-    def generate_moves_workorders(self, properties=None):
+    def generate_moves(self, properties=None):
         """ 
             Generates moves and work orders
         """
         WorkOrder = self.env['mrp.production.workcenter.line']
-        
         for production in self:
             #Produce lines
             production._make_production_produce_line()
-            
             #Consume lines
             results, results2 = production._prepare_lines(properties=properties)
-            firsttime = True
-            for line in results2:
-                if firsttime:
-                    firsttime = False
-                    line['state'] = 'ready'
-                line['production_id'] = production.id
-                WorkOrder.create(line)
-            
             stock_moves = self.env['stock.move']
             source_location = production.location_src_id
             prev_move = False
@@ -693,6 +753,7 @@ class MrpProductionWorkcenterLine(models.Model):
     state = fields.Selection([('confirmed', 'Confirmed'), ('ready', 'Ready'), ('cancel', 'Cancelled'), ('pause', 'Pending'), ('progress', 'In Progress'), ('done', 'Finished')], default='confirmed')
     date_planned_start = fields.Datetime('Scheduled Date Start')
     date_planned_end = fields.Datetime('Scheduled Date Finished')
+    capacity_planned = fields.Integer('Capacity Planned')
     date_start = fields.Datetime('Effective Start Date')
     date_finished = fields.Datetime('Effective End Date')
     delay = fields.Float('Real Duration', compute='_compute_delay', readonly=True)
@@ -716,6 +777,7 @@ class MrpProductionWorkcenterLine(models.Model):
     # Plan should disappear -> created when doing production
     @api.multi
     def button_plan(self):
+        self.ensure_one()
         self.write({'state' 'planned'})
 
     @api.multi
