@@ -1273,6 +1273,7 @@
                                 <field name="hour" widget="float_time" class="oe_inline"/>
                                 hours
                             </div>
+                            <field name="capacity_planned"/>
                         </group>
                         <group>
                             <label for="date_start" string="Effective Date"/>

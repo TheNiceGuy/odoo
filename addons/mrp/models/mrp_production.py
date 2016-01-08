@@ -290,33 +290,31 @@ class MrpProduction(models.Model):
     def _plan_workorder(self):
         workorder_obj = self.env['mrp.production.workcenter.line']
         for production in self:
-            # Current number of workorder
-            # TODO: for the next workorders, need to go from the last end date planned instead of NOW
+            start_date = fields.datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
             for workorder in production.workcenter_line_ids:
                 workcenter = workorder.workcenter_id
                 capacity = workcenter.capacity
-                now_date = fields.datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT) 
-                # Should be date of next workcenter
+                # Check initial capacity
                 wos = workorder_obj.search([
                     ('workcenter_id', '=', workcenter.id),
-                    ('date_planned_start', '<', now_date), 
-                    ('date_planned_end', '>', now_date)])
+                    ('date_planned_start', '<', start_date), 
+                    ('date_planned_end', '>', start_date)])
                 init_cap = sum([x.capacity_planned for x in wos])
                 cr = self._cr
                 cr.execute("""SELECT date, cap FROM 
                             ((SELECT date_planned_start AS date, capacity_planned AS cap FROM mrp_production_workcenter_line WHERE workcenter_id = %s AND
-                                    date_planned_start IS NOT NULL AND date_planned_end IS NOT NULL AND date_planned_end > CURRENT_DATE)
+                                    date_planned_start IS NOT NULL AND date_planned_end IS NOT NULL AND date_planned_start > %s)
                             UNION
                             (SELECT date_planned_end AS date, -capacity_planned AS cap FROM mrp_production_workcenter_line WHERE workcenter_id = %s AND
-                                    date_planned_start IS NOT NULL AND date_planned_end IS NOT NULL AND date_planned_end > CURRENT_DATE)) AS date_union 
-                            ORDER BY date""", (workcenter.id, workcenter.id,))
+                                    date_planned_start IS NOT NULL AND date_planned_end IS NOT NULL AND date_planned_end > %s)) AS date_union 
+                            ORDER BY date""", (workcenter.id, start_date, workcenter.id, start_date))
                 res = cr.fetchall()
                 first_date = False
                 to_date = False
                 between_capacity = init_cap
                 intervals = []
                 if between_capacity < capacity:
-                    first_date = datetime.now()
+                    first_date = datetime.strptime(start_date, DEFAULT_SERVER_DATETIME_FORMAT)
                     from_capacity = capacity - between_capacity
                     intervals = workcenter.calendar_id.interval_get(first_date, workorder.hour / from_capacity)
                     to_date = intervals[0][-1][1]
@@ -343,6 +341,7 @@ class MrpProduction(models.Model):
                 workorder.write({'date_planned_start': first_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT),
                                  'date_planned_end': to_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT),
                                  'capacity_planned': from_capacity})
+                start_date = to_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)
 
 
     @api.multi
@@ -768,7 +767,7 @@ class MrpProductionWorkcenterLine(models.Model):
     uom = fields.Many2one('product.uom', related='production_id.product_uom_id', string='Unit of Measure')
     started_since = fields.Datetime('Started Since', compute='_compute_started')
     time_ids = fields.One2many('mrp.production.workcenter.line.time', 'workorder_id')
-    worksheet = fields.Binary('Worksheet', related='operation_id.worksheet')
+    worksheet = fields.Binary('Worksheet', related='operation_id.worksheet', readonly=True)
     
     @api.multi
     def button_draft(self):
