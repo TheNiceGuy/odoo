@@ -831,6 +831,19 @@ class MrpProductionWorkcenterLine(models.Model):
                 workorder.work_user_ids = [(3, self.env.user.id)]
 
     @api.multi
+    def end_all(self):
+        timeline_obj = self.env['mrp.production.workcenter.line.time']
+        for workorder in self:
+            timelines = timeline_obj.search([('workorder_id', '=', workorder.id), ('state', '=', 'running')])
+            for timeline in timelines:
+                timed = datetime.now() - fields.Datetime.from_string(timeline.date_start)
+                hours = timed.total_seconds() / 3600.0
+                timeline.write({'state': 'done',
+                                'duration': hours})
+                if timeline.user_id.id in workorder.work_user_ids.ids:
+                    workorder.work_user_ids = [(3, timeline.user_id.id)]
+
+    @api.multi
     def button_pause(self):
         self.end_previous()
         self.write({'state': 'pause'})
@@ -841,7 +854,7 @@ class MrpProductionWorkcenterLine(models.Model):
 
     @api.multi
     def button_done(self):
-        self.end_previous()
+        self.end_all()
         self.write({'state': 'done',
                     'date_finished': datetime.now()})
 

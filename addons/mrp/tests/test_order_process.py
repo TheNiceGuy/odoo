@@ -13,7 +13,8 @@ class TestOrderProcess(TestOrderDemo):
 
         def assert_equals(value1, value2, msg, float_compare=float_compare):
             assert float_compare(value1, value2, precision_digits=2) == 0, msg
-        self.assertTrue(len(self.mrp_production_test1.workcenter_line_ids), "Workcenter lines are not generated proper.")
+        
+        #self.assertTrue(len(self.mrp_production_test1.workcenter_line_ids), "Workcenter lines are not generated proper.")
 
 
    # I check details of Produce Move of Production Order to trace Final Product.
@@ -80,6 +81,8 @@ class TestOrderProcess(TestOrderDemo):
 
         # The production order is Waiting Goods, will force production which should set consume lines as available
         self.mrp_production_test1.force_assign()
+        self.mrp_production_test1.button_plan()
+        
 
         # I check that production order in ready state after forcing production.
 
@@ -97,7 +100,7 @@ class TestOrderProcess(TestOrderDemo):
         self.mrp_product_produce1.do_produce()
 
     # I check production order after produced.
-        self.assertEqual(self.mrp_production_test1.state, 'confirmed', "Production order should be closed manually.")
+        self.assertEqual(self.mrp_production_test1.state, 'planned', "Production order should be in planned state.")
 
         def rounding(f, r):
             import math
