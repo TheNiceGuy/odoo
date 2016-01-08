@@ -1242,94 +1242,94 @@
                 <button name="button_scrap" type="object" string="Scrap" attrs="{'invisible': [('state', 'in', ('confirmed', 'cancel'))]}"/>
                 <field name="state" widget="statusbar" statusbar_visible="confirmed,progress,done"/>
             </header>
-            <sheet string="Work Orders">
-                <group col="4">
-                    <field colspan="2" name="name"/>
-                    <field name="workcenter_id"/>
-                    <field name="production_id"/>
-                    <field name="availability"/>
-                    <field name="qty_produced"/>
-                    <field name="sequence" invisible="1"/>
+            <group col="4">
+                <field name="availability"/>
+                <field name="qty_produced"/>
+                <field name="sequence" invisible="1"/>
+            </group>
+            <notebook>
+            <page string="Worksheet" attrs="{'invisible': [('worksheet', '=', False)]}">
+                <field name="worksheet" widget="image"/>
+            </page>
+            <page string="Time Tracking">
+                <group>
+                    <group>
+                        <label for="date_planned_start" string="Planned Date"/>
+                        <div class="o_row">
+                            <field name="date_planned_start"/>
+                            <label string="to" attrs="{'invisible': [('date_planned_start', '=', False)]}"/>
+                            <field name="date_planned_end" attrs="{'invisible': [('date_planned_start', '=', False)]}"/>
+                        </div>
+                        <label for="hour" string="Expected Duration"/>
+                        <div>
+                            <field name="hour" widget="float_time" class="oe_inline"/>
+                            hours
+                        </div>
+                        <field name="capacity_planned"/>
+                    </group>
+                    <group>
+                        <label for="date_start" string="Effective Date"/>
+                        <div class="o_row">
+                            <field name="date_start" readonly="1"/>
+                            <label string="to" attrs="{'invisible': [('date_start', '=', False)]}"/>
+                            <field name="date_finished" readonly="1" attrs="{'invisible': [('date_start', '=', False)]}"/>
+                        </div>
+                        <label for="delay" string="Real Duration"/>
+                        <div>
+                            <field name="delay" widget="float_time" class="oe_inline"/>
+                            hours
+                        </div>
+                        <field name="started_since" attrs="{'invisible': [('state', '!=', 'progress')]}"/>
+                    </group>
                 </group>
-                <notebook>
-                <page string="Worksheet" attrs="{'invisible': [('worksheet', '=', False)]}">
-                    <field name="worksheet" widget="image"/>
-                </page>
-                <page string="Time Tracking">
-                    <group>
-                        <group>
-                            <label for="date_planned_start" string="Planned Date"/>
-                            <div class="o_row">
-                                <field name="date_planned_start"/>
-                                <label string="to" attrs="{'invisible': [('date_planned_start', '=', False)]}"/>
-                                <field name="date_planned_end" attrs="{'invisible': [('date_planned_start', '=', False)]}"/>
-                            </div>
-                            <label for="hour" string="Expected Duration"/>
-                            <div>
-                                <field name="hour" widget="float_time" class="oe_inline"/>
-                                hours
-                            </div>
-                            <field name="capacity_planned"/>
-                        </group>
-                        <group>
-                            <label for="date_start" string="Effective Date"/>
-                            <div class="o_row">
-                                <field name="date_start" readonly="1"/>
-                                <label string="to" attrs="{'invisible': [('date_start', '=', False)]}"/>
-                                <field name="date_finished" readonly="1" attrs="{'invisible': [('date_start', '=', False)]}"/>
-                            </div>
-                            <label for="delay" string="Real Duration"/>
-                            <div>
-                                <field name="delay" widget="float_time" class="oe_inline"/>
-                                hours
-                            </div>
-                            <field name="started_since" attrs="{'invisible': [('state', '!=', 'progress')]}"/>
-                        </group>
-                    </group>
-                    <field name="show_state" invisible="1"/>
-                    <button name="button_start" type="object" string="START" class="btn-success" attrs="{'invisible': ['|',('state', '=', ('done')), ('show_state', '=', False)]}"/>
-                    <button name="button_pause" type="object" string="STOP" class="btn-danger" attrs="{'invisible': ['|',('state', 'in', ('confirmed', 'done')), ('show_state', '=', True)]}"/>
-                    <group>
-                        <field name="time_ids" readonly="1" nolabel="1">
-                            <tree>
-                                <field name="date_start"/>
-                                <field name="duration" widget="float_time"/>
-                                <field name="user_id"/>
-                                <field name="state"/>
-                            </tree>
-                            <form>
+                <field name="show_state" invisible="1"/>
+                <button name="button_start" type="object" string="START" class="btn-success" attrs="{'invisible': ['|',('state', '=', ('done')), ('show_state', '=', False)]}"/>
+                <button name="button_pause" type="object" string="STOP" class="btn-danger" attrs="{'invisible': ['|',('state', 'in', ('confirmed', 'done')), ('show_state', '=', True)]}"/>
+                <group>
+                    <field name="time_ids" readonly="1" nolabel="1">
+                        <tree>
+                            <field name="date_start"/>
+                            <field name="duration" widget="float_time"/>
+                            <field name="user_id"/>
+                            <field name="state"/>
+                        </tree>
+                        <form>
+                            <group>
                                 <group>
-                                    <group>
-                                        <field name="date_start"/>
-                                        <field name="duration" widget="float_time"/>
-                                    </group>
-                                    <group>
-                                        <field name="user_id"/>
-                                        <field name="state"/>
-                                    </group>
+                                    <field name="date_start"/>
+                                    <field name="duration" widget="float_time"/>
                                 </group>
-                            </form>
-                        </field>
-                    </group>
-                </page>
-                <page string="Miscellaneous">
+                                <group>
+                                    <field name="user_id"/>
+                                    <field name="state"/>
+                                </group>
+                            </group>
+                        </form>
+                    </field>
+                </group>
+            </page>
+            <page string="Miscellaneous">
+                <group>
                     <group>
-                        <group string="Product to Produce">
-                            <field name="product"/>
-                            <label for="product_qty" string="Qty"/>
-                            <div class="o_row">
-                                <field name="qty"/>
-                                <field name="uom" widget="selection"/>
-                            </div>
-                        </group>
+                        <field name="product"/>
+                        <label for="product_qty" string="Qty"/>
+                        <div class="o_row">
+                            <field name="qty"/>
+                            <field name="uom" widget="selection"/>
+                        </div>
                     </group>
-                </page>
-                </notebook>
-                </sheet>
-                <div class="oe_chatter">
-                    <field name="message_follower_ids" widget="mail_followers"/>
-                    <field name="message_ids" widget="mail_thread"/>
-                </div>
+                    <group>
+                        <field name="name"/>
+                        <field name="workcenter_id"/>
+                        <field name="production_id"/>
+                    </group>
+                </group>
+            </page>
+            </notebook>
+            <div class="oe_chatter">
+                <field name="message_follower_ids" widget="mail_followers"/>
+                <field name="message_ids" widget="mail_thread"/>
+            </div>
             </form>
         </field>
     </record>
