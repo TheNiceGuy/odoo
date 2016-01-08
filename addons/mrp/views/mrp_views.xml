@@ -1247,7 +1247,7 @@
                     <field name="workcenter_id"/>
                     <field name="production_id"/>
                     <field name="availability"/>
-                    
+                    <field name="operation_id"/>
                     <field name="sequence" invisible="1"/>
                 </group>
                 <notebook>

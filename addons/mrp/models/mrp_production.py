@@ -717,7 +717,7 @@ class MrpProductionWorkcenterLine(models.Model):
     uom = fields.Many2one('product.uom', related='production_id.product_uom_id', string='Unit of Measure')
     started_since = fields.Datetime('Started Since', compute='_compute_started')
     time_ids = fields.One2many('mrp.production.workcenter.line.time', 'workorder_id')
-    worksheet = fields.Binary('Worksheet', related='operation_id.worksheet')
+    worksheet = fields.Binary('Worksheet', related='operation_id.worksheet', readonly=True)
     work_user_ids = fields.Many2many('res.users', 'workorder_user_rel', 'workorder_id', 'user_id')
     show_state = fields.Boolean(compute='_get_current_state')
 
