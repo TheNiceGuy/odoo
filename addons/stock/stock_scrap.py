@@ -7,16 +7,16 @@ from openerp import api, fields, models
 class StockScrap(models.Model):
     _name = 'stock.scrap'
 
-    name = fields.Char(required=True, readonly=True, copy=False, default=lambda self: self.env['ir.sequence'].next_by_code('stock.scrap') or '/')
-    product_id = fields.Many2one('product.product', 'Product')
-    product_uom_id = fields.Many2one('product.uom', string='Product UoM')
-    lot_id = fields.Many2one('stock.production.lot', 'Lot')
-    picking_id = fields.Many2one('stock.picking', 'Picking')
-    location_id = fields.Many2one('stock.location', 'Source Location', default=lambda self: self.env.ref('stock.warehouse0').lot_stock_id.id or False,)
-    scrap_location_id = fields.Many2one('stock.location', domain="[('scrap_location', '=', True)]", string="Scrap Location", default=(lambda x: x.env['stock.location'].search([('scrap_location', '=', True)], limit=1)))
-    scrap_qty = fields.Float('Qty To Scrap')
+    name = fields.Char(required=True, readonly=True, copy=False, default=lambda self: self.env['ir.sequence'].next_by_code('stock.scrap') or '/', states={'done': [('readonly', True)]})
+    product_id = fields.Many2one('product.product', 'Product', states={'done': [('readonly', True)]})
+    product_uom_id = fields.Many2one('product.uom', string='Product UoM', states={'done': [('readonly', True)]})
+    lot_id = fields.Many2one('stock.production.lot', 'Lot', states={'done': [('readonly', True)]})
+    picking_id = fields.Many2one('stock.picking', 'Picking', states={'done': [('readonly', True)]})
+    location_id = fields.Many2one('stock.location', 'Source Location', default=lambda self: self.env.ref('stock.warehouse0').lot_stock_id.id or False, states={'done': [('readonly', True)]})
+    scrap_location_id = fields.Many2one('stock.location', domain="[('scrap_location', '=', True)]", states={'done': [('readonly', True)]}, string="Scrap Location", default=(lambda x: x.env['stock.location'].search([('scrap_location', '=', True)], limit=1)))
+    scrap_qty = fields.Float('Qty To Scrap', states={'done': [('readonly', True)]})
     state = fields.Selection([('confirmed', 'Confirmed'), ('done', 'Done')], default="confirmed")
-    move_id = fields.Many2one('stock.move', 'Stock Move')
+    move_id = fields.Many2one('stock.move', 'Stock Move', readonly=True)
 
     @api.onchange('product_id')
     def onchange_product_id(self):
