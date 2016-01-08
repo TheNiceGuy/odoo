@@ -100,7 +100,7 @@ class TestOrderProcess(TestOrderDemo):
         self.mrp_product_produce1.do_produce()
 
     # I check production order after produced.
-        self.assertEqual(self.mrp_production_test1.state, 'confirmed', "Production order should be closed manually.")
+        self.assertEqual(self.mrp_production_test1.state, 'planned', "Production order should be in planned state.")
 
         def rounding(f, r):
             import math
