@@ -3,7 +3,7 @@
 
 from collections import OrderedDict
 from openerp import api, fields, models, _
-from openerp.exceptions import AccessError, UserError
+from openerp.exceptions import AccessError, UserError, Warning
 from openerp.tools import float_compare, float_is_zero, DEFAULT_SERVER_DATETIME_FORMAT
 import openerp.addons.decimal_precision as dp
 from datetime import datetime
@@ -692,7 +692,6 @@ class MrpProduction(models.Model):
                 stock_moves.action_confirm()
         return 0
 
-
     @api.multi
     def action_assign(self):
         """
@@ -700,10 +699,13 @@ class MrpProduction(models.Model):
         """
         for production in self:
             production.move_line_ids.action_assign()
+            warning_state = production.move_line_ids.filtered(lambda x: x.state != 'available')
             if production.availability in ('assigned', 'partially_available'):
                 production.generate_production_consume_lines()
-        return True
- 
+            if warning_state:
+                raise Warning(_('Not all products are available, you can force availability'))
+            else:
+                raise Warning(_('All products are available'))
     @api.multi
     def force_assign(self):
         for order in self:
