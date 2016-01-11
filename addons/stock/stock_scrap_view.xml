@@ -25,8 +25,8 @@
             <field name="arch" type="xml">
                 <form string="Scrap">
                     <header>
-                        <button name="do_scrap" string="Scrap" type="object" states="confirmed" class="oe_highlight"/>
-                        <field name="state" widget="statusbar" statusbar_visible="confirmed,done" statusbar_colors="{&quot;done&quot;:&quot;blue&quot;}"/>
+                        <button name="do_scrap" string="Scrap" type="object" states="draft" class="oe_highlight"/>
+                        <field name="state" widget="statusbar" statusbar_visible="draft,done" statusbar_colors="{&quot;done&quot;:&quot;blue&quot;}"/>
                     </header>
                     <sheet>
                         <div class="oe_title">
@@ -63,7 +63,7 @@
             <field name="name">stock.scrap.tree</field>
             <field name="model">stock.scrap</field>
             <field name="arch" type="xml">
-                <tree>
+                <tree decoration-danger="state == 'draft'">
                     <field name="name"/>
                     <field name="create_date" string="Create Date"/>
                     <field name="product_id"/>

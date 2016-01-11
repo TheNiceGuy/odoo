@@ -15,7 +15,7 @@ class StockScrap(models.Model):
     location_id = fields.Many2one('stock.location', 'Source Location', default=lambda self: self.env.ref('stock.warehouse0').lot_stock_id.id or False, states={'done': [('readonly', True)]})
     scrap_location_id = fields.Many2one('stock.location', domain="[('scrap_location', '=', True)]", states={'done': [('readonly', True)]}, string="Scrap Location", default=(lambda x: x.env['stock.location'].search([('scrap_location', '=', True)], limit=1)))
     scrap_qty = fields.Float('Qty To Scrap', states={'done': [('readonly', True)]})
-    state = fields.Selection([('confirmed', 'Confirmed'), ('done', 'Done')], default="confirmed")
+    state = fields.Selection([('draft', 'Draft'), ('done', 'Done')], default="draft")
     move_id = fields.Many2one('stock.move', 'Stock Move', readonly=True)
 
     @api.onchange('product_id')
