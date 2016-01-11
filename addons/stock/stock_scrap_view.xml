@@ -1,6 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
+        <record id="stock_scrap_search_view" model="ir.ui.view">
+            <field name="name">stock.scrap.search</field>
+            <field name="model">stock.scrap</field>
+            <field name="arch" type="xml">
+                <search string="Search Scrap">
+                    <field name="product_id"/>
+                    <field name="location_id"/>
+                    <field name="scrap_location_id"/>
+                    <field name="create_date"/>
+                    <group expand="0" string="Group By">
+                        <filter string="Product" domain="[]" context="{'group_by':'product_id'}"/>
+                        <filter string="Source Location" domain="[]" context="{'group_by':'location_id'}"/>
+                        <filter string="Scrap Location" domain="[]" context="{'group_by':'scrap_location_id'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
         <record id="stock_scrap_form_view" model="ir.ui.view">
             <field name="name">stock.scrap.form</field>
             <field name="model">stock.scrap</field>
@@ -23,7 +41,7 @@
                             <group>
                                 <field name="lot_id"/>
                                 <field name="picking_id"/>
-                                <field name="location_id"/>
+                                <field name="location_id" groups="stock.group_locations"/>
                                 <field name="scrap_location_id" groups="stock.group_locations"/>
                             </group>
                         </group>
@@ -47,10 +65,12 @@
             <field name="arch" type="xml">
                 <tree>
                     <field name="name"/>
+                    <field name="create_date" string="Create Date"/>
                     <field name="product_id"/>
+                    <field name="product_uom_id"/>
                     <field name="scrap_qty"/>
-                    <field name="location_id"/>
-                    <field name="scrap_location_id"/>
+                    <field name="location_id" groups="stock.group_locations"/>
+                    <field name="scrap_location_id" groups="stock.group_locations"/>
                     <field name="state"/>
                 </tree>
             </field>

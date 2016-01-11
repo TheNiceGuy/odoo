@@ -7,7 +7,7 @@ from openerp import api, fields, models
 class StockScrap(models.Model):
     _name = 'stock.scrap'
 
-    name = fields.Char(required=True, readonly=True, copy=False, default=lambda self: self.env['ir.sequence'].next_by_code('stock.scrap') or '/', states={'done': [('readonly', True)]})
+    name = fields.Char(required=True, readonly=True, copy=False, default=lambda self: self.env['ir.sequence'].next_by_code('stock.scrap') or '/', states={'done': [('readonly', True)]}, string="Reference")
     product_id = fields.Many2one('product.product', 'Product', states={'done': [('readonly', True)]})
     product_uom_id = fields.Many2one('product.uom', string='Product UoM', states={'done': [('readonly', True)]})
     lot_id = fields.Many2one('stock.production.lot', 'Lot', states={'done': [('readonly', True)]})
