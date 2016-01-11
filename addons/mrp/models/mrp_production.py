@@ -986,20 +986,20 @@ class ProductionOperationLot(models.Model):
 class MrpUnbuild(models.Model):
     _name = "mrp.unbuild"
     _description = "Unbuild Order"
+    _inherit = ['mail.thread']
 
     name = fields.Char(string='Reference', required=True, readonly=True, copy=False,
                        default=lambda self: self.env['ir.sequence'].next_by_code('mrp.unbuild') or '/')
-    date_unbuild = fields.Datetime('Unbuild Date', default=fields.Datetime.now)
     product_id = fields.Many2one('product.product', string="Product", required=True)
-    product_qty = fields.Float('Product Quantity')
-    product_uom_id = fields.Many2one('product.uom', string="Unit of Measure")
+    product_qty = fields.Float('Product Quantity', required=True)
+    product_uom_id = fields.Many2one('product.uom', string="Unit of Measure", required=True)
     bom_id = fields.Many2one('mrp.bom', 'Bill of Material', required=True, domain=[('product_tmpl_id', '=', 'product_id.product_tmpl_id')])  # Add domain
     mo_id = fields.Many2one('mrp.production', string='Manufacturing Order')
-    lot_id = fields.Many2one('stock.production.lot', 'Lot')
+    lot_id = fields.Many2one('stock.production.lot', 'Lot', domain="[('product_id','=', product_id)]")
     location_id = fields.Many2one('stock.location', 'Location', required=True)
     consume_line_id = fields.Many2one('stock.move', string="Consume Product", readonly=True)
     produce_line_ids = fields.One2many('stock.move', 'unbuild_id', readonly=True)
-    state = fields.Selection([('confirmed', 'Confirmed'), ('done', 'Done')], default='confirmed', index=True)
+    state = fields.Selection([('draft', 'Draft'), ('done', 'Done')], default='draft', index=True)
 
     def _prepare_lines(self, properties=None):
         # search BoM structure and route
@@ -1022,10 +1022,10 @@ class MrpUnbuild(models.Model):
             for line in result:
                 vals = {
                     'name': self.name,
-                    'date': self.date_unbuild,
+                    'date': self.create_date,
                     'product_id': line['product_id'],
                     'product_uom': line['product_uom_id'],
-                    'product_uom_qty' : line['product_uom_qty'],
+                    'product_uom_qty': line['product_uom_qty'],
                     'location_id': self.product_id.property_stock_production.id,
                     'location_dest_id': order.location_id.id,
                     'origin': self.name,
@@ -1046,12 +1046,12 @@ class MrpUnbuild(models.Model):
     def _make_unbuild_line(self):
         data = {
             'name': self.name,
-            'date': self.date_unbuild,
+            'date': self.create_date,
             'product_id': self.product_id.id,
             'product_uom': self.product_uom_id.id,
             'product_uom_qty': self.product_qty,
             'restrict_lot_id': self.lot_id.id,
-            'location_id': self.location_id.id ,
+            'location_id': self.location_id.id,
             'location_dest_id': self.product_id.property_stock_production.id,
             'unbuild_id': self.id,
             'origin': self.name
@@ -1077,6 +1077,31 @@ class MrpUnbuild(models.Model):
     def button_unbuild(self):
         self.produce_line_ids.action_done()
         self.write({'state': 'done'})
+
+    @api.multi
+    def button_produce_product(self):
+        return {
+            'name': _('Stock Moves'),
+            'view_type': 'form',
+            'view_mode': 'tree',
+            'res_model': 'stock.move',
+            'view_id': False,
+            'type': 'ir.actions.act_window',
+            'domain': [('id', 'in', [x.id for x in self.produce_line_ids])],
+        }
+
+    @api.multi
+    def button_consume_product(self):
+        return {
+            'name': _('Stock Moves'),
+            'view_type': 'form',
+            'view_mode': 'tree',
+            'res_model': 'stock.move',
+            'view_id': False,
+            'type': 'ir.actions.act_window',
+            'domain': [('id', '=', self.consume_line_id.id)],
+        }
+
 
     #TODO: need quants defined here
 
