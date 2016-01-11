@@ -240,7 +240,7 @@ class MaintenanceRequest(models.Model):
                                     string='Kanban State', required=True, default='normal', track_visibility='onchange')
     archive = fields.Boolean(default=False, help="Set archive to true to hide the maintenance request without deleting it.")
     maintenance_type = fields.Selection([('corrective', 'Corrective'), ('preventive', 'Preventive')], string='Maintenance Type', default="corrective")
-    schedule_date = fields.Datetime('Schedule Date')
+    schedule_date = fields.Datetime('Scheduled Date')
     maintenance_team_id = fields.Many2one('maintenance.team', string='Maintenance Team', required=True)
     duration = fields.Float(help="Duration in minutes and seconds.")
 
@@ -273,7 +273,7 @@ class MaintenanceRequest(models.Model):
     @api.onchange('category_id')
     def onchange_category_id(self):
         if not self.technician_user_id or not self.equipment_id or (self.technician_user_id and not self.equipment_id.technician_user_id):
-            self.technician_user_id = self.category_id.technician_user_id
+            self.technician_user_id = self.category_id.technician_user_id if self.category_id.technician_user_id else self.env.user.id
 
     @api.model
     def create(self, vals):
