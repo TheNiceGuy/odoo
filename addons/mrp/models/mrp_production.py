@@ -1001,7 +1001,7 @@ class MrpUnbuild(models.Model):
     mo_id = fields.Many2one('mrp.production', string='Manufacturing Order')
     lot_id = fields.Many2one('stock.production.lot', 'Lot', domain="[('product_id','=', product_id)]")
     location_id = fields.Many2one('stock.location', 'Location', required=True)
-    consume_line_id = fields.Many2one('stock.move', string="Consume Product", readonly=True)
+    consume_line_ids = fields.One2many('stock.move', 'unbuild_raw_material_id', string="Consume Product", readonly=True)
     produce_line_ids = fields.One2many('stock.move', 'unbuild_id', readonly=True)
     state = fields.Selection([('draft', 'Draft'), ('done', 'Done')], default='draft', index=True)
 
@@ -1025,14 +1025,15 @@ class MrpUnbuild(models.Model):
             result, results2 = order._prepare_lines()
             for line in result:
                 vals = {
-                    'name': self.name,
-                    'date': self.create_date,
+                    'name': order.name,
+                    'date': order.create_date,
                     'product_id': line['product_id'],
                     'product_uom': line['product_uom_id'],
                     'product_uom_qty': line['product_uom_qty'],
-                    'location_id': self.product_id.property_stock_production.id,
+                    'unbuild_id' : order.id,
+                    'location_id': order.product_id.property_stock_production.id,
                     'location_dest_id': order.location_id.id,
-                    'origin': self.name,
+                    'origin': order.name,
                 }
                 stock_moves = stock_moves | self.env['stock.move'].create(vals)
             if stock_moves:
@@ -1045,7 +1046,7 @@ class MrpUnbuild(models.Model):
         if vals.get('name', 'New') == 'New':
             vals['name'] = self.env['ir.sequence'].next_by_code('mrp.unbuild') or 'New'
         unbuild = super(MrpUnbuild, self).create(vals)
-        unbuild.consume_line_id = unbuild._make_unbuild_line()
+        unbuild._make_unbuild_line()
         unbuild.generate_move_line()
         return unbuild
 
@@ -1059,12 +1060,12 @@ class MrpUnbuild(models.Model):
             'restrict_lot_id': self.lot_id.id,
             'location_id': self.location_id.id,
             'location_dest_id': self.product_id.property_stock_production.id,
+            'unbuild_raw_material_id' : self.id,
             'unbuild_id': self.id,
             'origin': self.name
         }
-        stock_move = self.env['stock.move'].create(data)
-        stock_move.action_confirm()
-        return stock_move.id
+        self.env['stock.move'].create(data).action_confirm()
+        return 0
 
     @api.onchange('mo_id')
     def onchange_mo_id(self):
@@ -1105,7 +1106,7 @@ class MrpUnbuild(models.Model):
             'res_model': 'stock.move',
             'view_id': False,
             'type': 'ir.actions.act_window',
-            'domain': [('id', '=', self.consume_line_id.id)],
+            'domain': [('id', 'in', self.consume_line_ids.ids)],
         }
 
 
