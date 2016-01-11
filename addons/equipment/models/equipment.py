@@ -240,7 +240,7 @@ class EquipmentRequest(models.Model):
                                     string='Kanban State', required=True, default='normal', track_visibility='onchange')
     archive = fields.Boolean(default=False, help="Set archive to true to hide the maintenance request without deleting it.")
     maintenance_type = fields.Selection([('corrective', 'Corrective'), ('preventive', 'Preventive')], string='Maintenance Type', default="corrective")
-    schedule_date = fields.Datetime('Schedule Date')
+    schedule_date = fields.Datetime('Scheduled Date')
     maintenance_team_id = fields.Many2one('maintenance.team', string='Maintenance Team', required=True)
     duration = fields.Float(help="Duration in minutes and seconds.")
 
@@ -250,10 +250,9 @@ class EquipmentRequest(models.Model):
 
     @api.multi
     def reset_equipment_request(self):
-        """ Reinsert the equipment request into the maintenance pipe in the first stage"""
-        first_stage_obj = self.env['equipment.stage'].search([], order="sequence asc", limit=1)
-        self.write({'active': True, 'stage_id': first_stage_obj.id})
-
+        """ Reinsert the maintenance request into the maintenance pipe in the first stage"""
+        first_stage_obj = self.env['maintenance.stage'].search([], order="sequence asc", limit=1)
+        self.write({'archive': False, 'stage_id': first_stage_obj.id})
     # @api.onchange('owner_user_id')
     # def onchange_department_or_employee_id(self):
     #     domain = [('owner_user_id', '=', self.owner_user_id.id)]
@@ -325,3 +324,35 @@ class EquipmentRequest(models.Model):
     _group_by_full = {
         'stage_id': _read_group_stage_ids
     }
+
+
+class MaintenanceTeam(models.Model):
+    _name = 'maintenance.team'
+    _description = 'Maintenance Teams'
+
+    name = fields.Char(required=True)
+    partner_id = fields.Many2one('res.partner', string='Subcontracting Partner')
+    color = fields.Integer(default=0)
+    request_ids = fields.One2many('maintenance.request', 'maintenance_team_id', copy=False)
+    equipment_ids = fields.One2many('maintenance.equipment', 'maintenance_team_id', copy=False)
+
+    # For the dashboard only
+    todo_request_ids = fields.One2many('maintenance.request', copy=False, compute='_compute_todo_requests')
+    todo_request_count = fields.Integer(compute='_compute_todo_requests')
+    todo_request_count_date = fields.Integer(compute='_compute_todo_requests')
+    todo_request_count_high_priority = fields.Integer(compute='_compute_todo_requests')
+    todo_request_count_block = fields.Integer(compute='_compute_todo_requests')
+
+    @api.one
+    @api.depends('todo_request_ids.stage_id.done')
+    def _compute_todo_requests(self):
+        self.todo_request_ids = self.request_ids.filtered(lambda e: e.stage_id.done==False)
+        self.todo_request_count = len(self.todo_request_ids)
+        self.todo_request_count_date = len(self.todo_request_ids.filtered(lambda e: e.schedule_date != False))
+        self.todo_request_count_high_priority = len(self.todo_request_ids.filtered(lambda e: e.priority == '3'))
+        self.todo_request_count_block = len(self.todo_request_ids.filtered(lambda e: e.kanban_state == 'blocked'))
+
+    @api.one
+    @api.depends('equipment_ids')
+    def _compute_equipment(self):
+        self.equipment_count = len(self.equipment_ids)

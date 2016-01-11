@@ -9,10 +9,15 @@
             <field name="model">mrp.product.produce.wo</field>
             <field name="arch" type="xml">
                 <form string="Produce">
-                    <group string="Produce">
-                        <field name="product_qty" colspan="2"/>
+                    <div class="o_row">
+                        <label for="product_id"/>
                         <field name="product_id"/>
-                    </group>
+                    </div>
+                    <div class="o_row">
+                        <label for="product_qty" />
+                        <field name="product_qty"/>
+                        <field name="product_uom_id"/>
+                    </div>
                     <footer>
                         <button name="do_produce" type="object" string="Confirm" class="btn-primary"/>
                         <button string="Cancel" class="btn-default" special="cancel" />

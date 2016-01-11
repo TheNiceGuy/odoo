@@ -18,7 +18,9 @@
                 <separator/>
                 <filter string="My Requests" domain="[('owner_user_id', '=', uid)]" class="o_equipment_request_my_requests_filter"/>
                 <separator/>
-                <filter string="Unread Messages" name="message_needaction" domain="[('message_needaction','=',True)]"/>
+                <filter string="Important Messages" name="message_needaction" domain="[('message_needaction','=',True)]"/>
+                <filter string="Top Priorities" name="top_priority" domain="[('priority', '=', '3')]"/>
+                <filter string="Blocked" name="kanban_state_block" domain="[('kanban_state', '=', 'blocked')]"/>
                 <group  expand='0' string='Group by...'>
                     <filter string='Assigned' domain="[]" context="{'group_by': 'technician_user_id'}"/>
                     <filter string='Category' domain="[]" context="{'group_by' : 'category_id'}"/>
@@ -35,11 +37,14 @@
         <field name="arch" type="xml">
             <form string="Maintenance Request">
                 <header>
-                    <button string="Cancel" name="archive_equipment_request" type="object" attrs="{'invisible': [('active', '=', False)]}"/>
-                    <button string="Reset Request" name="reset_equipment_request" type="object" attrs="{'invisible': [('active', '=', True)]}"/>
-                    <field name="stage_id" widget="statusbar" clickable="true" readonly="1"/>
+                    <button string="Cancel" name="archive_equipment_request" type="object" attrs="{'invisible': [('archive', '=', True)]}"/>
+                    <button string="Reopen Request" name="reset_equipment_request" type="object" attrs="{'invisible': [('archive', '=', False)]}"/>
+                    <field name="stage_id" widget="statusbar" clickable="true" readonly="1" attrs="{'invisible': [('archive', '=', True)]}"/>
                 </header>
                 <sheet>
+                    <div attrs="{'invisible': [('archive', '=', False)]}">
+                        <span class="label label-warning pull-right">Canceled</span>
+                    </div>
                     <div class="oe_right">
                         <field name="kanban_state" class="oe_inline" widget="kanban_state_selection"/>
                     </div>
@@ -57,15 +62,15 @@
                             <field name="request_date" groups="base.group_no_one"/>
                             <field name="close_date" groups="base.group_no_one"/>
                             <field name="archive" invisible="1"/>
+                            <field name="maintenance_type"/>
                             <field name="priority" widget="priority"/>
                         </group>
                         <group>
                             <field name="maintenance_team_id"/>
-                            <field name="maintenance_type"/>
-                            <field name="technician_user_id" string="Repair Responsible"/>
-                            <field name="schedule_date"/>
-                            <label for="duration"/>
-                            <div>
+                            <field name="technician_user_id" string="Maintenance Responsible"/>
+                            <label for="schedule_date"/>
+                            <div class="o_row">
+                                <field name="schedule_date"/> for
                                 <field name="duration" class="oe_inline"/> hours
                             </div>
                         </group>
@@ -196,6 +201,7 @@
         <field name="res_model">maintenance.request</field>
         <field name="view_mode">kanban,tree,form,pivot,graph,calendar</field>
         <field name="view_id" ref="equipment_request_view_kanban"/>
+        <field name="context">{'default_technician_user_id': uid}</field>
         <field name="help" type="html">
             <p class="oe_view_nocontent_create">
                 Click to add a new maintenance request.
@@ -241,9 +247,8 @@
         <field name="view_mode">kanban,tree,form,pivot,graph,calendar</field>
         <field name="context">{
             'default_maintenance_team_id': active_id,
-            'search_default_todo': 1,
         }</field>
-        <field name="domain">[('maintenance_team_id', '=', active_id), ('maintenance_type', '=', context.get('maintenance_type'))]</field>
+        <field name="domain">[('maintenance_team_id', '=', active_id), ('maintenance_type', 'in', context.get('maintenance_type', ['preventive', 'corrective']))]</field>
     </record>
 
     <record id="equipment_request_action_cal" model="ir.actions.act_window">
@@ -585,6 +590,61 @@
         <field name="view_mode">tree</field>
         <field name="view_type">form</field>
         <field name="view_id" ref="equipment_stage_view_tree"/>
+        <field name="help" type="html">
+          <p class="oe_view_nocontent_create">
+            Click to add a stage in the maintenance request.
+          </p>
+        </field>
+    </record>
+
+    <!-- maitenance.team: views -->
+    <record id="maintenance_team_view_form" model="ir.ui.view">
+        <field name="name">maintenance.team.form</field>
+        <field name="model">maintenance.team</field>
+        <field name="arch" type="xml">
+            <form string="Maintenance Team">
+                <sheet>
+                <div class="oe_title">
+                    <label for="name" class="oe_edit_only" string="Category Name"/>
+                    <h1>
+                        <field name="name"/>
+                    </h1>
+                </div>
+                <field name="partner_id"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="maintenance_team_view_tree" model="ir.ui.view">
+        <field name="name">maintenance.team.tree</field>
+        <field name="model">maintenance.team</field>
+        <field name="arch" type="xml">
+            <tree string="Maintenance Team" editable="top">
+                <field name="name"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- equipment.team : actions -->
+    <record id="maintenance_team_action_settings" model="ir.actions.act_window">
+        <field name="name">Teams</field>
+        <field name="res_model">maintenance.team</field>
+        <field name="view_mode">tree</field>
+        <field name="view_type">form</field>
+        <field name="view_id" ref="maintenance_team_view_tree"/>
+        <field name="help" type="html">
+          <p class="oe_view_nocontent_create">
+            Click to add a team in the maintenance request.
+          </p>
+        </field>
+    </record>
+
+    <record id="maintenance_dashboard_action" model="ir.actions.act_window">
+        <field name="name">Maintenance Teams</field>
+        <field name="res_model">maintenance.team</field>
+        <field name="view_mode">kanban</field>
+        <field name="view_type">form</field>
         <field name="help" type="html">
           <p class="oe_view_nocontent_create">
             Click to add a stage in the maintenance request.

@@ -30,8 +30,17 @@ class MrpProductProduceWo(models.TransientModel):
         workorder = self.env['mrp.production.workcenter.line'].browse(self._context.get('active_id'))
         return workorder.production_id.product_id.id
 
-    product_id = fields.Many2one('product.product', default=_get_product_id)
-    product_qty = fields.Float(string='Select Quantity', digits=dp.get_precision('Product Unit of Measure'), required=True, default=_get_product_qty)
+    @api.model
+    def _get_uom_id(self):
+        """ To obtain product id
+        :return: id
+        """
+        workorder = self.env['mrp.production.workcenter.line'].browse(self._context.get('active_id'))
+        return workorder.production_id.product_uom_id.id
+
+    product_id = fields.Many2one('product.product', readonly=True, string='Product', default=_get_product_id)
+    product_qty = fields.Float(string='Quantity Manufactured', digits=dp.get_precision('Product Unit of Measure'), required=True, default=_get_product_qty)
+    product_uom_id = fields.Many2one('product.uom', readonly=True, string='Unit of Measure', default=_get_uom_id)
     #lot_id = fields.Many2one('stock.production.lot', string='Lot')  # Should only be visible when it is consume and produce mode
     #consume_lines = fields.One2many('mrp.product.produce.line', 'produce_id', string='Products Consumed')
     #tracking = fields.Selection(related='product_id.tracking', selection=[('serial', 'By Unique Serial Number'), ('lot', 'By Lots'), ('none', 'No Tracking')], default=_get_track)

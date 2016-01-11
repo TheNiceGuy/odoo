@@ -3,7 +3,7 @@
 
 from collections import OrderedDict
 from openerp import api, fields, models, _
-from openerp.exceptions import AccessError, UserError
+from openerp.exceptions import AccessError, UserError, Warning
 from openerp.tools import float_compare, float_is_zero, DEFAULT_SERVER_DATETIME_FORMAT
 import openerp.addons.decimal_precision as dp
 from datetime import datetime
@@ -692,7 +692,6 @@ class MrpProduction(models.Model):
                 stock_moves.action_confirm()
         return 0
 
-
     @api.multi
     def action_assign(self):
         """
@@ -700,10 +699,11 @@ class MrpProduction(models.Model):
         """
         for production in self:
             production.move_line_ids.action_assign()
+            warning_state = production.move_line_ids.filtered(lambda x: x.state != 'available')
             if production.availability in ('assigned', 'partially_available'):
                 production.generate_production_consume_lines()
         return True
- 
+
     @api.multi
     def force_assign(self):
         for order in self:
@@ -758,19 +758,25 @@ class MrpProductionWorkcenterLine(models.Model):
             else:
                 workorder.availability = workorder.production_id.availability == 'assigned' and 'assigned' or 'waiting'
 
+    def _check_produce_qty(self):
+        for workorder in self:
+            if workorder.qty_produced >= workorder.qty:
+                workorder.check_produce_qty = True
+
+
     name = fields.Char(string='Work Order', required=True)
     workcenter_id = fields.Many2one('mrp.workcenter', string='Work Center', required=True)
     hour = fields.Float(string='Expected Duration', digits=(16, 2))
     sequence = fields.Integer(required=True, default=1, help="Gives the sequence order when displaying a list of work orders.")
     production_id = fields.Many2one('mrp.production', string='Manufacturing Order', track_visibility='onchange', index=True, ondelete='cascade', required=True)
-    state = fields.Selection([('confirmed', 'Confirmed'), ('ready', 'Ready'), ('cancel', 'Cancelled'), ('pause', 'Pending'), ('progress', 'In Progress'), ('done', 'Finished')], default='confirmed')
+    state = fields.Selection([('pause', 'Pending'), ('ready', 'Ready'), ('progress', 'In Progress'), ('done', 'Finished'), ('confirmed', 'Confirmed'),  ('cancel', 'Cancelled')], default='pause')
     date_planned_start = fields.Datetime('Scheduled Date Start')
     date_planned_end = fields.Datetime('Scheduled Date Finished')
     capacity_planned = fields.Integer('Capacity Planned')
     date_start = fields.Datetime('Effective Start Date')
     date_finished = fields.Datetime('Effective End Date')
     delay = fields.Float('Real Duration', compute='_compute_delay', readonly=True)
-    qty_produced = fields.Float('Qty Produced', help="The number of products already handled by this work order", default=0.0) #TODO: decimal precision
+    qty_produced = fields.Float('Qty Produced', readonly=True, help="The number of products already handled by this work order", default=0.0) #TODO: decimal precision
     operation_id = fields.Many2one('mrp.routing.workcenter', 'Operation') #Should be used differently as BoM can change in the meantime
     move_line_ids = fields.One2many('stock.move', 'workorder_id', 'Moves')
     consume_line_ids = fields.One2many('mrp.production.consume.line', 'workorder_id')
@@ -782,15 +788,15 @@ class MrpProductionWorkcenterLine(models.Model):
     started_since = fields.Datetime('Started Since', compute='_compute_started')
     time_ids = fields.One2many('mrp.production.workcenter.line.time', 'workorder_id')
     worksheet = fields.Binary('Worksheet', related='operation_id.worksheet', readonly=True)
-    work_user_ids = fields.Many2many('res.users', 'workorder_user_rel', 'workorder_id', 'user_id')
     show_state = fields.Boolean(compute='_get_current_state')
+    check_produce_qty = fields.Boolean(compute='_check_produce_qty')
 
     def _get_current_state(self):
         for order in self:
-            if self.env.user.id in order.work_user_ids.ids:
-                order.show_state = False
-            else:
+            if order.time_ids.filtered(lambda x : x.user_id.id == self.env.user.id and x.state == 'running'):
                 order.show_state = True
+            else:
+                order.show_state = False
 
     @api.multi
     def button_draft(self):
@@ -800,7 +806,7 @@ class MrpProductionWorkcenterLine(models.Model):
     @api.multi
     def button_plan(self):
         self.ensure_one()
-        self.write({'state' 'planned'})
+        self.write({'state': 'planned'})
 
     @api.multi
     def button_start(self):
@@ -812,11 +818,15 @@ class MrpProductionWorkcenterLine(models.Model):
                              'state': 'running',
                              'date_start': datetime.now(),
                              'user_id': self.env.user.id})
-            if self.env.user.id not in self.work_user_ids.ids:
-                workorder.work_user_ids = [(6, 0, self.work_user_ids.ids + [self.env.user.id] )]
         self.write({'state': 'progress',
                     'date_start': datetime.now(),
                     })
+
+    @api.multi
+    def button_finish(self):
+        self.ensure_one()
+        self.end_all()
+        self.write({'state': 'done'})
 
     @api.multi
     def end_previous(self):
@@ -827,8 +837,6 @@ class MrpProductionWorkcenterLine(models.Model):
             hours = timed.total_seconds() / 3600.0
             timeline.write({'state': 'done',
                             'duration': hours})
-            if self.env.user.id in workorder.work_user_ids.ids:
-                workorder.work_user_ids = [(3, self.env.user.id)]
 
     @api.multi
     def end_all(self):
@@ -840,13 +848,10 @@ class MrpProductionWorkcenterLine(models.Model):
                 hours = timed.total_seconds() / 3600.0
                 timeline.write({'state': 'done',
                                 'duration': hours})
-                if timeline.user_id.id in workorder.work_user_ids.ids:
-                    workorder.work_user_ids = [(3, timeline.user_id.id)]
 
     @api.multi
     def button_pause(self):
         self.end_previous()
-        self.write({'state': 'pause'})
 
     @api.multi
     def button_cancel(self):
@@ -986,20 +991,19 @@ class ProductionOperationLot(models.Model):
 class MrpUnbuild(models.Model):
     _name = "mrp.unbuild"
     _description = "Unbuild Order"
+    _inherit = ['mail.thread']
 
-    name = fields.Char(string='Reference', required=True, readonly=True, copy=False,
-                       default=lambda self: self.env['ir.sequence'].next_by_code('mrp.unbuild') or '/')
-    date_unbuild = fields.Datetime('Unbuild Date', default=fields.Datetime.now)
+    name = fields.Char(string='Reference', required=True, readonly=True, copy=False, default='New')
     product_id = fields.Many2one('product.product', string="Product", required=True)
-    product_qty = fields.Float('Product Quantity')
-    product_uom_id = fields.Many2one('product.uom', string="Unit of Measure")
+    product_qty = fields.Float('Product Quantity', required=True)
+    product_uom_id = fields.Many2one('product.uom', string="Unit of Measure", required=True)
     bom_id = fields.Many2one('mrp.bom', 'Bill of Material', required=True, domain=[('product_tmpl_id', '=', 'product_id.product_tmpl_id')])  # Add domain
     mo_id = fields.Many2one('mrp.production', string='Manufacturing Order')
-    lot_id = fields.Many2one('stock.production.lot', 'Lot')
+    lot_id = fields.Many2one('stock.production.lot', 'Lot', domain="[('product_id','=', product_id)]")
     location_id = fields.Many2one('stock.location', 'Location', required=True)
-    consume_line_id = fields.Many2one('stock.move', string="Consume Product", readonly=True)
+    consume_line_ids = fields.One2many('stock.move', 'unbuild_raw_material_id', string="Consume Product", readonly=True)
     produce_line_ids = fields.One2many('stock.move', 'unbuild_id', readonly=True)
-    state = fields.Selection([('confirmed', 'Confirmed'), ('done', 'Done')], default='confirmed', index=True)
+    state = fields.Selection([('draft', 'Draft'), ('done', 'Done')], default='draft', index=True)
 
     def _prepare_lines(self, properties=None):
         # search BoM structure and route
@@ -1021,14 +1025,15 @@ class MrpUnbuild(models.Model):
             result, results2 = order._prepare_lines()
             for line in result:
                 vals = {
-                    'name': self.name,
-                    'date': self.date_unbuild,
+                    'name': order.name,
+                    'date': order.create_date,
                     'product_id': line['product_id'],
                     'product_uom': line['product_uom_id'],
-                    'product_uom_qty' : line['product_uom_qty'],
-                    'location_id': self.product_id.property_stock_production.id,
+                    'product_uom_qty': line['product_uom_qty'],
+                    'unbuild_id' : order.id,
+                    'location_id': order.product_id.property_stock_production.id,
                     'location_dest_id': order.location_id.id,
-                    'origin': self.name,
+                    'origin': order.name,
                 }
                 stock_moves = stock_moves | self.env['stock.move'].create(vals)
             if stock_moves:
@@ -1038,27 +1043,29 @@ class MrpUnbuild(models.Model):
 
     @api.model
     def create(self, vals):
+        if vals.get('name', 'New') == 'New':
+            vals['name'] = self.env['ir.sequence'].next_by_code('mrp.unbuild') or 'New'
         unbuild = super(MrpUnbuild, self).create(vals)
-        unbuild.consume_line_id = unbuild._make_unbuild_line()
+        unbuild._make_unbuild_line()
         unbuild.generate_move_line()
         return unbuild
 
     def _make_unbuild_line(self):
         data = {
             'name': self.name,
-            'date': self.date_unbuild,
+            'date': self.create_date,
             'product_id': self.product_id.id,
             'product_uom': self.product_uom_id.id,
             'product_uom_qty': self.product_qty,
             'restrict_lot_id': self.lot_id.id,
-            'location_id': self.location_id.id ,
+            'location_id': self.location_id.id,
             'location_dest_id': self.product_id.property_stock_production.id,
+            'unbuild_raw_material_id' : self.id,
             'unbuild_id': self.id,
             'origin': self.name
         }
-        stock_move = self.env['stock.move'].create(data)
-        stock_move.action_confirm()
-        return stock_move.id
+        self.env['stock.move'].create(data).action_confirm()
+        return 0
 
     @api.onchange('mo_id')
     def onchange_mo_id(self):
@@ -1077,6 +1084,31 @@ class MrpUnbuild(models.Model):
     def button_unbuild(self):
         self.produce_line_ids.action_done()
         self.write({'state': 'done'})
+
+    @api.multi
+    def button_produce_product(self):
+        return {
+            'name': _('Stock Moves'),
+            'view_type': 'form',
+            'view_mode': 'tree',
+            'res_model': 'stock.move',
+            'view_id': False,
+            'type': 'ir.actions.act_window',
+            'domain': [('id', 'in', [x.id for x in self.produce_line_ids])],
+        }
+
+    @api.multi
+    def button_consume_product(self):
+        return {
+            'name': _('Stock Moves'),
+            'view_type': 'form',
+            'view_mode': 'tree',
+            'res_model': 'stock.move',
+            'view_id': False,
+            'type': 'ir.actions.act_window',
+            'domain': [('id', 'in', self.consume_line_ids.ids)],
+        }
+
 
     #TODO: need quants defined here
 

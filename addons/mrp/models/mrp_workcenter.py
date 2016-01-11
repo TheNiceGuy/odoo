@@ -15,10 +15,21 @@ class MrpWorkcenter(models.Model):
     _description = 'Work Center'
     _inherits = {'resource.resource': "resource_id"}
 
-    @api.one
     @api.depends('order_ids')
     def _compute_orders(self):
-        self.nb_orders = self.env['mrp.production.workcenter.line'].search_count([('workcenter_id', '=', self.id), ('state', '!=', 'done')]) #('state', 'in', ['pending', 'startworking'])
+        WorkcenterLine = self.env['mrp.production.workcenter.line']
+        for workcenter in self:
+            workcenter.nb_orders = WorkcenterLine.search_count([('workcenter_id', '=', workcenter.id), ('state', '!=', 'done')]) #('state', 'in', ['pending', 'startworking'])
+            workcenter.count_ready_order = WorkcenterLine.search_count([('workcenter_id', '=', workcenter.id), ('state', '=', 'ready')])
+            workcenter.count_pending_order = WorkcenterLine.search_count([('workcenter_id', '=', workcenter.id), ('state', '=', 'pause')])
+            workcenter.count_progress_order = WorkcenterLine.search_count([('workcenter_id', '=', workcenter.id), ('state', '=', 'progress')])
+
+    def _compute_status(self):
+        for workcenter in self:
+            if workcenter.count_progress_order:
+                workcenter.status = 'done'
+            else:
+                workcenter.status = 'normal'
 
     note = fields.Text(string='Description', help="Description of the Work Center. ")
     capacity = fields.Float(string='Capacity', default=1.0, help="Number of work orders this Work Center can do in parallel. If this Work Center represents a team of 5 workers, the capacity is 5.")
@@ -29,6 +40,11 @@ class MrpWorkcenter(models.Model):
     routing_line_ids = fields.One2many('mrp.routing.workcenter', 'workcenter_id', "Routing Lines")
     nb_orders = fields.Integer('Computed Orders', compute='_compute_orders')
     color = fields.Integer('Color')
+    count_ready_order = fields.Integer(compute='_compute_orders', string="Total Ready Orders")
+    count_pending_order = fields.Integer(compute='_compute_orders', string="Total Pending Orders")
+    count_progress_order = fields.Integer(compute='_compute_orders', string="Total Running Orders")
+    status = fields.Selection([('normal', 'Work order is not running'), ('blocked', 'Work center is block'), ('done', 'Work order is running')],
+                                    string='Status', compute="_compute_status")
 
     @api.multi
     @api.constrains('capacity')
