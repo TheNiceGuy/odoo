@@ -248,9 +248,8 @@
         <field name="view_mode">kanban,tree,form,pivot,graph,calendar</field>
         <field name="context">{
             'default_maintenance_team_id': active_id,
-            'search_default_todo': 1,
         }</field>
-        <field name="domain">[('maintenance_team_id', '=', active_id), ('maintenance_type', '=', context.get('maintenance_type'))]</field>
+        <field name="domain">[('maintenance_team_id', '=', active_id), ('maintenance_type', 'in', context.get('maintenance_type', ['preventive', 'corrective']))]</field>
     </record>
 
     <record id="equipment_request_action_cal" model="ir.actions.act_window">
