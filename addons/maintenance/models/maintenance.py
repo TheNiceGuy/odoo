@@ -250,8 +250,8 @@ class MaintenanceRequest(models.Model):
 
     @api.multi
     def reset_equipment_request(self):
-        """ Reinsert the equipment request into the maintenance pipe in the first stage"""
-        first_stage_obj = self.env['equipment.stage'].search([], order="sequence asc", limit=1)
+        """ Reinsert the maintenance request into the maintenance pipe in the first stage"""
+        first_stage_obj = self.env['maintenance.stage'].search([], order="sequence asc", limit=1)
         self.write({'archive': False, 'stage_id': first_stage_obj.id})
 
     # @api.onchange('owner_user_id')
