@@ -1257,6 +1257,7 @@
         <field name="model">mrp.production.workcenter.line</field>
         <field name="arch" type="xml">
             <tree string="Work Orders" decoration-success="date_planned_start&gt;=current_date and state == 'ready'" decoration-muted="state in ('done','cancel')" decoration-danger="date_planned_start&lt;current_date and state in ('draft', 'confirmed', 'ready')">
+                <field name="sequence" widget="handle"/>
                 <field name="name"/>
                 <field name="date_planned_start"/>
                 <field name="workcenter_id" widget="selection"/>
