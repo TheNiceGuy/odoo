@@ -46,6 +46,7 @@ Dashboard / Reports for MRP will include:
         'views/mrp_config_views.xml',
         'views/mrp_templates.xml',
         'views/mrp_bom_templates.xml',
+        'views/mrp.xml',
         'report/mrp_report.xml',
         'report/mrp_report_view.xml',
     ],
