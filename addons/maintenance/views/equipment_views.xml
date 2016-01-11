@@ -39,10 +39,13 @@
             <form string="Maintenance Request">
                 <header>
                     <button string="Cancel" name="archive_equipment_request" type="object" attrs="{'invisible': [('archive', '=', True)]}"/>
-                    <button string="Reset Request" name="reset_equipment_request" type="object" attrs="{'invisible': [('archive', '=', False)]}"/>
-                    <field name="stage_id" widget="statusbar" clickable="true" readonly="1"/>
+                    <button string="Reopen Request" name="reset_equipment_request" type="object" attrs="{'invisible': [('archive', '=', False)]}"/>
+                    <field name="stage_id" widget="statusbar" clickable="true" readonly="1" attrs="{'invisible': [('archive', '=', True)]}"/>
                 </header>
                 <sheet>
+                    <div attrs="{'invisible': [('archive', '=', False)]}">
+                        <span class="label label-warning pull-right">Canceled</span>
+                    </div>
                     <div class="oe_right">
                         <field name="kanban_state" class="oe_inline" widget="kanban_state_selection"/>
                     </div>
@@ -60,15 +63,15 @@
                             <field name="request_date" groups="base.group_no_one"/>
                             <field name="close_date" groups="base.group_no_one"/>
                             <field name="archive" invisible="1"/>
+                            <field name="maintenance_type"/>
                             <field name="priority" widget="priority"/>
                         </group>
                         <group>
                             <field name="maintenance_team_id"/>
-                            <field name="maintenance_type"/>
-                            <field name="technician_user_id" string="Repair Responsible"/>
-                            <field name="schedule_date"/>
-                            <label for="duration"/>
-                            <div>
+                            <field name="technician_user_id" string="Maintenance Responsible"/>
+                            <label for="schedule_date"/>
+                            <div class="o_row">
+                                <field name="schedule_date"/> for
                                 <field name="duration" class="oe_inline"/> hours
                             </div>
                         </group>
@@ -199,6 +202,7 @@
         <field name="res_model">maintenance.request</field>
         <field name="view_mode">kanban,tree,form,pivot,graph,calendar</field>
         <field name="view_id" ref="equipment_request_view_kanban"/>
+        <field name="context">{'default_technician_user_id': uid}</field>
         <field name="help" type="html">
             <p class="oe_view_nocontent_create">
                 Click to add a new maintenance request.
@@ -244,9 +248,8 @@
         <field name="view_mode">kanban,tree,form,pivot,graph,calendar</field>
         <field name="context">{
             'default_maintenance_team_id': active_id,
-            'search_default_todo': 1,
         }</field>
-        <field name="domain">[('maintenance_team_id', '=', active_id), ('maintenance_type', '=', context.get('maintenance_type'))]</field>
+        <field name="domain">[('maintenance_team_id', '=', active_id), ('maintenance_type', 'in', context.get('maintenance_type', ['preventive', 'corrective']))]</field>
     </record>
 
     <record id="equipment_request_action_cal" model="ir.actions.act_window">
