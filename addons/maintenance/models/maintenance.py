@@ -240,7 +240,7 @@ class MaintenanceRequest(models.Model):
                                     string='Kanban State', required=True, default='normal', track_visibility='onchange')
     archive = fields.Boolean(default=False, help="Set archive to true to hide the maintenance request without deleting it.")
     maintenance_type = fields.Selection([('corrective', 'Corrective'), ('preventive', 'Preventive')], string='Maintenance Type', default="corrective")
-    schedule_date = fields.Datetime('Schedule Date')
+    schedule_date = fields.Datetime('Scheduled Date')
     maintenance_team_id = fields.Many2one('maintenance.team', string='Maintenance Team', required=True)
     duration = fields.Float(help="Duration in minutes and seconds.")
 
@@ -250,8 +250,8 @@ class MaintenanceRequest(models.Model):
 
     @api.multi
     def reset_equipment_request(self):
-        """ Reinsert the equipment request into the maintenance pipe in the first stage"""
-        first_stage_obj = self.env['equipment.stage'].search([], order="sequence asc", limit=1)
+        """ Reinsert the maintenance request into the maintenance pipe in the first stage"""
+        first_stage_obj = self.env['maintenance.stage'].search([], order="sequence asc", limit=1)
         self.write({'archive': False, 'stage_id': first_stage_obj.id})
 
     # @api.onchange('owner_user_id')
@@ -340,14 +340,18 @@ class MaintenanceTeam(models.Model):
     # For the dashboard only
     todo_request_ids = fields.One2many('maintenance.request', copy=False, compute='_compute_todo_requests')
     todo_request_count = fields.Integer(compute='_compute_todo_requests')
-    todo_request_count_prev = fields.Integer(compute='_compute_todo_requests')
+    todo_request_count_date = fields.Integer(compute='_compute_todo_requests')
+    todo_request_count_high_priority = fields.Integer(compute='_compute_todo_requests')
+    todo_request_count_block = fields.Integer(compute='_compute_todo_requests')
 
     @api.one
     @api.depends('todo_request_ids.stage_id.done')
     def _compute_todo_requests(self):
         self.todo_request_ids = self.request_ids.filtered(lambda e: e.stage_id.done==False)
         self.todo_request_count = len(self.todo_request_ids)
-        self.todo_request_count_prev = len(self.todo_request_ids.filtered(lambda e: e.maintenance_type=='preventive'))
+        self.todo_request_count_date = len(self.todo_request_ids.filtered(lambda e: e.schedule_date != False))
+        self.todo_request_count_high_priority = len(self.todo_request_ids.filtered(lambda e: e.priority == '3'))
+        self.todo_request_count_block = len(self.todo_request_ids.filtered(lambda e: e.kanban_state == 'blocked'))
 
     @api.one
     @api.depends('equipment_ids')
