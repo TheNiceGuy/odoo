@@ -820,6 +820,7 @@
                             <field name="move_prod_id" groups="base.group_no_one"/>
                         </group>
                         <group groups="stock.group_locations">
+                            <field name="picking_type_id"/>
                             <field name="location_src_id" domain="[('usage','=','internal')]"/>
                             <field name="location_dest_id" domain="[('usage','=','internal')]"/>
                         </group>
