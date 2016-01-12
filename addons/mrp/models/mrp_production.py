@@ -152,7 +152,9 @@ class MrpProduction(models.Model):
                                        domain=[('state', 'not in', ('done', 'cancel'))], readonly=True)
     move_created_ids2 = fields.One2many('stock.move', 'production_id', 'Produced Products',
                                         domain=[('state', 'in', ('done', 'cancel'))], readonly=True)
-    consume_line_ids = fields.One2many('mrp.production.consume.line', 'production_id', string='To Consume')
+    
+    consume_operation_ids = fields.One2many('stock.pack.operation', 'production_raw_id', string="Consume Operations")
+    produce_operation_ids = fields.One2many('stock.pack.operation', 'production_finished_id', string="Produce Operations")
     workcenter_line_ids = fields.One2many('mrp.production.workcenter.line', 'production_id', string='Work Centers Utilisation',
                                           readonly=True, oldname='workcenter_lines')
     nb_orders = fields.Integer('Number of Orders', compute='_compute_nb_orders')
@@ -406,6 +408,37 @@ class MrpProduction(models.Model):
             procs.write({'state': 'exception'})
         return True
 
+    def do_prepare_partial(self):
+        pack_operation_obj = self.env['stock.pack.operation']
+
+        #get list of existing operations and delete them
+        existing_operation_ids = pack_operation_obj.search([('production_raw_id', 'in', self.ids), ('production_state', '!=', 'done')])
+        if existing_operation_ids:
+            existing_operation_ids.unlink()
+        for production in self:
+            forced_qties = {}  # Quantity remaining after calculating reserved quants
+            total_quants = self.env['stock.quant']
+            total_moves = self.env['stock.move']
+            #Calculate packages, reserved quants, qtys of this picking's moves
+            
+            for move in production.move_line_ids:
+                if move.state not in ('assigned', 'confirmed', 'waiting'):
+                    continue
+                total_moves |= move
+                move_quants = move.reserved_quant_ids
+                total_quants |= move_quants
+                forced_qty = (move.state == 'assigned') and move.product_qty - sum([x.qty for x in move_quants]) or 0
+                #if we used force_assign() on the move, or if the move is incoming, forced_qty > 0
+                if float_compare(forced_qty, 0, precision_rounding=move.product_id.uom_id.rounding) > 0:
+                    if forced_qties.get(move.product_id):
+                        forced_qties[move.product_id] += forced_qty
+                    else:
+                        forced_qties[move.product_id] = forced_qty
+            for vals in total_moves._prepare_pack_ops(total_quants, forced_qties):
+                vals['fresh_record'] = False
+                vals['production_raw_id'] = production.id
+                pack_operation_obj.create(vals)
+
     @api.multi
     def generate_production_consume_lines(self):
         """ Changes the production state to Ready and location id of stock move.
@@ -414,10 +447,13 @@ class MrpProduction(models.Model):
         consume_obj = self.env['mrp.production.consume.line']
         for production in self:
             #Let us create consume lines
+            
+            
             consume_lines = production._calculate_qty()
             for line in consume_lines:
                 line['production_id'] = production.id
                 consume_obj.create(line)
+            #The weird line
             if production.move_prod_id and production.move_prod_id.location_id.id != production.location_dest_id.id:
                 production.move_prod_id.write({'location_id': production.location_dest_id.id})
         return True
@@ -711,14 +747,14 @@ class MrpProduction(models.Model):
         for production in self:
             production.move_line_ids.action_assign()
             if production.availability in ('assigned', 'partially_available'):
-                production.generate_production_consume_lines()
+                production.do_prepare_partial()
         return True
  
     @api.multi
     def force_assign(self):
         for order in self:
             order.move_line_ids.force_assign()
-            order.generate_production_consume_lines()
+            order.do_prepare_partial()
         return True
 
     @api.multi
@@ -757,10 +793,10 @@ class MrpProductionWorkcenterLine(models.Model):
             workorder.delay = sum([x.duration for x in workorder.time_ids if x.state == "done"])
 
     @api.multi
-    @api.depends('consume_line_ids')
+    @api.depends('consume_operation_ids')
     def _compute_availability(self):
         for workorder in self:
-            if workorder.consume_line_ids:
+            if workorder.consume_operation_ids:
                 if any([x.state != 'assigned' for x in workorder.move_line_ids if not x.scrapped]):
                     workorder.availability = 'waiting'
                 else:
@@ -783,7 +819,7 @@ class MrpProductionWorkcenterLine(models.Model):
     qty_produced = fields.Float('Qty Produced', help="The number of products already handled by this work order", default=0.0) #TODO: decimal precision
     operation_id = fields.Many2one('mrp.routing.workcenter', 'Operation') #Should be used differently as BoM can change in the meantime
     move_line_ids = fields.One2many('stock.move', 'workorder_id', 'Moves')
-    consume_line_ids = fields.One2many('mrp.production.consume.line', 'workorder_id')
+    consume_operation_ids = fields.One2many('stock.pack.operation', 'workorder_id')
     availability = fields.Selection([('waiting', 'Waiting'), ('assigned', 'Available')], 'Stock Availability', store=True, compute='_compute_availability')
     production_state = fields.Selection(related='production_id.state', readonly=True)
     product = fields.Many2one('product.product', related='production_id.product_id', string="Product", readonly=True)
@@ -894,89 +930,89 @@ class MrpProductionWorkcenterLineTime(models.Model):
     state = fields.Selection([('running', 'Running'), ('done', 'Done')], string="Status", default="running")
 
 
-class MrpProductionConsumeLine(models.Model):
-    _name = "mrp.production.consume.line"
-    _description = "Consume Lines"
-
-    product_id = fields.Many2one('product.product', string='Product')
-    product_uom_id = fields.Many2one('product.uom', string='Unit of Measure')
-    product_qty = fields.Float(string='Quantity to Consume', digits=dp.get_precision('Product Unit of Measure'))
-    production_lot_ids = fields.One2many('production.operation.lot', 'operation_id', string='Related Packing Operations')
-    qty_done = fields.Float(string='Quantity Consumed', digits=dp.get_precision('Product Unit of Measure'))
-    production_id = fields.Many2one('mrp.production', string='Production Order')
-    workorder_id = fields.Many2one('mrp.production.workcenter.line', string='Work Order')
-    lots_visible = fields.Boolean(compute='_compute_lots_visible')
-
-    @api.multi
-    def _compute_lots_visible(self):
-        for consume_line in self:
-            if consume_line.production_lot_ids:
-                consume_line.lots_visible = True
-                continue
-            consume_line.lots_visible = (consume_line.product_id.tracking != 'none')
-
-    @api.multi
-    def save(self):
-        for pack in self:
-            if pack.product_id.tracking != 'none':
-                qty_done = sum([x.qty for x in pack.production_lot_ids])
-                pack.qty_done = qty_done
-        return {'type': 'ir.actions.act_window_close'}
-
-    @api.multi
-    def split_lot(self):
-        self.ensure_one()
-        ctx = {}
-        serial = (self.product_id.tracking == 'serial')
-        view = self.env.ref('mrp.mrp_production_consume_line_lot_form').id
-        show_reserved = any([x for x in self.production_lot_ids if x.qty_todo > 0.0])
-        ctx.update({'serial': serial,
-                    'show_reserved': show_reserved,})
-        return {
-            'name': _('Lot Details'),
-            'type': 'ir.actions.act_window',
-            'view_type': 'form',
-            'view_mode': 'form',
-            'res_model': 'mrp.production.consume.line',
-            'views': [(view, 'form')],
-            'view_id': view,
-            'target': 'new',
-            'res_id': self.id,
-            'context': ctx,
-        }
-
-
-class ProductionOperationLot(models.Model):
-    _name = "production.operation.lot"
-    _description = "Specifies lot/serial number for production operations that need it"
-
-    @api.multi
-    def _get_plus(self):
-        for operation in self:
-            operation.plus_visible = True
-            if operation.operation_id.product_id.tracking == 'serial':
-                operation.plus_visible = (operation.qty == 0.0)
-            else:
-                operation.plus_visible = (operation.qty_todo == 0.0) or (operation.qty < operation.qty_todo)
-
-    operation_id = fields.Many2one('mrp.production.consume.line')
-    qty = fields.Float(string='Done', default=1)
-    lot_id = fields.Many2one('stock.production.lot', string='Lot/Serial Number')
-    lot_name = fields.Char(string='Lot Name')
-    qty_todo = fields.Float(string='To Do', default=0.0)
-    plus_visible = fields.Boolean(compute=_get_plus)
-
-    @api.constrains('lot_id', 'lot_name')
-    def _check_lot(self):
-        for packlot in self:
-            if not packlot.lot_name and not packlot.lot_id:
-                raise UserError(_('Lot name and lot id required ..'))
-        return True
-
-    _sql_constraints = [
-        ('qty', 'CHECK(qty >= 0.0)','Quantity must be greater than or equal to 0.0!'),
-        ('uniq_lot_id', 'unique(operation_id, lot_id)', 'You have already mentioned this lot in another line'),
-        ('uniq_lot_name', 'unique(operation_id, lot_name)', 'You have already mentioned this lot name in another line')]
+# class MrpProductionConsumeLine(models.Model):
+#     _name = "mrp.production.consume.line"
+#     _description = "Consume Lines"
+# 
+#     product_id = fields.Many2one('product.product', string='Product')
+#     product_uom_id = fields.Many2one('product.uom', string='Unit of Measure')
+#     product_qty = fields.Float(string='Quantity to Consume', digits=dp.get_precision('Product Unit of Measure'))
+#     production_lot_ids = fields.One2many('production.operation.lot', 'operation_id', string='Related Packing Operations')
+#     qty_done = fields.Float(string='Quantity Consumed', digits=dp.get_precision('Product Unit of Measure'))
+#     production_id = fields.Many2one('mrp.production', string='Production Order')
+#     workorder_id = fields.Many2one('mrp.production.workcenter.line', string='Work Order')
+#     lots_visible = fields.Boolean(compute='_compute_lots_visible')
+# 
+#     @api.multi
+#     def _compute_lots_visible(self):
+#         for consume_line in self:
+#             if consume_line.production_lot_ids:
+#                 consume_line.lots_visible = True
+#                 continue
+#             consume_line.lots_visible = (consume_line.product_id.tracking != 'none')
+# 
+#     @api.multi
+#     def save(self):
+#         for pack in self:
+#             if pack.product_id.tracking != 'none':
+#                 qty_done = sum([x.qty for x in pack.production_lot_ids])
+#                 pack.qty_done = qty_done
+#         return {'type': 'ir.actions.act_window_close'}
+# 
+#     @api.multi
+#     def split_lot(self):
+#         self.ensure_one()
+#         ctx = {}
+#         serial = (self.product_id.tracking == 'serial')
+#         view = self.env.ref('mrp.mrp_production_consume_line_lot_form').id
+#         show_reserved = any([x for x in self.production_lot_ids if x.qty_todo > 0.0])
+#         ctx.update({'serial': serial,
+#                     'show_reserved': show_reserved,})
+#         return {
+#             'name': _('Lot Details'),
+#             'type': 'ir.actions.act_window',
+#             'view_type': 'form',
+#             'view_mode': 'form',
+#             'res_model': 'mrp.production.consume.line',
+#             'views': [(view, 'form')],
+#             'view_id': view,
+#             'target': 'new',
+#             'res_id': self.id,
+#             'context': ctx,
+#         }
+# 
+# 
+# class ProductionOperationLot(models.Model):
+#     _name = "production.operation.lot"
+#     _description = "Specifies lot/serial number for production operations that need it"
+# 
+#     @api.multi
+#     def _get_plus(self):
+#         for operation in self:
+#             operation.plus_visible = True
+#             if operation.operation_id.product_id.tracking == 'serial':
+#                 operation.plus_visible = (operation.qty == 0.0)
+#             else:
+#                 operation.plus_visible = (operation.qty_todo == 0.0) or (operation.qty < operation.qty_todo)
+# 
+#     operation_id = fields.Many2one('mrp.production.consume.line')
+#     qty = fields.Float(string='Done', default=1)
+#     lot_id = fields.Many2one('stock.production.lot', string='Lot/Serial Number')
+#     lot_name = fields.Char(string='Lot Name')
+#     qty_todo = fields.Float(string='To Do', default=0.0)
+#     plus_visible = fields.Boolean(compute=_get_plus)
+# 
+#     @api.constrains('lot_id', 'lot_name')
+#     def _check_lot(self):
+#         for packlot in self:
+#             if not packlot.lot_name and not packlot.lot_id:
+#                 raise UserError(_('Lot name and lot id required ..'))
+#         return True
+# 
+#     _sql_constraints = [
+#         ('qty', 'CHECK(qty >= 0.0)','Quantity must be greater than or equal to 0.0!'),
+#         ('uniq_lot_id', 'unique(operation_id, lot_id)', 'You have already mentioned this lot in another line'),
+#         ('uniq_lot_name', 'unique(operation_id, lot_name)', 'You have already mentioned this lot name in another line')]
 
     # @api.multi
     # def do_plus(self):

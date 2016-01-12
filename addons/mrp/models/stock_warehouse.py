@@ -5,6 +5,14 @@ from openerp import api, fields, models, _
 from openerp.exceptions import UserError
 
 
+class StockPackOperation(models.Model):
+    _inherit = 'stock.pack.operation'
+    
+    picking_id = fields.Many2one('stock.picking', 'Picking', required=False)
+    production_raw_id = fields.Many2one('mrp.production', 'Manufacturing Order')
+    production_finished_id = fields.Many2one('mrp.production', 'Manufacturing Order')
+    workorder_id = fields.Many2one('mrp.production.workcenter.line', 'Work Order')
+    production_state = fields.Selection([('confirmed', 'Confirmed'), ('done', 'Done')], 'Production State')
 
 class StockWarehouse(models.Model):
     _inherit = 'stock.warehouse'
