@@ -51,7 +51,7 @@ class MrpProductProduceWo(models.TransientModel):
     def do_produce(self):
         self.ensure_one()
         workorder = self.env['mrp.production.workcenter.line'].browse(self._context.get('active_id'))
-        if workorder.consume_line_ids:
+        if workorder.move_line_ids:
             # Raise the qty that would have been consumed
             pass
             # Calculate
