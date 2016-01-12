@@ -3680,6 +3680,7 @@ class stock_warehouse(osv.osv):
         pull_obj.write(cr, uid, warehouse.mto_pull_id.id, mto_pull_vals, context=context)
         return True
 
+    @api.cr_uid_records_context
     def create_sequences_and_picking_types(self, cr, uid, warehouse, context=None):
         seq_obj = self.pool.get('ir.sequence')
         picking_type_obj = self.pool.get('stock.picking.type')

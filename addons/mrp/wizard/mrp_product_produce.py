@@ -30,11 +30,11 @@ class MrpProductProduce(models.TransientModel):
         """
         production = self.env['mrp.production'].browse(self._context['active_id'])
         done = 0.0
-        for move in production.move_created_ids2:
-            if move.product_id == production.product_id:
-                if not move.scrapped:
-                    done += move.product_uom_qty # As uom of produced products and production order should correspond
-        return production.product_qty - done
+        produce_operations = production.produce_operation_ids.filtered(lambda x: x.production_state != 'done' and x.product_id.id == production.product_id.id)
+        result = 0.0
+        if produce_operations:
+            result = produce_operations[0].qty_done or produce_operations[0].product_qty
+        return result
 
     @api.model
     def _get_product_id(self):
@@ -61,26 +61,6 @@ class MrpProductProduce(models.TransientModel):
     lot_id = fields.Many2one('stock.production.lot', string='Lot')  # Should only be visible when it is consume and produce mode
 #    consume_lines = fields.One2many('mrp.product.produce.line', 'produce_id', string='Products Consumed')
     tracking = fields.Selection(related='product_id.tracking', selection=[('serial', 'By Unique Serial Number'), ('lot', 'By Lots'), ('none', 'No Tracking')], default=_get_track)
-
-#     @api.multi
-#     def on_change_qty(self, product_qty, consume_lines):
-#         """ 
-#             When changing the quantity of products to be produced it will 
-#             recalculate the number of raw materials needed according
-#             to the scheduled products and the already consumed/produced products
-#             It will return the consume lines needed for the products to be produced
-#             which the user can still adapt
-#         """
-#         production = self.env['mrp.production'].browse(self._context['active_id'])
-#         consume_lines = []
-#         new_consume_lines = []
-#         if product_qty > 0.0:
-#             product_uom_qty = production.product_uom_id._compute_qty(product_qty, production.product_id.uom_id.id)
-#             consume_lines = production._calculate_qty(product_qty=product_uom_qty)
-# 
-#         for consume in consume_lines:
-#             new_consume_lines.append([0, False, consume])
-#         return {'value': {'consume_lines': new_consume_lines}}
 
     @api.multi
     def do_produce(self):
