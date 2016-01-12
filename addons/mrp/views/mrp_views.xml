@@ -1048,7 +1048,7 @@
 
     <!-- Where to put production order planning??? -->
 
-        <!--<record id="mrp_production_action_planning" model="ir.actions.act_window">
+        <record id="mrp_production_action_planning" model="ir.actions.act_window">
             <field name="name">Manufacturing Orders</field>
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">mrp.production</field>
@@ -1068,9 +1068,6 @@
               </p>
             </field>
         </record>
-        <menuitem action="mrp.mrp_production_action_planning"
-                id="menu_mrp_production_order_action" name="Order Planning"
-                parent="menu_mrp_planning" sequence="1"/>-->
 
         <!-- Procurements -->
         <record id="view_procurement_rule_form_stock_inherit_mrp" model="ir.ui.view">
@@ -1525,15 +1522,39 @@
             action="mrp_workorder_todo"
             parent="menu_mrp_manufacturing"/>
 
-    <menuitem id="menu_mrp_workorder_production"
-              name="Work Orders by Production Order"
-              action="action_mrp_workorder_production"
+    <menuitem id="menu_mrp_production_planning"
+              name="Manufacturing Orders"
+              sequence="1"
               parent="menu_mrp_planning"/>
 
-    <menuitem id="menu_mrp_workorder_workcenter"
-              name="Work Orders by Workcenter"
-              action="action_mrp_workorder_workcenter"
+    <menuitem id="menu_mrp_production_plan"
+              name="Orders to Plan"
+              sequence="1"
+              action="mrp_production_action_planning"
+              parent="menu_mrp_production_planning"/>
+
+    <menuitem id="menu_mrp_production_pending"
+              name="Pending Orders"
+              sequence="2"
+              action="mrp_production_action_planning"
+              parent="menu_mrp_production_planning"/>
+
+    <menuitem id="menu_mrp_workorder_planning"
+              name="Work Orders"
+              sequence="2"
               parent="menu_mrp_planning"/>
+
+    <menuitem id="menu_mrp_workorder_production"
+              name="Planning by Production"
+              sequence="1"
+              action="action_mrp_workorder_production"
+              parent="menu_mrp_workorder_planning"/>
+
+    <menuitem id="menu_mrp_workorder_workcenter"
+              name="Planning by Workcenter"
+              sequence="2"
+              action="action_mrp_workorder_workcenter"
+              parent="menu_mrp_workorder_planning"/>
 
 
     <menuitem id="menu_mrp_mps"
