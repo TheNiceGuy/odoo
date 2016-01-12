@@ -988,8 +988,7 @@ class MrpUnbuild(models.Model):
     _description = "Unbuild Order"
     _inherit = ['mail.thread']
 
-    name = fields.Char(string='Reference', required=True, readonly=True, copy=False,
-                       default=lambda self: self.env['ir.sequence'].next_by_code('mrp.unbuild') or '/')
+    name = fields.Char(string='Reference', required=True, readonly=True, copy=False, default='New')
     product_id = fields.Many2one('product.product', string="Product", required=True)
     product_qty = fields.Float('Product Quantity', required=True)
     product_uom_id = fields.Many2one('product.uom', string="Unit of Measure", required=True)
@@ -1038,6 +1037,8 @@ class MrpUnbuild(models.Model):
 
     @api.model
     def create(self, vals):
+        if vals.get('name', 'New') == 'New':
+            vals['name'] = self.env['ir.sequence'].next_by_code('mrp.unbuild') or 'New'
         unbuild = super(MrpUnbuild, self).create(vals)
         unbuild.consume_line_id = unbuild._make_unbuild_line()
         unbuild.generate_move_line()

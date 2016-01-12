@@ -7,7 +7,7 @@ from openerp import api, fields, models, _
 class StockScrap(models.Model):
     _name = 'stock.scrap'
 
-    name = fields.Char(required=True, readonly=True, copy=False, default=lambda self: self.env['ir.sequence'].next_by_code('stock.scrap') or '/', states={'done': [('readonly', True)]}, string="Reference")
+    name = fields.Char(required=True, readonly=True, copy=False, default='New', states={'done': [('readonly', True)]}, string="Reference")
     product_id = fields.Many2one('product.product', 'Product', states={'done': [('readonly', True)]}, required=True)
     product_uom_id = fields.Many2one('product.uom', string='Unit of Measure', states={'done': [('readonly', True)]}, required=True)
     lot_id = fields.Many2one('stock.production.lot', 'Lot', states={'done': [('readonly', True)]}, domain="[('product_id', '=', product_id)]")
@@ -20,6 +20,8 @@ class StockScrap(models.Model):
 
     @api.model
     def create(self, vals):
+        if vals.get('name', 'New') == 'New':
+            vals['name'] = self.env['ir.sequence'].next_by_code('stock.scrap') or 'New'
         scrap = super(StockScrap, self).create(vals)
         scrap.do_scrap()
         return scrap
