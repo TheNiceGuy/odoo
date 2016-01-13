@@ -889,13 +889,16 @@
                     </group>
                     <notebook>
                         <page string="Consumed Materials">
-<<<<<<< dd2642c6051ca5e0a2d3d42c3d4bb91c35f193fa
-                            <field name="consume_line_ids">
-                                <tree editable="bottom">
-                                    <field name="lots_visible" invisible="1"/>
-=======
-                            <field name="consume_operation_ids">
-                                <tree editable="bottom" decoration-danger="qty_done&gt;product_qty" decoration-success="qty_done==product_qty and state!='done'">
+                            <field name="move_line_ids" attrs="{'invisible': [('consume_operation_ids', '!=', [])]}" readonly="1">
+                                <tree>
+                                    <field name="product_id"/>
+                                    <field name="product_uom_qty"/>
+                                    <field name="product_uom"/>
+                                    <field name="state" invisible="1"/>
+                                </tree>
+                            </field>
+                            <field name="consume_operation_ids" attrs="{'invisible': [('consume_operation_ids', '=', [])]}">
+                                <tree editable="bottom" decoration-danger="qty_done&gt;product_qty" decoration-success="qty_done==product_qty">
                                     <field name="package_id" groups="stock.group_tracking_lot" invisible="1"/>
                                     <field name="product_id" on_change="product_id_change(product_id, product_uom_id, product_qty)" required="1" attrs="{'readonly': [('fresh_record', '=', False)]}"/>
                                     <field name="fresh_record" invisible="1"/>
@@ -914,25 +917,33 @@
                                     <button name="split_lot" string="Lot Split" type="object" icon="fa-list" groups="stock.group_production_lot"
                                             attrs="{'invisible': ['|', ('lots_visible', '=', False), ('state', 'not in', ['confirmed', 'assigned', 'waiting', 'partially_available','done'])]}"/>
                                     <button name="show_details" string="Modify" type="object" icon="fa-pencil" groups="stock.group_locations"
-                                            states="confirmed,assigned,waiting,partially_available"/>
+                                            states="confirmed,planned,progress"/>
                                 </tree>
-                                <!-- <tree editable="bottom">
->>>>>>> [IMP] Intermediate consume operations
-                                    <field name="product_id"/>
-                                    <field name="product_qty"/>
-                                    <field name="qty_done"/>
-                                    <button name="split_lot" string="Lot Split" type="object" icon="fa-list" groups="stock.group_production_lot" attrs="{'invisible': [('lots_visible', '=', False)]}"/>
-
-                                    <field name="product_uom_id"/>
-                                </tree> -->
                             </field>
                         </page>
                         <page string="Finished Products">
-                            <field name="move_created_ids2">
-                                <field name="product_id"/>
-                                <field name="restrict_lot_id"/>
-                                <field name="product_uom_qty"/>
-                                <field name="product_uom"/>
+                            <field name="produce_operation_ids">
+                                <tree editable="bottom" decoration-danger="qty_done&gt;product_qty" decoration-success="qty_done==product_qty">
+                                    <field name="package_id" groups="stock.group_tracking_lot" invisible="1"/>
+                                    <field name="product_id" on_change="product_id_change(product_id, product_uom_id, product_qty)" required="1" attrs="{'readonly': [('fresh_record', '=', False)]}"/>
+                                    <field name="fresh_record" invisible="1"/>
+                                    <field name="product_uom_id" attrs="{'readonly': [('fresh_record', '=', False)]}" groups="product.group_uom"/>
+                                    <field name="lots_visible" invisible="1"/>
+                                    <field name="owner_id" groups="stock.group_tracking_owner"/>
+                                    <field name="location_id" domain="[('id', 'child_of', parent.location_id)]" invisible="1"/>
+                                    <field name="location_dest_id" domain="[('id', 'child_of', parent.location_dest_id)]" invisible="1"/>
+                                    <field name="from_loc" groups="stock.group_locations,stock.group_tracking_lot" invisible="1"/>
+                                    <field name="to_loc" groups="stock.group_locations,stock.group_tracking_lot"/>
+                                    <field name="result_package_id" groups="stock.group_tracking_lot" context="{'location_id': location_dest_id}" invisible="1"/>
+                                    <field name="state" invisible="1"/>
+                                    <field name="production_state" invisible="1"/>
+                                    <field name="product_qty" readonly="1" attrs="{'required': [('product_id', '!=', False)]}"/>
+                                    <field name="qty_done" attrs="{'readonly': [('lots_visible', '=', True)]}"/>
+                                    <button name="split_lot" string="Lot Split" type="object" icon="fa-list" groups="stock.group_production_lot"
+                                            attrs="{'invisible': ['|', ('lots_visible', '=', False), ('state', 'not in', ['confirmed', 'assigned', 'waiting', 'partially_available','done'])]}"/>
+                                    <button name="show_details" string="Modify" type="object" icon="fa-pencil" groups="stock.group_locations"
+                                            states="confirmed,planned,progress"/>
+                                </tree>
                             </field>
                         </page>
                     </notebook>
@@ -945,46 +956,6 @@
             </field>
         </record>
 
-<<<<<<< dd2642c6051ca5e0a2d3d42c3d4bb91c35f193fa
-        <record id="mrp_production_consume_line_lot_form" model="ir.ui.view">
-            <field name="name">mrp.production.consume.line.lots.form</field>
-            <field name="model">mrp.production.consume.line</field>
-            <field eval="20" name="priority"/>
-            <field name="arch" type="xml">
-                <form>
-                    <group>
-                        <field name="product_id" readonly="1"/>
-                        <label for="qty_done"/>
-                        <span>
-                            <field name="qty_done" class="oe_inline" readonly="1"/> of
-                            <field name="product_qty" class="oe_inline" readonly="1"/>
-                            <field name="product_uom_id" class="oe_inline" groups="product.group_uom" readonly="1"/>
-                        </span>
-                    </group>
-                    <group>
-                        <field name="production_lot_ids" nolabel="1">
-                            <tree editable="bottom" decoration-success="qty_todo==qty" decoration-danger="(qty_todo &gt; 0) and (qty&gt;qty_todo)">
-                                <field name="lot_id"
-                                        domain="[('product_id', '=', parent.product_id)]"
-                                        context="{'product_id': parent.product_id}"/>
-                                <field name="qty_todo" readonly="1"/>
-                                <field name="qty" invisible="context.get('serial')"/>
-<!--                                 <button name="do_minus" type="object" icon="fa-minus-square"/>
-                                <button name="do_plus" type="object" icon="fa-plus-square"/> -->
-                                <field name="plus_visible" invisible="1"/>
-                            </tree>
-                        </field>
-                    </group>
-                    <footer>
-                        <button name="save" type="object" string="Save" class="oe_highlight"/>
-                        <button string="Discard" special="cancel"/>
-                    </footer>
-                </form>
-            </field>
-        </record>
-
-
-=======
         <record id="mrp_production_tree_view" model="ir.ui.view">
             <field name="name">mrp.production.tree</field>
             <field name="model">mrp.production</field>
@@ -1004,7 +975,7 @@
                 </tree>
             </field>
         </record>
->>>>>>> [IMP] Intermediate consume operations
+
         <record id="mrp_production_kanban_view" model="ir.ui.view">
             <field name="name">mrp.production.kanban</field>
             <field name="model">mrp.production</field>
