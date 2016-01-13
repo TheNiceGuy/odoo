@@ -1275,12 +1275,16 @@
         <field name="arch" type="xml">
             <form string="Production Workcenter">
             <header>
-                <button name="button_start" type="object" string="Start Working" states="pause,ready" class="btn-success"/>
-                <button name="%(act_mrp_product_produce_wo)d" type="action" string="Record Production" states="progress" class="btn-success"/>
-                <button name="button_pause" type="object" string="Pause" states="progress" class="btn-warning"><span>(<field name="delay" widget="float_time"/>)</span></button>
-                <button name="button_finish" type="object" string="Finish Production" states="progress" class="btn-info"/>
-                <button name="button_start" type="object" string="Continue Production" states="done" class="btn-success"/>
+                <button name="button_start" type="object" string="Start Working" attrs="{'invisible': [('state', '!=', 'pause')]}"/>
+                <button name="button_start" type="object" string="Start Working" attrs="{'invisible': [('state', '!=', 'ready')]}" class="btn-success"/>
+                <button name="%(act_mrp_product_produce_wo)d" type="action" string="Record Production" class="btn-success" attrs="{'invisible': ['|', ('state', '!=', 'progress'), ('show_state', '=', False)]}"/>
+                <button name="button_pause" type="object" string="Pause" class="btn-warning" attrs="{'invisible': ['|', ('state', 'in', ('done', 'pause', 'ready')), ('show_state', '=', False)]}"><span>(<field name="delay" widget="float_time"/>)</span></button>
+                <button name="button_finish" type="object" string="Finish Production" attrs="{'invisible': ['|',('state', '!=', 'progress'), ('check_produce_qty','=', False)]}" class="btn-info"/>
+                <button name="button_start" type="object" string="Continue Production" class="btn-warning" attrs="{'invisible': ['|', ('show_state', '=', True), ('state', 'in', ('done', 'pause', 'ready'))]}"><span>(<field name="delay" widget="float_time"/>)</span></button>
+                <button name="button_start" type="object" string="Continue Production" attrs="{'invisible': [('state', '!=', 'done')]}"/>
                 <field name="state" widget="statusbar" statusbar_visible="pause,ready,progress,done"/>
+                <field name="show_state" invisible="1"/>
+                <field name="check_produce_qty" invisible="1"/>
             </header>
             <sheet>
             <group>

@@ -758,6 +758,12 @@ class MrpProductionWorkcenterLine(models.Model):
             else:
                 workorder.availability = workorder.production_id.availability == 'assigned' and 'assigned' or 'waiting'
 
+    def _check_produce_qty(self):
+        for workorder in self:
+            if workorder.qty_produced >= workorder.qty:
+                workorder.check_produce_qty = True
+
+
     name = fields.Char(string='Work Order', required=True)
     workcenter_id = fields.Many2one('mrp.workcenter', string='Work Center', required=True)
     hour = fields.Float(string='Expected Duration', digits=(16, 2))
@@ -784,13 +790,14 @@ class MrpProductionWorkcenterLine(models.Model):
     worksheet = fields.Binary('Worksheet', related='operation_id.worksheet', readonly=True)
     work_user_ids = fields.Many2many('res.users', 'workorder_user_rel', 'workorder_id', 'user_id')
     show_state = fields.Boolean(compute='_get_current_state')
+    check_produce_qty = fields.Boolean(compute='_check_produce_qty')
 
     def _get_current_state(self):
         for order in self:
             if self.env.user.id in order.work_user_ids.ids:
-                order.show_state = False
-            else:
                 order.show_state = True
+            else:
+                order.show_state = False
 
     @api.multi
     def button_draft(self):
@@ -851,7 +858,6 @@ class MrpProductionWorkcenterLine(models.Model):
     @api.multi
     def button_pause(self):
         self.end_previous()
-        self.write({'state': 'pause'})
 
     @api.multi
     def button_cancel(self):
