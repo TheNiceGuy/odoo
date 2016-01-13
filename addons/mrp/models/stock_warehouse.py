@@ -12,7 +12,7 @@ class StockPackOperation(models.Model):
     production_raw_id = fields.Many2one('mrp.production', 'Manufacturing Order')
     production_finished_id = fields.Many2one('mrp.production', 'Manufacturing Order')
     workorder_id = fields.Many2one('mrp.production.workcenter.line', 'Work Order')
-    production_state = fields.Selection([('confirmed', 'Confirmed'), ('done', 'Done')], 'Production State')
+    production_state = fields.Selection([('confirmed', 'Confirmed'), ('done', 'Done')], default='confirmed', string='Production State', copy=False)
 
 class StockWarehouse(models.Model):
     _inherit = 'stock.warehouse'
