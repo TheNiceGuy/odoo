@@ -702,10 +702,8 @@ class MrpProduction(models.Model):
             warning_state = production.move_line_ids.filtered(lambda x: x.state != 'available')
             if production.availability in ('assigned', 'partially_available'):
                 production.generate_production_consume_lines()
-            if warning_state:
-                raise Warning(_('Not all products are available, you can force availability'))
-            else:
-                raise Warning(_('All products are available'))
+        return True
+
     @api.multi
     def force_assign(self):
         for order in self:
