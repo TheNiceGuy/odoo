@@ -763,7 +763,7 @@ class MrpProductionWorkcenterLine(models.Model):
     hour = fields.Float(string='Expected Duration', digits=(16, 2))
     sequence = fields.Integer(required=True, default=1, help="Gives the sequence order when displaying a list of work orders.")
     production_id = fields.Many2one('mrp.production', string='Manufacturing Order', track_visibility='onchange', index=True, ondelete='cascade', required=True)
-    state = fields.Selection([('confirmed', 'Confirmed'), ('ready', 'Ready'), ('cancel', 'Cancelled'), ('pause', 'Pending'), ('progress', 'In Progress'), ('done', 'Finished')], default='confirmed')
+    state = fields.Selection([('pause', 'Pending'), ('ready', 'Ready'), ('progress', 'In Progress'), ('done', 'Finished'), ('confirmed', 'Confirmed'),  ('cancel', 'Cancelled')], default='pause')
     date_planned_start = fields.Datetime('Scheduled Date Start')
     date_planned_end = fields.Datetime('Scheduled Date Finished')
     capacity_planned = fields.Integer('Capacity Planned')
@@ -800,7 +800,7 @@ class MrpProductionWorkcenterLine(models.Model):
     @api.multi
     def button_plan(self):
         self.ensure_one()
-        self.write({'state' 'planned'})
+        self.write({'state': 'planned'})
 
     @api.multi
     def button_start(self):
@@ -817,6 +817,11 @@ class MrpProductionWorkcenterLine(models.Model):
         self.write({'state': 'progress',
                     'date_start': datetime.now(),
                     })
+
+    @api.multi
+    def button_finish(self):
+        self.ensure_one()
+        self.write({'state': 'done'})
 
     @api.multi
     def end_previous(self):

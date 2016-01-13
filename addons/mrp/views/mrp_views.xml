@@ -1232,12 +1232,12 @@
         <field name="arch" type="xml">
             <form string="Production Workcenter">
             <header>
-                <button name="%(act_mrp_product_produce_wo)d" string="Produce" type="action"/>
-                <button name="button_done" type="object" string="Finished" states="progress" class="oe_highlight"/>
-                <button name="button_draft" type="object" string="Set Draft" states="cancel"/>
-                <button name="button_cancel" type="object" string="Cancel" states="confirmed,planned,progress"/>
-                <button name="button_scrap" type="object" string="Scrap" attrs="{'invisible': [('state', 'in', ('confirmed', 'cancel'))]}"/>
-                <field name="state" widget="statusbar" statusbar_visible="confirmed,progress,done"/>
+                <button name="button_start" type="object" string="Start Working" states="pause,ready" class="btn-success"/>
+                <button name="%(act_mrp_product_produce_wo)d" type="action" string="Record Production" states="progress" class="btn-success"/>
+                <button name="button_pause" type="object" string="Pause" states="progress" class="btn-warning"><span>(<field name="delay" widget="float_time"/>)</span></button>
+                <button name="button_finish" type="object" string="Finish Production" states="progress" class="btn-info"/>
+                <button name="button_start" type="object" string="Continue Production" states="done" class="btn-success"/>
+                <field name="state" widget="statusbar" statusbar_visible="pause,ready,progress,done"/>
             </header>
             <group col="4">
                 <field name="availability"/>
@@ -1271,17 +1271,10 @@
                             <label string="to" attrs="{'invisible': [('date_start', '=', False)]}"/>
                             <field name="date_finished" readonly="1" attrs="{'invisible': [('date_start', '=', False)]}"/>
                         </div>
-                        <label for="delay" string="Real Duration"/>
-                        <div>
-                            <field name="delay" widget="float_time" class="oe_inline"/>
-                            hours
-                        </div>
                         <field name="started_since" attrs="{'invisible': [('state', '!=', 'progress')]}"/>
                     </group>
                 </group>
                 <field name="show_state" invisible="1"/>
-                <button name="button_start" type="object" string="START" class="btn-success" attrs="{'invisible': ['|',('state', '=', ('done')), ('show_state', '=', False)]}"/>
-                <button name="button_pause" type="object" string="STOP" class="btn-danger" attrs="{'invisible': ['|',('state', 'in', ('confirmed', 'done')), ('show_state', '=', True)]}"/>
                 <group>
                     <field name="time_ids" readonly="1" nolabel="1">
                         <tree>
