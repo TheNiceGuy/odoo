@@ -1283,13 +1283,21 @@
                 <field name="state" widget="statusbar" statusbar_visible="pause,ready,progress,done"/>
             </header>
             <sheet>
-            <group col="4">
-                <field name="availability"/>
-                <field name="qty_produced"/>
-                <field name="sequence" invisible="1"/>
+            <group>
+                <group>
+                    <field name="product" string="To Produce"/>
+                    <label for="qty_produced" string="Quantity Produced"/>
+                    <div class="o_row">
+                        <field name="qty_produced"/> /
+                        <field name="qty"/>
+                        <field name="uom" widget="selection"/>
+                        <field name="availability" widget="bullet_state" options="{'classes': {'assigned': 'success', 'waiting': 'danger'}}"/>
+                    </div>
+                    <field name="sequence" invisible="1"/>
+                </group>
             </group>
             <notebook>
-            <page string="Worksheet" attrs="{'invisible': [('worksheet', '=', False)]}">
+            <page string="Work Instruction" attrs="{'invisible': [('worksheet', '=', False)]}">
                 <field name="worksheet" widget="image"/>
             </page>
             <page string="Time Tracking">
@@ -1345,12 +1353,7 @@
             <page string="Miscellaneous">
                 <group>
                     <group>
-                        <field name="product"/>
-                        <label for="product_qty" string="Qty"/>
-                        <div class="o_row">
-                            <field name="qty"/>
-                            <field name="uom" widget="selection"/>
-                        </div>
+                        
                     </group>
                     <group>
                         <field name="name"/>

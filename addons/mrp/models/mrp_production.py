@@ -770,7 +770,7 @@ class MrpProductionWorkcenterLine(models.Model):
     date_start = fields.Datetime('Effective Start Date')
     date_finished = fields.Datetime('Effective End Date')
     delay = fields.Float('Real Duration', compute='_compute_delay', readonly=True)
-    qty_produced = fields.Float('Qty Produced', help="The number of products already handled by this work order", default=0.0) #TODO: decimal precision
+    qty_produced = fields.Float('Qty Produced', readonly=True, help="The number of products already handled by this work order", default=0.0) #TODO: decimal precision
     operation_id = fields.Many2one('mrp.routing.workcenter', 'Operation') #Should be used differently as BoM can change in the meantime
     move_line_ids = fields.One2many('stock.move', 'workorder_id', 'Moves')
     consume_line_ids = fields.One2many('mrp.production.consume.line', 'workorder_id')
