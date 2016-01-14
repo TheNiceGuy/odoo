@@ -471,24 +471,6 @@ class MrpProduction(models.Model):
                 vals['production_finished_id'] = production.id
                 pack_operation_obj.create(vals)
 
-    @api.multi
-    def generate_production_consume_lines(self):
-        """ Changes the production state to Ready and location id of stock move.
-        :return: True
-        """
-        consume_obj = self.env['mrp.production.consume.line']
-        for production in self:
-            #Let us create consume lines
-            
-            
-            consume_lines = production._calculate_qty()
-            for line in consume_lines:
-                line['production_id'] = production.id
-                consume_obj.create(line)
-            #The weird line
-            if production.move_prod_id and production.move_prod_id.location_id.id != production.location_dest_id.id:
-                production.move_prod_id.write({'location_id': production.location_dest_id.id})
-        return True
 
     @api.multi
     def action_production_end(self):
@@ -816,6 +798,9 @@ class MrpProduction(models.Model):
         for production in self:
             #Produce lines
             production._make_production_produce_line()
+            #The weird line
+            if production.move_prod_id and production.move_prod_id.location_id.id != production.location_dest_id.id:
+                production.move_prod_id.write({'location_id': production.location_dest_id.id})
             production.do_prepare_partial_produce()
             #Consume lines
             results, results2 = production._prepare_lines(properties=properties)
