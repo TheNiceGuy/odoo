@@ -375,7 +375,7 @@ class StockMove(models.Model):
         for ops in operations:
             lot_qty = {}
             for packlot in ops.pack_lot_ids:
-                lot_qty[packlot.lot_id.id] = uom_obj._compute_qty(ops.product_uom_id.id, packlot.qty, ops.product_id.uom_id.id)
+                lot_qty[packlot.lot_id.id] = uom_obj._compute_qty_obj(ops.product_uom_id, packlot.qty, ops.product_id.uom_id)
             #for each operation, create the links with the stock move by seeking on the matching reserved quants,
             #and deffer the operation if there is some ambiguity on the move to select
             if ops.package_id and not ops.product_id and (not done_qtys or ops.qty_done):
