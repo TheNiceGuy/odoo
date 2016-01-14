@@ -64,8 +64,8 @@ class MrpProduction(models.Model):
                     order.availability = 'assigned'
                     continue
                 #TODO: We can skip this,but partially available is only possible when field on bom allows it
-                if order.workcenter_line_ids and order.workcenter_line_ids[0].consume_line_ids:
-                    if all([x.state=='assigned' for x in order.consume_line_ids]):
+                if order.workcenter_line_ids and order.workcenter_line_ids[0].move_line_ids:
+                    if all([x.state=='assigned' for x in order.move_line_ids]):
                         order.availability = 'partially_available'
                     else:
                         order.availability = 'waiting'
@@ -622,7 +622,7 @@ class MrpProduction(models.Model):
             
             produce_operation_ids = production.produce_operation_ids.filtered(lambda x: x.production_state != 'done' and x.qty_done > 0)
             # Do what would have been done otherwise
-            need_rereserve, all_op_processed = production.move_line_ids.recompute_remaining_qty(produce_operation_ids)
+            need_rereserve, all_op_processed = production.move_created_ids.recompute_remaining_qty(produce_operation_ids)
             
             #create extra moves in the picking (unexpected product moves coming from pack operations)
             todo_move_ids = []
@@ -652,7 +652,7 @@ class MrpProduction(models.Model):
                     toassign_move_ids.append(new_move)
             if need_rereserve or not all_op_processed:
                 stock_move_obj.browse(todo_move_ids).action_assign()
-                need_rereserve, all_op_processed = production.move_line_ids.recompute_remaining_qty(produce_operation_ids)
+                need_rereserve, all_op_processed = production.move_created_ids.recompute_remaining_qty(produce_operation_ids)
             self.env['stock.move'].browse(todo_move_ids).action_done()
             produce_operation_ids.write({'production_state': 'done'})
         return True
@@ -854,7 +854,7 @@ class MrpProduction(models.Model):
             'res_model': 'stock.scrap',
             'view_id': self.env.ref('stock.stock_scrap_form_view2').id,
             'type': 'ir.actions.act_window',
-            'context': {'product_ids': self.consume_line_ids.mapped('product_id').ids},
+            'context': {'product_ids': self.move_line_ids.mapped('product_id').ids},
             'target': 'new',
         }
 
