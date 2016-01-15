@@ -788,13 +788,12 @@ class MrpProductionWorkcenterLine(models.Model):
     started_since = fields.Datetime('Started Since', compute='_compute_started')
     time_ids = fields.One2many('mrp.production.workcenter.line.time', 'workorder_id')
     worksheet = fields.Binary('Worksheet', related='operation_id.worksheet', readonly=True)
-    work_user_ids = fields.Many2many('res.users', 'workorder_user_rel', 'workorder_id', 'user_id')
     show_state = fields.Boolean(compute='_get_current_state')
     check_produce_qty = fields.Boolean(compute='_check_produce_qty')
 
     def _get_current_state(self):
         for order in self:
-            if self.env.user.id in order.work_user_ids.ids:
+            if order.time_ids.filtered(lambda x : x.user_id.id == self.env.user.id and x.state == 'running'):
                 order.show_state = True
             else:
                 order.show_state = False
@@ -819,8 +818,6 @@ class MrpProductionWorkcenterLine(models.Model):
                              'state': 'running',
                              'date_start': datetime.now(),
                              'user_id': self.env.user.id})
-            if self.env.user.id not in self.work_user_ids.ids:
-                workorder.work_user_ids = [(6, 0, self.work_user_ids.ids + [self.env.user.id] )]
         self.write({'state': 'progress',
                     'date_start': datetime.now(),
                     })
@@ -828,6 +825,7 @@ class MrpProductionWorkcenterLine(models.Model):
     @api.multi
     def button_finish(self):
         self.ensure_one()
+        self.end_all()
         self.write({'state': 'done'})
 
     @api.multi
@@ -839,8 +837,6 @@ class MrpProductionWorkcenterLine(models.Model):
             hours = timed.total_seconds() / 3600.0
             timeline.write({'state': 'done',
                             'duration': hours})
-            if self.env.user.id in workorder.work_user_ids.ids:
-                workorder.work_user_ids = [(3, self.env.user.id)]
 
     @api.multi
     def end_all(self):
@@ -852,8 +848,6 @@ class MrpProductionWorkcenterLine(models.Model):
                 hours = timed.total_seconds() / 3600.0
                 timeline.write({'state': 'done',
                                 'duration': hours})
-                if timeline.user_id.id in workorder.work_user_ids.ids:
-                    workorder.work_user_ids = [(3, timeline.user_id.id)]
 
     @api.multi
     def button_pause(self):
