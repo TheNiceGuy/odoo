@@ -1312,7 +1312,7 @@
                         <label for="date_planned_start" string="Planned Date"/>
                         <div class="o_row">
                             <field name="date_planned_start"/>
-                            <label string="to" attrs="{'invisible': [('date_planned_start', '=', False)]}"/>
+                            <label string="to" attrs="{'invisible': [('date_planned_end', '=', False)]}"/>
                             <field name="date_planned_end" attrs="{'invisible': [('date_planned_start', '=', False)]}"/>
                         </div>
                         <label for="hour" string="Expected Duration"/>
@@ -1326,7 +1326,7 @@
                         <label for="date_start" string="Effective Date"/>
                         <div class="o_row">
                             <field name="date_start" readonly="1"/>
-                            <label string="to" attrs="{'invisible': [('date_start', '=', False)]}"/>
+                            <label string="to" attrs="{'invisible': [('date_finished', '=', False)]}"/>
                             <field name="date_finished" readonly="1" attrs="{'invisible': [('date_start', '=', False)]}"/>
                         </div>
                         <field name="started_since" attrs="{'invisible': [('state', '!=', 'progress')]}"/>
