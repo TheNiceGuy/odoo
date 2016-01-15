@@ -142,9 +142,9 @@ class StockWarehouse(models.Model):
                 'color': color})
             warehouse.write({'manu_type_id': manu_type.id})
 
-    @api.model
-    def create_sequences_and_picking_types(self, warehouse):
-        res = super(StockWarehouse, self).create_sequences_and_picking_types(self, warehouse)
+    @api.v7
+    def create_sequences_and_picking_types(self, cr, uid, warehouse, context=None):
+        res = super(StockWarehouse, self).create_sequences_and_picking_types(cr, uid, warehouse, context=context)
         warehouse._create_manufacturing_picking_type()
         return res
 
