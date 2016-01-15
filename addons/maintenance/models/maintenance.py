@@ -273,7 +273,7 @@ class MaintenanceRequest(models.Model):
     @api.onchange('category_id')
     def onchange_category_id(self):
         if not self.technician_user_id or not self.equipment_id or (self.technician_user_id and not self.equipment_id.technician_user_id):
-            self.technician_user_id = self.category_id.technician_user_id if self.category_id.technician_user_id else self.env.user.id
+            self.technician_user_id = self.category_id.technician_user_id
 
     @api.model
     def create(self, vals):
