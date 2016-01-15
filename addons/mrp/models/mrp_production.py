@@ -160,7 +160,7 @@ class MrpProduction(models.Model):
     nb_orders = fields.Integer('Number of Orders', compute='_compute_nb_orders')
     nb_done = fields.Integer('Number of Orders Done', compute='_compute_nb_orders')
     state = fields.Selection([('confirmed', 'Confirmed'), ('planned', 'Planned'), ('progress', 'In Progress'), ('done', 'Done'), ('cancel', 'Cancelled')], 'State', default='confirmed', copy=False)
-    availability = fields.Selection([('assigned', 'Available'), ('partially_available', 'Partially available'), ('none', 'None'), ('waiting', 'Waiting')], compute='_compute_availability', default="none")
+    availability = fields.Selection([('assigned', 'Available'), ('partially_available', 'Partially available'), ('none', 'None'), ('waiting', 'Waiting')], compute='_compute_availability', store=True, default="none")
     picking_type_id = fields.Many2one('stock.picking.type', 'Picking Type', default=_default_picking_type, required=True)
 
 #     state = fields.Selection(

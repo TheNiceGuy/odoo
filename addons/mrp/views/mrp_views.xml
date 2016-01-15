@@ -1072,7 +1072,7 @@
                     <filter string="Planned" name="planned" domain="[('state','=','planned')]"/>
                     <separator/>
                     <filter string="Late" domain="['&amp;', ('date_planned','&lt;', current_date), ('state', 'in', ('draft', 'confirmed', 'ready'))]"
-                        help="Production started late"/>
+                        name="late" help="Production started late"/>
                     <field name="product_tmpl_id"/>
                     <field name="product_id"/>
                     <field name="routing_id" groups="mrp.group_mrp_routings"/>
@@ -1107,6 +1107,31 @@
               </p>
             </field>
         </record>
+
+        <record id="mrp_production_action_late" model="ir.actions.act_window">
+            <field name="name">Late Manufacturing Orders</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">mrp.production</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+            <field name="view_id" eval="False"/>
+            <field name="search_view_id" ref="view_mrp_production_filter"/>
+            <field name="context">{'search_default_late': True}</field>
+        </record>
+
+        <record id="mrp_production_action_waiting" model="ir.actions.act_window">
+            <field name="name">Waiting Manufacturing Orders</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">mrp.production</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+            <field name="view_id" eval="False"/>
+            <field name="search_view_id" ref="view_mrp_production_filter"/>
+            <field name="context">{'search_default_waiting': True}</field>
+        </record>
+
+
+
         <menuitem action="mrp_production_action"
             id="menu_mrp_production_action"
             parent="menu_mrp_manufacturing"
@@ -1769,4 +1794,66 @@
             parent="menu_mrp_manufacturing"
             action="stock.action_stock_scrap"
             sequence="25"/>
+
+    <record id="stock_production_type_kanban" model="ir.ui.view">
+        <field name="name">stock.picking.type.kanban</field>
+        <field name="model">stock.picking.type</field>
+        <field name="inherit_id" ref="stock.stock_picking_type_kanban"/>
+        <field name="arch" type="xml">
+            <field name="code" position="after">
+                <field name="count_mo_todo"/>
+                <field name="count_mo_waiting"/>
+                <field name="count_mo_late"/>
+            </field>
+            <xpath expr='//div[@name="stock_picking"]' position="after">
+                <div t-if="record.code.raw_value == 'mrp_operation'"> 
+                            <div t-attf-class="#{kanban_color(record.color.raw_value)}">
+                                <div class="o_kanban_card_header">
+                                    <div class="o_kanban_card_header_title">
+                                        <div class="o_primary"><field name="name"/></div>
+                                        <div class="o_secondary"><field class="o_secondary"  name="warehouse_id"/></div>
+                                    </div>
+                                    <div class="o_kanban_manage_button_section">
+                                        <a class="o_kanban_manage_toggle_button" href="#">More <i class="fa fa-caret-down"/></a>
+                                    </div>
+                                </div>
+                                <div class="container o_kanban_card_content o_visible">
+                                    <div class="row">
+                                        <div class="col-xs-6 o_kanban_primary_left">
+                                            <button class="btn btn-primary" name="get_action_mo_tree_todo" type="object">
+                                                <span t-if="record.code.raw_value =='mrp_operation'"><t t-esc="record.count_mo_todo.value"/> To Do</span>
+                                            </button>
+                                        </div>
+                                        <div class="col-xs-6 o_kanban_primary_right">
+                                            <div t-if="record.count_mo_waiting.raw_value > 0" class="row">
+                                                <div class="col-xs-9">
+                                                    <a name="get_action_mo_tree_waiting" type="object">
+                                                        Waiting
+                                                    </a>
+                                                </div>
+                                                <div class="col-xs-3">
+                                                    <field name="count_mo_waiting"/>
+                                                </div>
+                                            </div>
+
+                                            <div t-if="record.count_mo_late.raw_value > 0" class="row">
+                                                <div class="col-xs-9">
+                                                    <a class="oe_kanban_stock_picking_type_list" name="get_action_mo_tree_late" type="object">
+                                                        Late
+                                                    </a>
+                                                </div>
+                                                <div class="col-xs-3">
+                                                    <field name="count_mo_late"/>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+            </xpath>
+        </field>
+    </record>
+
+
 </odoo>
