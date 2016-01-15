@@ -340,14 +340,18 @@ class MaintenanceTeam(models.Model):
     # For the dashboard only
     todo_request_ids = fields.One2many('maintenance.request', copy=False, compute='_compute_todo_requests')
     todo_request_count = fields.Integer(compute='_compute_todo_requests')
-    todo_request_count_prev = fields.Integer(compute='_compute_todo_requests')
+    todo_request_count_date = fields.Integer(compute='_compute_todo_requests')
+    todo_request_count_high_priority = fields.Integer(compute='_compute_todo_requests')
+    todo_request_count_block = fields.Integer(compute='_compute_todo_requests')
 
     @api.one
     @api.depends('todo_request_ids.stage_id.done')
     def _compute_todo_requests(self):
         self.todo_request_ids = self.request_ids.filtered(lambda e: e.stage_id.done==False)
         self.todo_request_count = len(self.todo_request_ids)
-        self.todo_request_count_prev = len(self.todo_request_ids.filtered(lambda e: e.maintenance_type=='preventive'))
+        self.todo_request_count_date = len(self.todo_request_ids.filtered(lambda e: e.schedule_date != False))
+        self.todo_request_count_high_priority = len(self.todo_request_ids.filtered(lambda e: e.priority == '3'))
+        self.todo_request_count_block = len(self.todo_request_ids.filtered(lambda e: e.kanban_state == 'blocked'))
 
     @api.one
     @api.depends('equipment_ids')

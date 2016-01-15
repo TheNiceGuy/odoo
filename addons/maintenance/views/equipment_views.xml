@@ -22,6 +22,8 @@
                 <filter string="My Requests" domain="[('owner_user_id', '=', uid)]" class="o_equipment_request_my_requests_filter"/>
                 <separator/>
                 <filter string="Important Messages" name="message_needaction" domain="[('message_needaction','=',True)]"/>
+                <filter string="Top Priorities" name="top_priority" domain="[('priority', '=', '3')]"/>
+                <filter string="Blocked" name="kanban_state_block" domain="[('kanban_state', '=', 'blocked')]"/>
                 <group  expand='0' string='Group by...'>
                     <filter string='Assigned' domain="[]" context="{'group_by': 'technician_user_id'}"/>
                     <filter string='Category' domain="[]" context="{'group_by' : 'category_id'}"/>
@@ -642,7 +644,7 @@
     </record>
 
     <record id="maintenance_dashboard_action" model="ir.actions.act_window">
-        <field name="name">Teams</field>
+        <field name="name">Maintenance Teams</field>
         <field name="res_model">maintenance.team</field>
         <field name="view_mode">kanban</field>
         <field name="view_type">form</field>
