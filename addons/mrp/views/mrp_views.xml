@@ -908,7 +908,7 @@
                                     <field name="state" invisible="1"/>
                                 </tree>
                             </field>
-                            <field name="consume_operation_ids" attrs="{'invisible': [('consume_operation_ids', '=', [])]}">
+                            <field name="consume_operation_ids" attrs="{'invisible': [('consume_operation_ids', '=', [])]}" options="{'reload_on_button': True}" context="{'default_location_id': location_src_id, 'default_location_dest_id': location_dest_id}">
                                 <tree editable="bottom" default_order="production_state,id" decoration-danger="qty_done&gt;product_qty" decoration-success="qty_done==product_qty and production_state!='done'" decoration-muted="production_state=='done'">
                                     <field name="package_id" groups="stock.group_tracking_lot" invisible="1"/>
                                     <field name="product_id" on_change="product_id_change(product_id, product_uom_id, product_qty)" required="1" attrs="{'readonly': [('fresh_record', '=', False)]}"/>
@@ -933,7 +933,7 @@
                             </field>
                         </page>
                         <page string="Finished Products">
-                            <field name="produce_operation_ids">
+                            <field name="produce_operation_ids" options="{'reload_on_button': True}" context="{'default_picking_id': id, 'default_location_id': location_src_id, 'default_location_dest_id': location_dest_id}">
                                 <tree editable="bottom" default_order="production_state,id" decoration-danger="qty_done&gt;product_qty" decoration-success="qty_done==product_qty and production_state!='done'" decoration-muted="production_state=='done'">
                                     <field name="package_id" groups="stock.group_tracking_lot" invisible="1"/>
                                     <field name="product_id" on_change="product_id_change(product_id, product_uom_id, product_qty)" required="1" attrs="{'readonly': [('fresh_record', '=', False)]}"/>
