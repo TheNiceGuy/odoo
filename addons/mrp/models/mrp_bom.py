@@ -166,7 +166,8 @@ class MrpBom(models.Model):
     def copy_data(self, default=None):
         if default is None:
             default = {}
-        default['name'] = self.display_name + _(' (copy)')
+        if not default.get('name', False):
+            default['name'] = self.display_name + _(' (copy)')
         return super(MrpBom, self).copy_data(default)[0]
 
     @api.onchange('product_uom_id')

@@ -58,8 +58,7 @@ class TestBomWithServiceTypeProduct(common.TransactionCase):
     #I produce product.
         context.update({'active_id': self.mrp_production_service_mo1.id})
 
-        self.mrp_product_produce_1 = self.MrpProductProduce.with_context(context).create({
-            'mode': 'consume_produce'})
+        self.mrp_product_produce_1 = self.MrpProductProduce.with_context(context).create({})
 
     # I check production order after produced.
         self.assertEqual(self.mrp_production_service_mo1.state, 'confirmed', "Production order should only be closed manually.")

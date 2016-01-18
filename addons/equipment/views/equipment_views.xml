@@ -720,9 +720,9 @@
         sequence="1"/>
 
     <menuitem
-        id="menu_equipment_stage_configuration"
-        name="Stages"
-        parent="menu_equipment_configuration"
+        id="menu_maintenance_stage_configuration"
+        name="Maintenance Stages"
+        parent="menu_maintenance_configuration"
         action="equipment_stage_action"
         groups="base.group_no_one"
         sequence="2" />
