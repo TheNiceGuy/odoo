@@ -99,7 +99,7 @@
                             <field name="scrap_qty"/>
                         </group>
                         <group>
-                            <field name="picking_id"/>
+                            <field name="picking_id" attrs="{'invisible': [('picking_id', '=', False)]}"/>
                             <field name="lot_id"/>
                             <field name="scrap_location_id" groups="stock.group_locations"/>
                         </group>

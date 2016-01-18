@@ -297,8 +297,9 @@
                 <search>
                     <field name="workcenter_id"/>
                     <filter string="Ready" name="ready" domain="[('state','=','ready')]"/>
-                    <filter string="Pending" name="pending" domain="[('state','=','pause')]"/>
+                    <filter string="Pending" name="pending" domain="[('state','=','pending')]"/>
                     <filter string="In Progress" name="progress" domain="[('state','=','progress')]"/>
+                    <filter string="Waiting" name="waiting" domain="[('availability','=', 'waiting')]"/>
                 </search>
             </field>
 
@@ -348,7 +349,7 @@
 
         <!-- Actions for Work Center  -->
         <record id="act_product_mrp_production_workcenter" model="ir.actions.act_window">
-            <field name="context">{'search_default_planned': 1}</field>
+            <field name="context">{'search_default_todo': 1}</field>
             <field name="name">Manufacturing Orders</field>
             <field name="res_model">mrp.production</field>
             <field name="view_id" ref="mrp_production_tree_view"/>
@@ -361,11 +362,8 @@
             <field name="name">mrp.workcenter.kanban</field>
             <field name="model">mrp.workcenter</field>
             <field name="arch" type="xml">
-                <kanban class="oe_background_grey o_kanban_dashboard o_stock_kanban" create="0">
+                <kanban class="oe_background_grey o_kanban_dashboard o_workcenter_kanban" create="0">
                     <field name="name"/>
-                    <field name="capacity"/>
-                    <field name="time_start"/>
-                    <field name="time_stop"/>
                     <field name="color"/>
                     <field name="status"/>
                     <field name="nb_orders"/>
@@ -390,8 +388,8 @@
                                             </t>
                                             <t  t-if="record.nb_orders.raw_value &lt;= 0">
                                                 <button class="btn btn-warning" name="%(act_product_mrp_production_workcenter)d" type="action">
-                                                <span>Plan Manufacturing</span>
-                                            </button>
+                                                    <span>Plan Manufacturing</span>
+                                                </button>
                                             </t>
                                         </div>
                                         <div class="col-xs-6 o_kanban_primary_right">
@@ -415,24 +413,14 @@
                                                     <field name="count_progress_order"/>
                                                 </div>
                                             </div>
-                                            <div class="row">
-                                                <div class="col-xs-9">
-                                                    <a name="%(action_work_orders)d" type="action" context="{'search_default_pending': 1}">
-                                                        Pending
-                                                    </a>
-                                                </div>
-                                                <div class="col-xs-3">
-                                                    <field name="count_pending_order"/>
-                                                </div>
-                                            </div>
                                         </div>
                                         <div class="col-xs-6 o_kanban_primary_left">
                                             <div class="pull-left">
                                                 <t t-if="record.status.raw_value == 'done'">
-                                                    <span class="oe_kanban_status oe_kanban_status_green"/>
+                                                    <span class="oe_kanban_status oe_kanban_status_green" title="Work order is Running"/>
                                                 </t>
                                                 <t t-if="record.status.raw_value == 'normal'">
-                                                    <span class="oe_kanban_status"/>
+                                                    <span class="oe_kanban_status" title="Work Order is not Running"/>
                                                 </t>
                                             </div>
                                         </div>
@@ -441,21 +429,25 @@
                                     <div class="row">
                                         <div class="col-xs-6 o_kanban_card_manage_section o_kanban_manage_view">
                                             <div class="o_kanban_card_manage_title">
-                                                <span>View</span>
+                                                <span>Actions</span>
                                             </div>
-                                            <div>
-                                                <a name="%(action_work_orders)" type="action">All</a>
+                                            <div name="plan_order">
+                                                <a name="%(action_work_orders)d" type="action">Plan More Orders</a>
                                             </div>
                                         </div>
                                         <div class="col-xs-6 o_kanban_card_manage_section o_kanban_manage_new">
                                             <div class="o_kanban_card_manage_title">
-                                                <span>Report</span>
+                                                <span>Reports</span>
                                             </div>
                                             <div>
-                                                <a name="%(action_work_orders)" type="action">Work Center Efficiency</a>
+                                                <a name="%(action_work_orders)d" type="action">Work Center Efficiency</a>
+                                            </div>
+                                            <div>
+                                                <a name="%(action_work_orders)d" type="action" context="{'search_default_waiting': 1}">Orders Waiting Availability</a>
                                             </div>
                                         </div>
                                     </div>
+
                                     <div t-if="widget.editable" class="o_kanban_card_manage_settings row">
                                         <div class="col-xs-8">
                                             <ul class="oe_kanban_colorpicker" data-field="color"/>
@@ -474,7 +466,7 @@
 
 
         <record id="mrp_workcenter_kanban_action" model="ir.actions.act_window">
-            <field name="name">Dashboard</field>
+            <field name="name">Work Centers Dashboard</field>
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">mrp.workcenter</field>
             <field name="view_type">form</field>
@@ -1288,7 +1280,7 @@
         <field name="name">mrp.production.workcenter.line.tree</field>
         <field name="model">mrp.production.workcenter.line</field>
         <field name="arch" type="xml">
-            <tree string="Work Orders" decoration-success="date_planned_start&gt;=current_date and state == 'ready'" decoration-muted="state in ('done','cancel')" decoration-danger="date_planned_start&lt;current_date and state in ('draft', 'confirmed', 'ready')">
+            <tree string="Work Orders" decoration-success="date_planned_start&gt;=current_date and state == 'ready'" decoration-muted="state in ('done','cancel')" decoration-danger="date_planned_start&lt;current_date and state in ('ready')">
                 <field name="sequence" widget="handle"/>
                 <field name="name"/>
                 <field name="date_planned_start"/>
@@ -1308,18 +1300,18 @@
         <field name="arch" type="xml">
             <form string="Production Workcenter">
             <header>
-                <button name="button_start" type="object" string="Start Working" attrs="{'invisible': [('state', '!=', 'pause')]}"/>
+                <button name="button_start" type="object" string="Start Working" attrs="{'invisible': [('state', '!=', 'pending')]}"/>
                 <button name="button_start" type="object" string="Start Working" attrs="{'invisible': [('state', '!=', 'ready')]}" class="btn-success"/>
                 <button name="%(act_mrp_product_produce_wo)d" type="action" string="Record Production" class="btn-success" attrs="{'invisible': ['|', ('state', '!=', 'progress'), ('show_state', '=', False)]}"/>
-                <button name="button_pause" type="object" string="Pause" class="btn-warning" attrs="{'invisible': ['|', ('state', 'in', ('done', 'pause', 'ready')), ('show_state', '=', False)]}"><span>(<field name="delay" widget="float_time"/>)</span></button>
+                <button name="button_pending" type="object" string="Pause" class="btn-warning" attrs="{'invisible': ['|', ('state', 'in', ('done', 'pending', 'ready')), ('show_state', '=', False)]}"><span>(<field name="delay" widget="float_time"/>)</span></button>
                 <button name="button_finish" type="object" string="Finish Production" attrs="{'invisible': ['|',('state', '!=', 'progress'), ('check_produce_qty','=', False)]}" class="btn-info"/>
-                <button name="button_start" type="object" string="Continue Production" class="btn-warning" attrs="{'invisible': ['|', ('show_state', '=', True), ('state', 'in', ('done', 'pause', 'ready'))]}"><span>(<field name="delay" widget="float_time"/>)</span></button>
+                <button name="button_start" type="object" string="Continue Production" class="btn-warning" attrs="{'invisible': ['|', ('show_state', '=', True), ('state', 'in', ('done', 'pending', 'ready'))]}"><span>(<field name="delay" widget="float_time"/>)</span></button>
                 <button name="button_start" type="object" string="Continue Production" attrs="{'invisible': [('state', '!=', 'done')]}"/>
-                <field name="state" widget="statusbar" statusbar_visible="pause,ready,progress,done"/>
+                <button name="button_scrap" type="object" string="Scrap" attrs="{'invisible': [('state', 'in', ('confirmed', 'cancel'))]}"/>
+                <field name="state" widget="statusbar" statusbar_visible="pending,ready,progress,done"/>
                 <field name="show_state" invisible="1"/>
                 <field name="check_produce_qty" invisible="1"/>
             </header>
-            <sheet>
             <group>
                 <group>
                     <field name="product" string="To Produce"/>
@@ -1400,7 +1392,6 @@
                 </group>
             </page>
             </notebook>
-            </sheet>
             <div class="oe_chatter">
                 <field name="message_follower_ids" widget="mail_followers"/>
                 <field name="message_ids" widget="mail_thread"/>
@@ -1417,14 +1408,13 @@
                 <field name="name" string="Work Orders"/>
                 <field name="date_planned_start"/>
                 <field name="state"/>
-                <filter string="Confirmed" name="confirmed" domain="[('state','=','confirmed')]"/>
                 <filter string="In Progress" name="progress" domain="[('state','=','progress')]"/>
                 <filter string="Ready" name="ready" domain="[('state','=','ready')]"/>
-                <filter string="Pending" name="pending" domain="[('state','=','pause')]"/>
+                <filter string="Pending" name="pending" domain="[('state','=','pending')]"/>
                 <filter string="Finished" name="finish" domain="[('state','=','done')]"/>
                 <filter string="Available" domain="[('availability','=', 'assigned')]"/>
                 <separator/>
-                <filter string="Late" domain="['&amp;', ('date_planned_start','&lt;', current_date), ('state', 'in', ('draft', 'confirmed', 'ready'))]"
+                <filter string="Late" domain="['&amp;', ('date_planned_start','&lt;', current_date), ('state', '=', 'ready')]"
                     help="Production started late"/>
                 <field name="workcenter_id"/>
                 <field name="production_id"/>
@@ -1582,7 +1572,7 @@
         <field name="view_type">form</field>
         <field name="view_mode">kanban,tree,form,calendar,pivot,graph</field>
         <field name="search_view_id" ref="view_mrp_production_workcenter_form_view_filter"/>
-        <field name="context">{'search_default_confirmed': True, 'search_default_ready': True, 'search_default_progress': True}</field>
+        <field name="context">{'search_default_ready': True, 'search_default_progress': True}</field>
         <field name="help" type="html">
           <p class="oe_view_nocontent_create">
             Click to start a new work order.
@@ -1726,7 +1716,7 @@
         <field name="inherit_id" ref="stock.stock_scrap_form_view2"/>
         <field name="arch" type="xml">
             <field name="scrap_location_id" position="after">
-                <field name="workorder_id"/>
+                <field name="workorder_id" attrs="{'invisible': [('workorder_id', '=', False)]}"/>
             </field>
         </field>
     </record>

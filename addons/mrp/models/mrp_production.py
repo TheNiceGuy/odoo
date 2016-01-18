@@ -854,7 +854,7 @@ class MrpProduction(models.Model):
             'res_model': 'stock.scrap',
             'view_id': self.env.ref('stock.stock_scrap_form_view2').id,
             'type': 'ir.actions.act_window',
-            'context': {'product_ids': self.move_line_ids.mapped('product_id').ids},
+            'context': {'product_ids': self.move_line_ids.mapped('product_id').ids + self.produce_operation_ids.mapped('product_id').ids},
             'target': 'new',
         }
 
@@ -902,7 +902,7 @@ class MrpProductionWorkcenterLine(models.Model):
     hour = fields.Float(string='Expected Duration', digits=(16, 2))
     sequence = fields.Integer(required=True, default=1, help="Gives the sequence order when displaying a list of work orders.")
     production_id = fields.Many2one('mrp.production', string='Manufacturing Order', track_visibility='onchange', index=True, ondelete='cascade', required=True)
-    state = fields.Selection([('pause', 'Pending'), ('ready', 'Ready'), ('progress', 'In Progress'), ('done', 'Finished'), ('confirmed', 'Confirmed'),  ('cancel', 'Cancelled')], default='pause')
+    state = fields.Selection([('pending', 'Pending'), ('ready', 'Ready'), ('progress', 'In Progress'), ('done', 'Finished'), ('cancel', 'Cancelled')], default='pending')
     date_planned_start = fields.Datetime('Scheduled Date Start')
     date_planned_end = fields.Datetime('Scheduled Date Finished')
     capacity_planned = fields.Integer('Capacity Planned')
@@ -930,10 +930,6 @@ class MrpProductionWorkcenterLine(models.Model):
                 order.show_state = True
             else:
                 order.show_state = False
-
-    @api.multi
-    def button_draft(self):
-        self.write({'state': 'confirmed'})
 
     # Plan should disappear -> created when doing production
     @api.multi
@@ -983,7 +979,7 @@ class MrpProductionWorkcenterLine(models.Model):
                                 'duration': hours})
 
     @api.multi
-    def button_pause(self):
+    def button_pending(self):
         self.end_previous()
 
     @api.multi
@@ -1006,7 +1002,7 @@ class MrpProductionWorkcenterLine(models.Model):
             'res_model': 'stock.scrap',
             'view_id': self.env.ref('stock.stock_scrap_form_view2').id,
             'type': 'ir.actions.act_window',
-            'context': {'default_workorder_id': self.ids[0], 'product_ids': self.move_line_ids.mapped('product_id').ids},
+            'context': {'default_workorder_id': self.ids[0], 'product_ids': self.move_line_ids.mapped('product_id').ids + [self.product.id]},
             'target': 'new',
         }
 
@@ -1064,7 +1060,7 @@ class MrpUnbuild(models.Model):
                     'product_id': line['product_id'],
                     'product_uom': line['product_uom_id'],
                     'product_uom_qty': line['product_uom_qty'],
-                    'unbuild_id' : order.id,
+                    'unbuild_id': order.id,
                     'location_id': order.product_id.property_stock_production.id,
                     'location_dest_id': order.location_id.id,
                     'origin': order.name,
@@ -1073,7 +1069,6 @@ class MrpUnbuild(models.Model):
             if stock_moves:
                 self.produce_line_ids = stock_moves
                 stock_moves.action_confirm()
-        return 0
 
     @api.model
     def create(self, vals):
@@ -1094,12 +1089,11 @@ class MrpUnbuild(models.Model):
             'restrict_lot_id': self.lot_id.id,
             'location_id': self.location_id.id,
             'location_dest_id': self.product_id.property_stock_production.id,
-            'unbuild_raw_material_id' : self.id,
+            'unbuild_raw_material_id': self.id,
             'unbuild_id': self.id,
             'origin': self.name
         }
         self.env['stock.move'].create(data).action_confirm()
-        return 0
 
     @api.onchange('mo_id')
     def onchange_mo_id(self):
