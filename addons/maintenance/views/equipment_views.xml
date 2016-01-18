@@ -751,7 +751,7 @@
 
     <menuitem
         id="menu_maintenance_stage_configuration"
-        name="Stages"
+        name="Maintenance Stages"
         parent="menu_maintenance_configuration"
         action="equipment_stage_action"
         groups="base.group_no_one"

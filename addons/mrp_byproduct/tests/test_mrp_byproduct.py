@@ -52,9 +52,7 @@ class TestMrpByProduct(common.TransactionCase):
 
         # I consume and produce the production of products.
         # I create record for selecting mode and quantity of products to produce.
-        product_consume = self.MrpProductProduce.create({'product_qty': 2.00,
-                                                         'mode': 'consume_produce'
-                                                         })
+        product_consume = self.MrpProductProduce.create({'product_qty': 2.00})
         # I finish the production order.
         context = {"active_model": "mrp.production", "active_ids": [mnf_hardisk.id], "active_id": mnf_hardisk.id}
         product_consume.with_context(context).do_produce()
