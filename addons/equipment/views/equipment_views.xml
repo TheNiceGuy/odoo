@@ -13,14 +13,19 @@
                 <field name="equipment_id"/>
                 <field name="owner_user_id"/>
                 <field name="stage_id"/>
+                <field name="maintenance_team_id"/>
+                <separator/>
+                <filter string="To do" domain="[('stage_id.done', '=', False)]" name="todo"/>
+                <filter string="Blocked" name="kanban_state_block" domain="[('kanban_state', '=', 'blocked')]"/>
+                <filter string="In Progress" name="progress" domain="[('kanban_state', '=', 'normal')]"/>
+                <filter string="Done" name="done" domain="[('kanban_state', '=', 'done')]"/>
+                <filter string="Top Priorities" name="top_priority" domain="[('priority', '=', '3')]"/>
                 <separator/>
                 <filter string="Unscheduled Maintenance" domain="[('schedule_date', '=', False)]" name="unscheduled"/>
                 <separator/>
                 <filter string="My Requests" domain="[('owner_user_id', '=', uid)]" class="o_equipment_request_my_requests_filter"/>
                 <separator/>
                 <filter string="Important Messages" name="message_needaction" domain="[('message_needaction','=',True)]"/>
-                <filter string="Top Priorities" name="top_priority" domain="[('priority', '=', '3')]"/>
-                <filter string="Blocked" name="kanban_state_block" domain="[('kanban_state', '=', 'blocked')]"/>
                 <group  expand='0' string='Group by...'>
                     <filter string='Assigned' domain="[]" context="{'group_by': 'technician_user_id'}"/>
                     <filter string='Category' domain="[]" context="{'group_by' : 'category_id'}"/>
@@ -58,21 +63,22 @@
                         <group>
                             <field name="owner_user_id" string="Requested by"/>
                             <field name="equipment_id"  context="{'default_category_id':category_id}" string="Equipment"/>
-                            <field name="category_id" groups="base.group_equipment_manager"/>
+                            <field name="category_id" groups="base.group_equipment_manager" invisible="1"/>
                             <field name="request_date" groups="base.group_no_one"/>
                             <field name="close_date" groups="base.group_no_one"/>
                             <field name="archive" invisible="1"/>
-                            <field name="maintenance_type"/>
-                            <field name="priority" widget="priority"/>
+                            <field name="maintenance_type" widget="radio"/>
                         </group>
                         <group>
                             <field name="maintenance_team_id"/>
-                            <field name="technician_user_id" string="Maintenance Responsible"/>
+                            <field name="technician_user_id" string="Responsible"/>
                             <label for="schedule_date"/>
                             <div class="o_row">
-                                <field name="schedule_date"/> for
+                                <field name="schedule_date"/>
+                                <label string="for"/>
                                 <field name="duration" class="oe_inline"/> hours
                             </div>
+                            <field name="priority" widget="priority"/>
                         </group>
                     </group>
                     <field name='description' placeholder="Internal Note ......."/>
@@ -643,7 +649,7 @@
     <record id="maintenance_dashboard_action" model="ir.actions.act_window">
         <field name="name">Maintenance Teams</field>
         <field name="res_model">maintenance.team</field>
-        <field name="view_mode">kanban</field>
+        <field name="view_mode">kanban,form</field>
         <field name="view_type">form</field>
         <field name="help" type="html">
           <p class="oe_view_nocontent_create">
@@ -684,14 +690,29 @@
         sequence="1"/>
 
     <menuitem
-        id="menu_equipment_global_settings"
-        name="Settings"
-        parent="menu_equipment_configuration"
-        action="action_equipment_configuration"
-        sequence="0"/>
+        id="menu_m_reports_losses"
+        name="Losses Analysis"
+        parent="menu_m_reports"
+        groups="base.group_equipment_manager,base.group_user"
+        sequence="2"/>
 
     <menuitem
-        id="menu_equipment_cat"
+        id="menu_maintenance_configuration"
+        name="Configuration"
+        parent="menu_maintenance_title"
+        groups="base.group_equipment_manager,base.group_configuration"
+        sequence="100"/>
+
+    <menuitem
+        id="menu_maintenance_teams"
+        name="Maintenance Teams"
+        parent="menu_maintenance_configuration"
+        action="maintenance_team_action_settings"
+        groups="base.group_no_one"
+        sequence="1"/>
+
+    <menuitem
+        id="menu_maintenance_cat"
         name="Equipment Categories"
         parent="menu_equipment_configuration"
         action="equipment_category_action"

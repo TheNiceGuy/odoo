@@ -21,7 +21,6 @@ class MrpWorkcenter(models.Model):
         for workcenter in self:
             workcenter.nb_orders = WorkcenterLine.search_count([('workcenter_id', '=', workcenter.id), ('state', '!=', 'done')]) #('state', 'in', ['pending', 'startworking'])
             workcenter.count_ready_order = WorkcenterLine.search_count([('workcenter_id', '=', workcenter.id), ('state', '=', 'ready')])
-            workcenter.count_pending_order = WorkcenterLine.search_count([('workcenter_id', '=', workcenter.id), ('state', '=', 'pause')])
             workcenter.count_progress_order = WorkcenterLine.search_count([('workcenter_id', '=', workcenter.id), ('state', '=', 'progress')])
 
     def _compute_status(self):
@@ -41,7 +40,6 @@ class MrpWorkcenter(models.Model):
     nb_orders = fields.Integer('Computed Orders', compute='_compute_orders')
     color = fields.Integer('Color')
     count_ready_order = fields.Integer(compute='_compute_orders', string="Total Ready Orders")
-    count_pending_order = fields.Integer(compute='_compute_orders', string="Total Pending Orders")
     count_progress_order = fields.Integer(compute='_compute_orders', string="Total Running Orders")
     status = fields.Selection([('normal', 'Work order is not running'), ('blocked', 'Work center is block'), ('done', 'Work order is running')],
                                     string='Status', compute="_compute_status")

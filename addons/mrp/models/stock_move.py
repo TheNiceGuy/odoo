@@ -4,6 +4,7 @@
 from openerp import api, fields, models, _
 from openerp.exceptions import UserError
 from openerp.tools import float_compare
+from datetime import datetime
 
 
 class StockMove(models.Model):
@@ -439,6 +440,15 @@ class StockMove(models.Model):
 class StockPickingType(models.Model):
     _inherit = 'stock.picking.type'
 
-    code = fields.Selection(selection_add=[('mrp_operation', 'Manufacturing Operation')])
-    
+    def _get_mo_count(self):
+        MrpProduction = self.env['mrp.production']
+        for picking in self:
+            if picking.code == 'mrp_operation':
+                picking.count_mo_waiting = MrpProduction.search_count([('availability', '=', 'waiting')])
+                picking.count_mo_todo = MrpProduction.search_count([('state', '=', 'confirmed')])
+                picking.count_mo_late = MrpProduction.search_count(['&', ('date_planned', '<', datetime.now().strftime('%Y-%m-%d')), ('state', 'in', ['draft', 'confirmed', 'ready'])])
 
+    code = fields.Selection(selection_add=[('mrp_operation', 'Manufacturing Operation')])
+    count_mo_todo = fields.Integer(compute='_get_mo_count')
+    count_mo_waiting = fields.Integer(compute='_get_mo_count')
+    count_mo_late = fields.Integer(compute='_get_mo_count')

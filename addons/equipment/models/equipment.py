@@ -26,6 +26,11 @@ class EquipmentCategory(models.Model):
     _inherit = ['mail.thread']
     _description = 'Asset Category'
 
+    def _auto_init(self, cr, context=None):
+        """Installation hook to create aliases for all request and avoid constraint errors."""
+        return self.pool.get('mail.alias').migrate_to_alias(cr, self._name, self._table, super(MaintenanceEquipmentCategory, self)._auto_init,
+            'maintenance.equipment.category', self._columns['alias_id'], 'name', alias_prefix='maintenance+', alias_defaults={}, context=context)
+
     @api.one
     @api.depends('equipment_ids')
     def _compute_fold(self):
@@ -61,17 +66,22 @@ class EquipmentCategory(models.Model):
 
     @api.model
     def create(self, vals):
-        self = self.with_context(alias_model_name='equipment.request', alias_parent_model_name=self._name)
-        category_id = super(EquipmentCategory, self).create(vals)
+        self = self.with_context(alias_model_name='maintenance.request', alias_parent_model_name=self._name)
+        if not vals.get('alias_name'):
+            vals['alias_name'] = vals.get('name')
+        category_id = super(MaintenanceEquipmentCategory, self).create(vals)
         category_id.alias_id.write({'alias_parent_thread_id': category_id.id, 'alias_defaults': {'category_id': category_id.id}})
         return category_id
 
     @api.multi
     def unlink(self):
+        MailAlias = self.env['mail.alias']
         for category in self:
             if category.equipment_ids or category.maintenance_ids:
                 raise UserError(_("You cannot delete an equipment category containing equipments or maintenance requests."))
-        res = super(EquipmentCategory, self).unlink()
+            MailAlias += category.alias_id
+        res = super(MaintenanceEquipmentCategory, self).unlink()
+        MailAlias.unlink()
         return res
 
 
@@ -241,7 +251,7 @@ class EquipmentRequest(models.Model):
     archive = fields.Boolean(default=False, help="Set archive to true to hide the maintenance request without deleting it.")
     maintenance_type = fields.Selection([('corrective', 'Corrective'), ('preventive', 'Preventive')], string='Maintenance Type', default="corrective")
     schedule_date = fields.Datetime('Scheduled Date')
-    maintenance_team_id = fields.Many2one('maintenance.team', string='Maintenance Team', required=True)
+    maintenance_team_id = fields.Many2one('maintenance.team', string='Team', required=True)
     duration = fields.Float(help="Duration in minutes and seconds.")
 
     @api.multi

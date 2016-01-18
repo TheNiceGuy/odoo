@@ -6,6 +6,7 @@ from openerp import api, fields, models, _
 
 class StockScrap(models.Model):
     _name = 'stock.scrap'
+    _order = 'id desc'
 
     name = fields.Char(required=True, readonly=True, copy=False, default='New', states={'done': [('readonly', True)]}, string="Reference")
     product_id = fields.Many2one('product.product', 'Product', states={'done': [('readonly', True)]}, required=True)
@@ -14,7 +15,7 @@ class StockScrap(models.Model):
     picking_id = fields.Many2one('stock.picking', 'Picking', states={'done': [('readonly', True)]})
     location_id = fields.Many2one('stock.location', 'Location', default=lambda self: self.env.ref('stock.warehouse0').lot_stock_id.id or False, states={'done': [('readonly', True)]}, required=True, domain="[('usage', '=', 'internal')]")
     scrap_location_id = fields.Many2one('stock.location', domain="[('scrap_location', '=', True)]", states={'done': [('readonly', True)]}, string="Scrap Location", default=(lambda x: x.env['stock.location'].search([('scrap_location', '=', True)], limit=1)))
-    scrap_qty = fields.Float('Qty To Scrap', states={'done': [('readonly', True)]}, required=True)
+    scrap_qty = fields.Float('Quantity', states={'done': [('readonly', True)]}, required=True)
     state = fields.Selection([('draft', 'Draft'), ('done', 'Done')], default="draft")
     move_id = fields.Many2one('stock.move', 'Stock Move', readonly=True)
 
@@ -72,3 +73,7 @@ class StockScrap(models.Model):
             'type': 'ir.actions.act_window',
             'domain': [('id', '=', self.move_id.id)],
         }
+
+    @api.multi
+    def button_done(self):
+        return {'type': 'ir.actions.act_window_close'}

@@ -34,7 +34,7 @@
                                     attrs="{'invisible':[('picking_id','=',False)]}" icon="fa-cogs"/>
                             <field name="picking_id" invisible="1"/>
                             <button class="oe_stat_button" name="button_stock_move"
-                                    string="Stock Moves" type="object"
+                                    string="Inventory Move" type="object"
                                     attrs="{'invisible':[('move_id','=',False)]}" icon="fa-bars"/>
                             <field name="move_id" invisible="1"/>
                         </div>
@@ -69,8 +69,8 @@
                     <field name="name"/>
                     <field name="create_date" string="Create Date"/>
                     <field name="product_id"/>
-                    <field name="product_uom_id"/>
                     <field name="scrap_qty"/>
+                    <field name="product_uom_id"/>
                     <field name="location_id" groups="stock.group_locations"/>
                     <field name="scrap_location_id" groups="stock.group_locations"/>
                     <field name="state"/>
@@ -95,17 +95,20 @@
                         <group>
                             <field name="state" invisible="1"/>
                             <field name="product_id" domain="[('id', 'in', context.get('product_ids', []))]"/>
-                            <field name="product_uom_id"/>
-                            <field name="scrap_qty"/>
+                            <label for="scrap_qty"/>
+                            <div class="o_row">
+                                <field name="scrap_qty"/>
+                                <field name="product_uom_id"/>
+                            </div>
                         </group>
                         <group>
-                            <field name="picking_id"/>
+                            <field name="picking_id" attrs="{'invisible': [('picking_id', '=', False)]}"/>
                             <field name="lot_id"/>
                             <field name="scrap_location_id" groups="stock.group_locations"/>
                         </group>
                     </group>
                     <footer>
-                        <button name="do_scrap" string="Scrap" type="object" class="btn-primary"/>
+                        <button name="button_done" string="Done" type="object" class="btn-primary"/>
                         <button string="Cancel" class="btn-default" special="cancel" />
                     </footer>
                 </form>
