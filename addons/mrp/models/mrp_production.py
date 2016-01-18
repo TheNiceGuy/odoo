@@ -47,7 +47,7 @@ class MrpProduction(models.Model):
         return types[0].id if types else False
 
     @api.multi
-    @api.depends('move_line_ids')
+    @api.depends('move_line_ids','move_line_ids.state', 'workcenter_line_ids', 'workcenter_line_ids.move_line_ids')
     def _compute_availability(self):
         for order in self:
             if not order.move_line_ids:
@@ -113,6 +113,16 @@ class MrpProduction(models.Model):
             mo.nb_orders = total_mo
             mo.nb_done = done_mo
 
+    @api.depends('move_created_ids2')
+    def _check_to_done(self):
+        produced_qty = 0
+        for produced_product in self.move_created_ids2:
+            if (produced_product.scrapped) or (produced_product.product_id.id != self.product_id.id):
+                continue
+            produced_qty += produced_product.product_qty
+        self.check_to_done = True if produced_qty >= self.product_qty else False
+
+
 
     name = fields.Char(string='Reference', required=True, readonly=True, states={'confirmed': [('readonly', False)]}, copy=False,
                        default=lambda self: self.env['ir.sequence'].next_by_code('mrp.production') or '/')
@@ -160,7 +170,7 @@ class MrpProduction(models.Model):
     nb_orders = fields.Integer('Number of Orders', compute='_compute_nb_orders')
     nb_done = fields.Integer('Number of Orders Done', compute='_compute_nb_orders')
     state = fields.Selection([('confirmed', 'Confirmed'), ('planned', 'Planned'), ('progress', 'In Progress'), ('done', 'Done'), ('cancel', 'Cancelled')], 'State', default='confirmed', copy=False)
-    availability = fields.Selection([('assigned', 'Available'), ('partially_available', 'Partially available'), ('none', 'None'), ('waiting', 'Waiting')], compute='_compute_availability', default="none")
+    availability = fields.Selection([('assigned', 'Available'), ('partially_available', 'Partially available'), ('none', 'None'), ('waiting', 'Waiting')], compute='_compute_availability', store=True, default="none")
     picking_type_id = fields.Many2one('stock.picking.type', 'Picking Type', default=_default_picking_type, required=True)
 
 #     state = fields.Selection(
@@ -179,6 +189,8 @@ class MrpProduction(models.Model):
     company_id = fields.Many2one('res.company', string='Company', required=True, default=lambda self: self.env['res.company']._company_default_get('mrp.production'))
     product_tmpl_id = fields.Many2one('product.template', related='product_id.product_tmpl_id', string='Product')
     categ_id = fields.Many2one('product.category', related='product_tmpl_id.categ_id', string='Product Category', readonly=True, store=True)
+    check_to_done = fields.Boolean(compute="_check_to_done", string="Check Produced Qty")
+
 
     _sql_constraints = [
         ('name_uniq', 'unique(name, company_id)', 'Reference must be unique per Company!'),
@@ -237,6 +249,11 @@ class MrpProduction(models.Model):
             WorkOrder.create(line)
         #Let us try to plan the order
         self._plan_workorder()
+
+    @api.multi
+    def button_mark_done(self):
+        self.ensure_one()
+        self.write({'state': 'done'})
 
     @api.multi
     def unlink(self):
@@ -675,9 +692,10 @@ class MrpProduction(models.Model):
             produce_operations[0].qty_done = production_qty
         else:
             self.env['stock.pack.operation'].create({'product_id': self.product_id.id,
-                                                    'product_uom': self.uom_id.id,
-                                                    'product_uom_qty': production_qty,
-                                                    'name': _('Extra Move: ') + self.product_id.name,})
+                                                    'product_uom_id': self.product_uom_id.id,
+                                                    'product_qty': production_qty,
+                                                    'location_id': self.location_src_id.id,
+                                                    'location_dest_id': self.location_dest_id.id})
         self.do_transfer() #TODO: Need to give back move_ids done for consumed_for relationship
         self.do_transfer_finished()
         return True 
@@ -854,7 +872,7 @@ class MrpProduction(models.Model):
             'res_model': 'stock.scrap',
             'view_id': self.env.ref('stock.stock_scrap_form_view2').id,
             'type': 'ir.actions.act_window',
-            'context': {'product_ids': self.move_line_ids.mapped('product_id').ids},
+            'context': {'product_ids': self.move_line_ids.mapped('product_id').ids + self.produce_operation_ids.mapped('product_id').ids},
             'target': 'new',
         }
 
@@ -896,13 +914,30 @@ class MrpProductionWorkcenterLine(models.Model):
             if workorder.qty_produced >= workorder.qty:
                 workorder.check_produce_qty = True
 
+    @api.depends('production_id', 'workcenter_id', 'production_id.bom_id', 'production_id.picking_type_id')
+    def _get_alert_message(self):
+        MrpAlert = self.env['mrp.alert']
+        msg = ''
+        for workorder in self:
+            domain = [
+                '|', '|', '|', ('picking_type_id', '=', workorder.production_id.picking_type_id.id),
+                ('bom_id', '=', workorder.production_id.bom_id.id),
+                ('workcenter_id', '=', workorder.workcenter_id.id),
+                ('workorder_id', '=', workorder.id), ('nb_occurrences', '>', 0)
+            ]
+            alerts = MrpAlert.search(domain)
+            if alerts:
+                for alert in alerts:
+                    msg += "".join(alert.message) + ','
+                workorder.alert_message = msg
+                workorder.alert_ids = [(6, 0, [alert.id for alert in alerts])]
 
     name = fields.Char(string='Work Order', required=True)
     workcenter_id = fields.Many2one('mrp.workcenter', string='Work Center', required=True)
     hour = fields.Float(string='Expected Duration', digits=(16, 2))
     sequence = fields.Integer(required=True, default=1, help="Gives the sequence order when displaying a list of work orders.")
     production_id = fields.Many2one('mrp.production', string='Manufacturing Order', track_visibility='onchange', index=True, ondelete='cascade', required=True)
-    state = fields.Selection([('pause', 'Pending'), ('ready', 'Ready'), ('progress', 'In Progress'), ('done', 'Finished'), ('confirmed', 'Confirmed'),  ('cancel', 'Cancelled')], default='pause')
+    state = fields.Selection([('pending', 'Pending'), ('ready', 'Ready'), ('progress', 'In Progress'), ('done', 'Finished'), ('cancel', 'Cancelled')], default='pending')
     date_planned_start = fields.Datetime('Scheduled Date Start')
     date_planned_end = fields.Datetime('Scheduled Date Finished')
     capacity_planned = fields.Integer('Capacity Planned')
@@ -923,6 +958,8 @@ class MrpProductionWorkcenterLine(models.Model):
     worksheet = fields.Binary('Worksheet', related='operation_id.worksheet', readonly=True)
     show_state = fields.Boolean(compute='_get_current_state')
     check_produce_qty = fields.Boolean(compute='_check_produce_qty')
+    alert_message = fields.Char(compute="_get_alert_message")
+    alert_ids = fields.One2many('mrp.alert', compute='_get_alert_message', string='Alert')
 
     def _get_current_state(self):
         for order in self:
@@ -932,8 +969,10 @@ class MrpProductionWorkcenterLine(models.Model):
                 order.show_state = False
 
     @api.multi
-    def button_draft(self):
-        self.write({'state': 'confirmed'})
+    def button_alert(self):
+        for alert in self.alert_ids:
+            alert.user_ids = [(4, self.env.uid)]
+            alert.nb_occurrences -= 1
 
     # Plan should disappear -> created when doing production
     @api.multi
@@ -983,7 +1022,7 @@ class MrpProductionWorkcenterLine(models.Model):
                                 'duration': hours})
 
     @api.multi
-    def button_pause(self):
+    def button_pending(self):
         self.end_previous()
 
     @api.multi
@@ -1006,7 +1045,7 @@ class MrpProductionWorkcenterLine(models.Model):
             'res_model': 'stock.scrap',
             'view_id': self.env.ref('stock.stock_scrap_form_view2').id,
             'type': 'ir.actions.act_window',
-            'context': {'default_workorder_id': self.ids[0], 'product_ids': self.move_line_ids.mapped('product_id').ids},
+            'context': {'default_workorder_id': self.ids[0], 'product_ids': self.move_line_ids.mapped('product_id').ids + [self.product.id]},
             'target': 'new',
         }
 
@@ -1026,10 +1065,11 @@ class MrpUnbuild(models.Model):
     _name = "mrp.unbuild"
     _description = "Unbuild Order"
     _inherit = ['mail.thread']
+    _order = 'id desc'
 
     name = fields.Char(string='Reference', required=True, readonly=True, copy=False, default='New')
     product_id = fields.Many2one('product.product', string="Product", required=True)
-    product_qty = fields.Float('Product Quantity', required=True)
+    product_qty = fields.Float('Quantity', required=True)
     product_uom_id = fields.Many2one('product.uom', string="Unit of Measure", required=True)
     bom_id = fields.Many2one('mrp.bom', 'Bill of Material', required=True, domain=[('product_tmpl_id', '=', 'product_id.product_tmpl_id')])  # Add domain
     mo_id = fields.Many2one('mrp.production', string='Manufacturing Order')
@@ -1064,7 +1104,7 @@ class MrpUnbuild(models.Model):
                     'product_id': line['product_id'],
                     'product_uom': line['product_uom_id'],
                     'product_uom_qty': line['product_uom_qty'],
-                    'unbuild_id' : order.id,
+                    'unbuild_id': order.id,
                     'location_id': order.product_id.property_stock_production.id,
                     'location_dest_id': order.location_id.id,
                     'origin': order.name,
@@ -1073,7 +1113,6 @@ class MrpUnbuild(models.Model):
             if stock_moves:
                 self.produce_line_ids = stock_moves
                 stock_moves.action_confirm()
-        return 0
 
     @api.model
     def create(self, vals):
@@ -1094,12 +1133,11 @@ class MrpUnbuild(models.Model):
             'restrict_lot_id': self.lot_id.id,
             'location_id': self.location_id.id,
             'location_dest_id': self.product_id.property_stock_production.id,
-            'unbuild_raw_material_id' : self.id,
+            'unbuild_raw_material_id': self.id,
             'unbuild_id': self.id,
             'origin': self.name
         }
         self.env['stock.move'].create(data).action_confirm()
-        return 0
 
     @api.onchange('mo_id')
     def onchange_mo_id(self):
@@ -1120,7 +1158,8 @@ class MrpUnbuild(models.Model):
         self.write({'state': 'done'})
 
     @api.multi
-    def button_produce_product(self):
+    def button_open_move(self):
+        stock_moves = self.env['stock.move'].search([('origin', '=', self.name)])
         return {
             'name': _('Stock Moves'),
             'view_type': 'form',
@@ -1128,23 +1167,28 @@ class MrpUnbuild(models.Model):
             'res_model': 'stock.move',
             'view_id': False,
             'type': 'ir.actions.act_window',
-            'domain': [('id', 'in', [x.id for x in self.produce_line_ids])],
-        }
-
-    @api.multi
-    def button_consume_product(self):
-        return {
-            'name': _('Stock Moves'),
-            'view_type': 'form',
-            'view_mode': 'tree',
-            'res_model': 'stock.move',
-            'view_id': False,
-            'type': 'ir.actions.act_window',
-            'domain': [('id', 'in', self.consume_line_ids.ids)],
+            'domain': [('id', 'in', stock_moves.ids)],
         }
 
 
     #TODO: need quants defined here
+
+
+class MrpAlert(models.Model):
+    _name = "mrp.alert"
+    _description = "MRP Alert"
+
+    name = fields.Char(required=True, copy=False)
+    message = fields.Char(required=True)
+    workorder_id = fields.Many2one('mrp.production.workcenter.line', string="WorkOrder")
+    picking_type_id = fields.Many2one('stock.picking.type', string="Picking Type")
+    production_id = fields.Many2one('mrp.production', string='Manufacturing Order')
+    product_id = fields.Many2one('product.product', string="Product")
+    bom_id = fields.Many2one('mrp.bom', 'Bill of Material')
+    workcenter_id = fields.Many2one('mrp.workcenter', string='Work Center')
+    user_ids = fields.Many2many('res.users', string='Consumed by', readonly=True)
+    nb_occurrences = fields.Integer(string='Occurrences', default=3, readonly=True)
+    alert_type = fields.Selection([('product', 'Product'), ('bom', 'Bill of Material'), ('picktype', 'Picking Type'), ('workcenter', 'Workcenter'), ('production', 'Manufacturing Order')])
 
 
 class StockScrap(models.Model):
