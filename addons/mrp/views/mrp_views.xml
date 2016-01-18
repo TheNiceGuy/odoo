@@ -827,6 +827,7 @@
             <field name="arch" type="xml">
                 <form string="Manufacturing Orders">
                 <header>
+                    <button name="button_mark_done" attrs="{'invisible': [('check_to_done', '=', False)]}" string="Mark as Done" type="object"/>
                     <button name="%(act_mrp_product_produce)d" attrs="{'invisible': [('availability', '=', 'none')]}" string="Produce" type="action" class="oe_highlight"/>
                     <button name="action_assign" attrs="{'invisible': [('availability', '=', 'assigned')]}" string="Check availability" type="object" class="oe_highlight"/>
                     <button name="force_assign" attrs="{'invisible': [('availability', '=', 'assigned')]}" string="Force availability" type="object"/>
@@ -851,6 +852,7 @@
                     <group>
                         <group>
                             <field name="availability" invisible="1"/>
+                            <field name="check_to_done" invisible="1"/>
                             <field name="product_id" domain="[('bom_ids','!=',False),('bom_ids.bom_type','!=','phantom')]" context='{"default_type": "product"}'/>
                             <field name="product_tmpl_id" invisible="1"/>
                             <label for="product_qty"/>
@@ -930,7 +932,6 @@
                                     <field name="package_id" groups="stock.group_tracking_lot" invisible="1"/>
                                     <field name="product_id" on_change="product_id_change(product_id, product_uom_id, product_qty)" required="1" attrs="{'readonly': [('fresh_record', '=', False)]}"/>
                                     <field name="fresh_record" invisible="1"/>
-                                    <field name="product_uom_id" attrs="{'readonly': [('fresh_record', '=', False)]}" groups="product.group_uom"/>
                                     <field name="lots_visible" invisible="1"/>
                                     <field name="owner_id" groups="stock.group_tracking_owner"/>
                                     <field name="location_id" domain="[('id', 'child_of', parent.location_id)]" invisible="1"/>
@@ -940,8 +941,9 @@
                                     <field name="result_package_id" groups="stock.group_tracking_lot" context="{'location_id': location_dest_id}" invisible="1"/>
                                     <field name="state" invisible="1"/>
                                     <field name="production_state" invisible="1"/>
-                                    <field name="product_qty" readonly="1" attrs="{'required': [('product_id', '!=', False)]}"/>
-                                    <field name="qty_done" attrs="{'readonly': ['|', ('production_state', '=', 'done'), ('lots_visible', '=', True)]}"/>
+                                    <field name="product_qty" readonly="1" attrs="{'required': [('product_id', '!=', False)]}" string="To Produce"/>
+                                    <field name="qty_done" attrs="{'readonly': ['|', ('production_state', '=', 'done'), ('lots_visible', '=', True)]}" string="Produced"/>
+                                    <field name="product_uom_id" attrs="{'readonly': [('fresh_record', '=', False)]}" groups="product.group_uom"/>
                                     <button name="split_lot" string="Lot Split" type="object" icon="fa-list" groups="stock.group_production_lot"
                                             attrs="{'invisible': ['|', ('lots_visible', '=', False), ('state', 'not in', ['confirmed', 'assigned', 'waiting', 'partially_available','done'])]}"/>
                                     <button name="show_details" string="Modify" type="object" icon="fa-pencil" groups="stock.group_locations"
@@ -1132,7 +1134,7 @@
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">mrp.production</field>
             <field name="view_type">form</field>
-            <field name="view_mode">calendar,tree,form,pivot,graph</field>
+            <field name="view_mode">tree,form,calendar,pivot,graph</field>
             <field name="domain">[('state','in',('ready','confirmed','in_production'))]</field>
             <field name="help" type="html">
               <p class="oe_view_nocontent_create">
@@ -1599,6 +1601,22 @@
         </field>
     </record>
 
+    <record model="ir.actions.act_window" id="mrp_workorder_report">
+        <field name="name">Work Orders</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">mrp.production.workcenter.line</field>
+        <field name="view_type">form</field>
+        <field name="view_mode">pivot,graph</field>
+    </record>
+
+    <record id="mrp_production_report" model="ir.actions.act_window">
+        <field name="name">Manufacturing Orders</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">mrp.production</field>
+        <field name="view_type">form</field>
+        <field name="view_mode">pivot,graph</field>
+    </record>
+
 
 
     <menuitem id="menu_mrp_workorder_todo"
@@ -1618,7 +1636,7 @@
               parent="menu_mrp_production_planning"/>
 
     <menuitem id="menu_mrp_production_pending"
-              name="Pending Orders"
+              name="Waiting for Material Availability"
               sequence="2"
               action="mrp_production_action_planning"
               parent="menu_mrp_production_planning"/>
@@ -1642,16 +1660,28 @@
 
 
     <menuitem id="menu_mrp_mps"
-          name="MPS"
+          name="Master Production Schedule"
           parent="menu_mrp_reporting"
           action="mrp_workorder_todo"
           sequence="5"/>
 
     <menuitem id="menu_mrp_traceability"
-          name="Traceability"
+          name="Lots Traceability"
           parent="menu_mrp_reporting"
           action="mrp_workorder_todo"
           sequence="10"/>
+
+    <menuitem id="menu_mrp_production_report"
+          name="Manufacturing Orders"
+          parent="menu_mrp_reporting"
+          action="mrp_production_report"
+          sequence="11"/>
+
+    <menuitem id="menu_mrp_work_order_report"
+          name="Work Orders"
+          parent="menu_mrp_reporting"
+          action="mrp_workorder_report"
+          sequence="11"/>
 
 
     <!--  Unbuild and scrap menu -->
@@ -1696,6 +1726,7 @@
                         <group>
                             <group>
                                 <field name="product_id"/>
+                                <field name="bom_id"/>
                                 <label for="product_qty"/>
                                 <div class="o_row">
                                     <field name="product_qty"/>
@@ -1706,7 +1737,6 @@
                                 <field name="mo_id"/>
                                 <field name="location_id" groups="stock.group_locations"/>
                                 <field name="lot_id"/>
-                                <field name="bom_id"/>
                             </group>
                         </group>
                     </sheet>
@@ -1736,10 +1766,11 @@
                 <tree>
                     <field name="name"/>
                     <field name="product_id"/>
-                    <field name="product_qty"/>
                     <field name="bom_id"/>
-                    <field name="state"/>
                     <field name="lot_id"/>
+                    <field name="product_qty"/>
+                    <field name="product_uom_id"/>
+                    <field name="state"/>
                     <field name="location_id" groups="stock.group_locations"/>
                 </tree>
             </field>
@@ -1751,7 +1782,6 @@
         <field name="res_model">mrp.unbuild</field>
         <field name="view_type">form</field>
         <field name="view_mode">tree,form</field>
-        <field name="context">{'search_default_draft': True}</field>
         <field name="help" type="html">
           <p class="oe_view_nocontent_create">
             Click to start a new Unbuild Order

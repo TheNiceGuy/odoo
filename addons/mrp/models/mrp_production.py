@@ -113,6 +113,16 @@ class MrpProduction(models.Model):
             mo.nb_orders = total_mo
             mo.nb_done = done_mo
 
+    @api.depends('move_created_ids2')
+    def _check_to_done(self):
+        produced_qty = 0
+        for produced_product in self.move_created_ids2:
+            if (produced_product.scrapped) or (produced_product.product_id.id != self.product_id.id):
+                continue
+            produced_qty += produced_product.product_qty
+        self.check_to_done = True if produced_qty >= self.product_qty else False
+
+
 
     name = fields.Char(string='Reference', required=True, readonly=True, states={'confirmed': [('readonly', False)]}, copy=False,
                        default=lambda self: self.env['ir.sequence'].next_by_code('mrp.production') or '/')
@@ -179,6 +189,8 @@ class MrpProduction(models.Model):
     company_id = fields.Many2one('res.company', string='Company', required=True, default=lambda self: self.env['res.company']._company_default_get('mrp.production'))
     product_tmpl_id = fields.Many2one('product.template', related='product_id.product_tmpl_id', string='Product')
     categ_id = fields.Many2one('product.category', related='product_tmpl_id.categ_id', string='Product Category', readonly=True, store=True)
+    check_to_done = fields.Boolean(compute="_check_to_done", string="Check Produced Qty")
+
 
     _sql_constraints = [
         ('name_uniq', 'unique(name, company_id)', 'Reference must be unique per Company!'),
@@ -237,6 +249,11 @@ class MrpProduction(models.Model):
             WorkOrder.create(line)
         #Let us try to plan the order
         self._plan_workorder()
+
+    @api.multi
+    def button_mark_done(self):
+        self.ensure_one()
+        self.write({'state': 'done'})
 
     @api.multi
     def unlink(self):
@@ -675,9 +692,10 @@ class MrpProduction(models.Model):
             produce_operations[0].qty_done = production_qty
         else:
             self.env['stock.pack.operation'].create({'product_id': self.product_id.id,
-                                                    'product_uom': self.uom_id.id,
-                                                    'product_uom_qty': production_qty,
-                                                    'name': _('Extra Move: ') + self.product_id.name,})
+                                                    'product_uom_id': self.product_uom_id.id,
+                                                    'product_qty': production_qty,
+                                                    'location_id': self.location_src_id.id,
+                                                    'location_dest_id': self.location_dest_id.id})
         self.do_transfer() #TODO: Need to give back move_ids done for consumed_for relationship
         self.do_transfer_finished()
         return True 
@@ -1022,10 +1040,11 @@ class MrpUnbuild(models.Model):
     _name = "mrp.unbuild"
     _description = "Unbuild Order"
     _inherit = ['mail.thread']
+    _order = 'id desc'
 
     name = fields.Char(string='Reference', required=True, readonly=True, copy=False, default='New')
     product_id = fields.Many2one('product.product', string="Product", required=True)
-    product_qty = fields.Float('Product Quantity', required=True)
+    product_qty = fields.Float('Quantity', required=True)
     product_uom_id = fields.Many2one('product.uom', string="Unit of Measure", required=True)
     bom_id = fields.Many2one('mrp.bom', 'Bill of Material', required=True, domain=[('product_tmpl_id', '=', 'product_id.product_tmpl_id')])  # Add domain
     mo_id = fields.Many2one('mrp.production', string='Manufacturing Order')

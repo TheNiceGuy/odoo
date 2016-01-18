@@ -31,8 +31,8 @@ class MrpBom(models.Model):
                                  help="If a product variant is defined the BOM is available only for this product.")
     bom_line_ids = fields.One2many('mrp.bom.line', 'bom_id', string='BoM Lines', copy=True)
     categ_id = fields.Many2one('product.category', related='product_tmpl_id.categ_id', string='Product Category', readonly=True, store=True)
-    product_qty = fields.Float(string='Product Quantity', required=True, default=1.0, digits=dp.get_precision('Product Unit of Measure'))
-    product_uom_id = fields.Many2one('product.uom', default=_get_uom_id, string='Product Unit of Measure', required=True, help="Unit of Measure (Unit of Measure) is the unit of measurement for the inventory control", oldname='product_uom')
+    product_qty = fields.Float(string='Quantity', required=True, default=1.0, digits=dp.get_precision('Product Unit of Measure'))
+    product_uom_id = fields.Many2one('product.uom', default=_get_uom_id, string='Unit of Measure', required=True, help="Unit of Measure (Unit of Measure) is the unit of measurement for the inventory control", oldname='product_uom')
     sequence = fields.Integer(string='Sequence', help="Gives The sequence order when displaying a list of bills of material.")
     routing_id = fields.Many2one('mrp.routing', string='Routing', help="The list of operations (list of work centers) to produce the finished product. "
                                  "The routing is mainly used to compute work center costs during operations and to plan future loads on work centers based on production planning.")
