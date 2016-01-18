@@ -748,13 +748,10 @@ class MrpProduction(models.Model):
         self.do_transfer_finished()
 
     @api.multi
-    def action_produce(self, production_qty, production_mode, wizard=False):
-        """ To produce final product based on production mode (consume/consume&produce).
-        If Production mode is consume, all stock move lines of raw materials will be done/consumed.
-        If Production mode is consume & produce, all stock move lines of raw materials will be done/consumed
+    def action_produce(self, production_qty, wizard=False):
+        """ All stock move lines of raw materials will be done/consumed
         and stock move lines of final product will be also done/produced.
         :param production_qty: specify qty to produce in the uom of the production order
-        :param production_mode: specify production mode (consume/consume&produce).
         :param wizard: the mrp produce product wizard, which will tell the amount of consumed products needed
         :return: True
         """

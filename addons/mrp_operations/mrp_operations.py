@@ -109,7 +109,7 @@ class mrp_production_workcenter_line(osv.osv):
             if flag:
                 for production in prod_obj_pool.browse(cr, uid, [prod_obj.id], context= None):
                     if production.move_line_ids or production.move_created_ids:
-                        prod_obj_pool.action_produce(cr,uid, production.id, production.product_qty, 'consume_produce', context = None)
+                        prod_obj_pool.action_produce(cr, uid, production.id, production.product_qty, context = None)
                 prod_obj_pool.signal_workflow(cr, uid, [oper_obj.production_id.id], 'button_produce_done')
         return
 
