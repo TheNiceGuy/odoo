@@ -9,18 +9,21 @@
             <field name="model">mrp.product.produce</field>
             <field name="arch" type="xml">
                 <form string="Produce">
-                    <group string="Produce">
-                        <field name="mode"/>
-                        <field name="product_qty" colspan="2"/>
+                    <group>
+                        <div class="o_row">
+                            <strong> <label for="product_qty"/> </strong>
+                            <field name="product_qty" colspan="2"/>
+                            <field name="product_uom_id" readonly="1"/>
+                        </div>
                         <field name="product_id" invisible="1"/>
                         <field name="tracking" invisible="1"/>
                         <field name="lot_id" domain="[('product_id', '=', product_id)]"
                                     context="{'default_product_id':product_id}"
-                                    attrs="{'required': [('tracking', '!=', 'none'), ('mode', '=', 'consume_produce')]}"
+                                    attrs="{'required': [('tracking', '!=', 'none')]}"
                                     groups="stock.group_production_lot"/>
                     </group>
                     <footer>
-                        <button name="do_produce" type="object" string="Confirm" class="btn-primary"/>
+                        <button name="do_produce" type="object" string="Consume &amp; Produce" class="btn-primary"/>
                         <button string="Cancel" class="btn-default" special="cancel" />
                     </footer>
                 </form>
