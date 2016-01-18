@@ -39,7 +39,7 @@
                                         <div class="row">
                                             <div class="col-xs-9">
                                                 <a name="%(equipment_request_action_cal)d" type="action" domain="[('maintenance_team_id', '=', active_id)]">
-                                                    Schedule Maintenance
+                                                    Scheduled Maintenance
                                                 </a>
                                             </div>
                                             <div class="col-xs-3">
@@ -64,9 +64,39 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="container o_kanban_card_content o_visible">
                             </div><div class="container o_kanban_card_manage_pane o_invisible">
+                                <div class="row">
+                                    <div class="col-xs-6 o_kanban_card_manage_section o_kanban_manage_view">
+                                        <div class="o_kanban_card_manage_title">
+                                            <span>View</span>
+                                        </div>
+                                        <div>
+                                            <a name="%(equipment_todo_request_action_from_dashboard)d" type="action">
+                                                All
+                                            </a>
+                                        </div>
+                                        <div>
+                                            <a name="%(equipment_todo_request_action_from_dashboard)d" type="action" context="{'search_default_todo': 1}">
+                                                To Do
+                                            </a>
+                                        </div>
+                                        <div>
+                                            <a name="%(equipment_todo_request_action_from_dashboard)d" type="action" context="{'search_default_progress': 1}">
+                                                In Progress
+                                            </a>
+                                        </div>
+                                        <div>
+                                            <a name="%(equipment_todo_request_action_from_dashboard)d" type="action" context="{'search_default_done': 1}">
+                                                Done
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-6 o_kanban_card_manage_section o_kanban_manage_new">
+                                        <div class="o_kanban_card_manage_title">
+                                            <span>Reports</span>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div t-if="widget.editable" class="o_kanban_card_manage_settings row">
                                     <div class="col-xs-8">
                                         <ul class="oe_kanban_colorpicker" data-field="color"/>

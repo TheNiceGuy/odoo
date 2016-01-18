@@ -13,7 +13,6 @@
         'security/equipment.xml',
         'security/ir.model.access.csv',
         'data/equipment_data.xml',
-        'views/res_config_views.xml',
         'views/equipment_views.xml',
         'views/maintenance_dashboard.xml',
     ],
