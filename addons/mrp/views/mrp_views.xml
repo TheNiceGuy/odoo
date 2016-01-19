@@ -1326,6 +1326,9 @@
                 <field name="show_state" invisible="1"/>
                 <field name="check_produce_qty" invisible="1"/>
             </header>
+            <div class="alert alert-warning text-center" attrs="{'invisible': [('alert_message', '=', False)]}">
+                <button name="button_alert" type="object" class="oe_link"><field name="alert_message"/></button>
+            </div>
             <group>
                 <group>
                     <field name="product" string="To Produce"/>
@@ -1346,6 +1349,7 @@
             <page string="Time Tracking">
                 <group>
                     <group>
+                        <field name="alert_ids" invisible="True"/>
                         <label for="date_planned_start" string="Planned Date"/>
                         <div class="o_row">
                             <field name="date_planned_start"/>
@@ -1902,5 +1906,58 @@
         </field>
     </record>
 
+    <!-- MRP Alert-->
+    <record id="mrp_alert_form_view" model="ir.ui.view">
+            <field name="name">mrp.alert.form</field>
+            <field name="model">mrp.alert</field>
+            <field name="arch" type="xml">
+                <form string="Alert">
+                    <sheet>
+                        <div class="oe_title">
+                            <h1><field name="name" placeholder="Alert"/></h1>
+                        </div>
+                        <group>
+                            <group>
+                                <field name="alert_type"/>
+                                <field name="workorder_id"/>
+                                <field name="message"/>
+                                <field name="nb_occurrences" invisible="True"/>
+                                <field name="user_ids" widget="many2many_tags" readonly="True"/>
+                            </group>
+                            <group>
+                                <field name="picking_type_id"/>
+                                <field name="production_id"/>
+                                <field name="workcenter_id"/>
+                                <field name="product_id"/>
+                                <field name="bom_id"/>
+                            </group>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
 
+        <record id="mrp_alert_tree_view" model="ir.ui.view">
+            <field name="name">mrp.alert.tree</field>
+            <field name="model">mrp.alert</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="name"/>
+                    <field name="alert_type"/>
+                    <field name="message"/>
+                </tree>
+            </field>
+        </record>
+
+    <record model="ir.actions.act_window" id="action_mrp_alert">
+        <field name="name">MRP Alert</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">mrp.alert</field>
+        <field name="view_type">form</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem id="menu_mrp_alert"
+          parent="menu_mrp_configuration"
+          action="action_mrp_alert"/>
 </odoo>

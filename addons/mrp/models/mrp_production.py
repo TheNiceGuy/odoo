@@ -914,6 +914,23 @@ class MrpProductionWorkcenterLine(models.Model):
             if workorder.qty_produced >= workorder.qty:
                 workorder.check_produce_qty = True
 
+    @api.depends('production_id', 'workcenter_id', 'production_id.bom_id', 'production_id.picking_type_id')
+    def _get_alert_message(self):
+        MrpAlert = self.env['mrp.alert']
+        msg = ''
+        for workorder in self:
+            domain = [
+                '|', ('picking_type_id', '=', workorder.production_id.picking_type_id.id),
+                '|', ('bom_id', '=', workorder.production_id.bom_id.id),
+                '|', ('workcenter_id', '=', workorder.workcenter_id.id),
+                '&', ('workorder_id', '=', workorder.id), ('nb_occurrences', '>', 0)
+            ]
+            alerts = MrpAlert.search(domain)
+            if alerts:
+                for alert in alerts:
+                    msg += "".join(alert.message) + ','
+                workorder.alert_message = msg
+                workorder.alert_ids = [(6, 0, [alert.id for alert in alerts])]
 
     name = fields.Char(string='Work Order', required=True)
     workcenter_id = fields.Many2one('mrp.workcenter', string='Work Center', required=True)
@@ -941,6 +958,8 @@ class MrpProductionWorkcenterLine(models.Model):
     worksheet = fields.Binary('Worksheet', related='operation_id.worksheet', readonly=True)
     show_state = fields.Boolean(compute='_get_current_state')
     check_produce_qty = fields.Boolean(compute='_check_produce_qty')
+    alert_message = fields.Char(compute="_get_alert_message")
+    alert_ids = fields.One2many('mrp.alert', compute='_get_alert_message', string='Alert')
 
     def _get_current_state(self):
         for order in self:
@@ -948,6 +967,12 @@ class MrpProductionWorkcenterLine(models.Model):
                 order.show_state = True
             else:
                 order.show_state = False
+
+    @api.multi
+    def button_alert(self):
+        for alert in self.alert_ids:
+            alert.user_ids = [(4, self.env.uid)]
+            alert.nb_occurrences -= 1
 
     # Plan should disappear -> created when doing production
     @api.multi
@@ -1147,6 +1172,23 @@ class MrpUnbuild(models.Model):
 
 
     #TODO: need quants defined here
+
+
+class MrpAlert(models.Model):
+    _name = "mrp.alert"
+    _description = "MRP Alert"
+
+    name = fields.Char(required=True, copy=False)
+    message = fields.Char()
+    workorder_id = fields.Many2one('mrp.production.workcenter.line', string="WorkOrder")
+    picking_type_id = fields.Many2one('stock.picking.type', string="Picking Type")
+    production_id = fields.Many2one('mrp.production', string='Manufacturing Order')
+    product_id = fields.Many2one('product.product', string="Product")
+    bom_id = fields.Many2one('mrp.bom', 'Bill of Material')
+    workcenter_id = fields.Many2one('mrp.workcenter', string='Work Center')
+    user_ids = fields.Many2many('res.users', string='Consumed by', readonly=True)
+    nb_occurrences = fields.Integer(string='Occurrences', default=3, readonly=True)
+    alert_type = fields.Selection([('product', 'Product'), ('bom', 'Bill of Material'), ('picktype', 'Picking Type'), ('workcenter', 'Workcenter'), ('production', 'Manufacturing Order')])
 
 
 class StockScrap(models.Model):
