@@ -92,9 +92,7 @@ class TestOrderProcess(TestOrderDemo):
     # I produce product.
         ctx.update({'active_id': self.mrp_production_test1.id})
 
-        self.mrp_product_produce1 = self.env['mrp.product.produce'].with_context(ctx).create({
-            'mode': 'consume_produce'
-        })
+        self.mrp_product_produce1 = self.env['mrp.product.produce'].with_context(ctx).create({})
 
         qty = self.mrp_product_produce1.product_qty
         self.mrp_product_produce1.do_produce()
