@@ -277,7 +277,6 @@ class TestSaleMrpFlow(common.TransactionCase):
         # ------------------
 
         produce_d = self.ProductProduce.with_context({'active_ids': [mnf_product_d.id], 'active_id': mnf_product_d.id}).create({
-            'mode': 'consume_produce',
             'product_qty': 20})
         produce_d.do_produce()
 
@@ -327,7 +326,7 @@ class TestSaleMrpFlow(common.TransactionCase):
         # Produce product A.
         # ------------------
         produce_a = self.ProductProduce.with_context(
-            {'active_ids': [mnf_product_a.id], 'active_id': mnf_product_a.id}).create({'mode': 'consume_produce'})
+            {'active_ids': [mnf_product_a.id], 'active_id': mnf_product_a.id}).create({})
         produce_a.do_produce()
 
         # Check state of manufacturing order product A.
