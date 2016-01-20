@@ -47,7 +47,7 @@ class MrpProduction(models.Model):
         return types[0].id if types else False
 
     @api.multi
-    @api.depends('move_line_ids')
+    @api.depends('move_line_ids','move_line_ids.state', 'workcenter_line_ids', 'workcenter_line_ids.move_line_ids')
     def _compute_availability(self):
         for order in self:
             if not order.move_line_ids:

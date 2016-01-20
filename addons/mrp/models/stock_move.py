@@ -442,24 +442,13 @@ class StockPickingType(models.Model):
 
     def _get_mo_count(self):
         MrpProduction = self.env['mrp.production']
-        for order in self:
-            order.count_mo_waiting = MrpProduction.search_count([('availability', '=', 'waiting')])
-            order.count_mo_todo = MrpProduction.search_count(['&', ('availability', 'in', ['assigned', 'partially_available']), ('state', 'not in', ['cancel', 'done'])])
-            order.count_mo_late = MrpProduction.search_count(['&', ('date_planned', '<', datetime.now().strftime('%Y-%m-%d')), ('state', 'in', ['draft', 'confirmed', 'ready'])])
+        for picking in self:
+            if picking.code == 'mrp_operation':
+                picking.count_mo_waiting = MrpProduction.search_count([('availability', '=', 'waiting')])
+                picking.count_mo_todo = MrpProduction.search_count([('state', '=', 'confirmed')])
+                picking.count_mo_late = MrpProduction.search_count(['&', ('date_planned', '<', datetime.now().strftime('%Y-%m-%d')), ('state', 'in', ['draft', 'confirmed', 'ready'])])
 
     code = fields.Selection(selection_add=[('mrp_operation', 'Manufacturing Operation')])
     count_mo_todo = fields.Integer(compute='_get_mo_count')
     count_mo_waiting = fields.Integer(compute='_get_mo_count')
     count_mo_late = fields.Integer(compute='_get_mo_count')
-
-    @api.multi
-    def get_action_mo_tree_todo(self):
-        return self._get_action('mrp.mrp_production_action')
-
-    @api.multi
-    def get_action_mo_tree_late(self):
-        return self._get_action('mrp.mrp_production_action_late')
-
-    @api.multi
-    def get_action_mo_tree_waiting(self):
-        return self._get_action('mrp.mrp_production_action_waiting')
