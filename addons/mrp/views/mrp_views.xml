@@ -1687,12 +1687,8 @@
                     </header>
                     <sheet>
                         <div class="oe_button_box" name="button_box">
-                            <button class="oe_stat_button" name="button_produce_product"
-                                    string="Produce Product" type="object" icon="fa-cog"/>
-                            <field name="produce_line_ids" invisible="1"/>
-                            <button class="oe_stat_button" name="button_consume_product"
-                                    string="Consume Product" type="object" icon="fa-cart-plus"/>
-                            <field name="consume_line_ids" invisible="1"/>
+                            <button class="oe_stat_button" name="button_open_move"
+                                    string="Moves" type="object" icon="fa-arrows-v"/>
                         </div>
                         <div class="oe_title">
                             <h1><field name="name" placeholder="Unbuild Order" nolabel="1"/></h1>

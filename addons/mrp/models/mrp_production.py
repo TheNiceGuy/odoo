@@ -1114,7 +1114,8 @@ class MrpUnbuild(models.Model):
         self.write({'state': 'done'})
 
     @api.multi
-    def button_produce_product(self):
+    def button_open_move(self):
+        stock_moves = self.env['stock.move'].search([('origin', '=', self.name)])
         return {
             'name': _('Stock Moves'),
             'view_type': 'form',
@@ -1122,19 +1123,7 @@ class MrpUnbuild(models.Model):
             'res_model': 'stock.move',
             'view_id': False,
             'type': 'ir.actions.act_window',
-            'domain': [('id', 'in', [x.id for x in self.produce_line_ids])],
-        }
-
-    @api.multi
-    def button_consume_product(self):
-        return {
-            'name': _('Stock Moves'),
-            'view_type': 'form',
-            'view_mode': 'tree',
-            'res_model': 'stock.move',
-            'view_id': False,
-            'type': 'ir.actions.act_window',
-            'domain': [('id', 'in', self.consume_line_ids.ids)],
+            'domain': [('id', 'in', stock_moves.ids)],
         }
 
 
