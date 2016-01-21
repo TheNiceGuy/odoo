@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <odoo>
-    <data noupdate="1">
+    <data>
         <record id="vat_tag_200" model="account.account.tag">
             <field name="name">Switzerland VAT Form: grid 200</field>
             <field name="applicability">taxes</field>
