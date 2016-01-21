@@ -9,10 +9,25 @@ from openerp.tools import DEFAULT_SERVER_DATETIME_FORMAT
 from openerp.exceptions import AccessError, UserError, ValidationError
 import openerp.addons.decimal_precision as dp
 from openerp import api, fields, models, _
+from openerp import SUPERUSER_ID
 
 import logging
 _logger = logging.getLogger(__name__)
 
+
+def migrate_tags_on_taxes(cr, registry):
+    ''' This is a utiliy function to help migrate the tags of taxes when the localization has been modified on stable version. If
+    called accordingly in a post_init_hooked function, it will reset the tags set on taxes as per their equivalent template.
+
+    Note: This unusual decision has been made in order to help the improvement of VAT reports on version 9.0, to have them more flexible
+    and working out of the box when people are creating/using new taxes.
+    '''
+    print 'here we are'
+    xml_record_ids = registry['ir.model.data'].search(cr, SUPERUSER_ID, [('model', '=', 'account.tax.template'), ('module', 'like', 'l10n_%')])
+    for xml_record in registry['ir.model.data'].browse(cr, SUPERUSER_ID, xml_record_ids):
+        tax_id = registry['account.tax'].search(cr, SUPERUSER_ID, [('name', '=', xml_record.name), ('type_tax_use', '=', xml_record.type_tax_use), ('code', '=', xml_record.code)])
+        if len(tax_id) == 1:
+            registry['account.tax'].write(cr, SUPERUSER_ID, tax_id, {'tag_ids': [(6,0,[x.id for x in xml_record.tag_ids])]})
 
 #  ---------------------------------------------------------------
 #   Account Templates: Account, Tax, Tax Code and chart. + Wizard
