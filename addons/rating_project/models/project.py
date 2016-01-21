@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-from openerp import models, fields, api
 
+from openerp import models, fields, api
+from datetime import datetime, timedelta
+from openerp.tools.translate import _
 
 class ProjectTaskType(models.Model):
-
     _inherit = 'project.task.type'
-
     rating_template_id = fields.Many2one(
         'mail.template',
         string='Rating Email Template',
@@ -17,36 +17,72 @@ class ProjectTaskType(models.Model):
             " * A medium or a bad feedback will set the kanban state to 'blocked' (red bullet).\n")
 
 class Task(models.Model):
-
     _name = 'project.task'
     _inherit = ['project.task', 'rating.mixin']
 
+    rating_latest = fields.Float(string="Latest Rating", related="rating_ids.rating", group_operator="avg", store=True)
+    rating_feedback = fields.Text(string="Rating Feedback", related="rating_ids.feedback", store=True)
+    rating_text = fields.Text(string="Rating Feedback", compute="_get_rating_text")
+
+    # This method should be called once a day by the scheduler
+    @api.model
+    def _send_rating_all(self):
+        periods = ['daily']
+        if datetime.today().day in (1,15):
+            periods.append('bimonthly')
+        if datetime.today().day == 1:
+            periods.append('monthly')
+            if datetime.today().month in (1,4,7,10):
+                periods.append('quarterly')
+            if datetime.today().month in (1,):
+                periods.append('yearly')
+        if datetime.today().weekday() == 2:
+            periods.append('weekly')
+        project_ids = self.env['project.project'].search([('rating_status','=','periodic'),('rating_status_period','in',periods)])
+        return self.search([('project_id', 'in', project_ids)])._send_rating_mail()
+
+    @api.multi
+    def _send_rating_mail(self):
+        for task in self:
+            template = task.stage_id.rating_template_id
+            if template:
+                partner = None
+                if self.sale_line_id:
+                    partner = self.sale_line_id.order_id.partner_id
+                else:
+                    partner = self.project_id.partner_id or None
+                rated_partner_id = self.user_id.partner_id
+                if partner and rated_partner_id:
+                    self.rating_send_request(template, partner, rated_partner_id)
+        return True
+
     @api.multi
     def write(self, values):
+        result = super(Task, self).write(values)
         if 'stage_id' in values and values.get('stage_id'):
-            template = self.env['project.task.type'].browse(values.get('stage_id')).rating_template_id
-            if template:
-                rated_partner_id = self.user_id.partner_id
-                partner_id = self.partner_id
-                if partner_id and rated_partner_id:
-                    self.rating_send_request(template, partner_id, rated_partner_id)
-        return super(Task, self).write(values)
+            self._send_rating_mail()
+        return result
 
+    @api.one
+    def _get_rating_text(self):
+        if (self.project_id.rating_status=='no') or (not self.rating_ids):
+            self.rating_text = False
+            return True
+        self.rating_text = {
+            0: _('Not happy'),
+            5: _('Average'),
+            10: _('Happy')
+        }.get(self.rating_latest, _('Unknown rating'))
 
 class Project(models.Model):
-
     _inherit = "project.project"
 
     @api.one
-    @api.depends('percentage_satisfaction_task')
-    def _compute_percentage_satisfaction_project(self):
-        self.percentage_satisfaction_project = self.percentage_satisfaction_task
-
-    @api.one
     @api.depends('tasks.rating_ids.rating')
-    def _compute_percentage_satisfaction_task(self):
-        activity = self.tasks.rating_get_grades()
-        self.percentage_satisfaction_task = activity['great'] * 100 / sum(activity.values()) if sum(activity.values()) else -1
+    def _compute_rating_satisfaction(self):
+        domain = [('create_date','>=',(datetime.today() - timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S'))]
+        activity = self.tasks.rating_get_grades(domain)
+        self.rating_satisfaction = activity['great'] * 100 / sum(activity.values()) if sum(activity.values()) else -1
 
     percentage_satisfaction_task = fields.Integer(
         compute='_compute_percentage_satisfaction_task', string='% Happy', store=True, default=-1)
@@ -54,7 +90,14 @@ class Project(models.Model):
         compute="_compute_percentage_satisfaction_project", string="% Happy", store=True, default=-1)
     is_visible_happy_customer = fields.Boolean(string="Customer Satisfaction", default=False,
         help="Display information about rating of the project on kanban and form view. This buttons will only be displayed if at least a rating exists.")
+    rating_satisfaction = fields.Integer(
+        compute='_compute_rating_satisfaction', string='% Happy', store=True, default=-1)
 
+    rating_status = fields.Selection([('no','No customer rating'), ('stage','On stage change'), ('periodic','Periodically')], 'Customer Ratings', default='no')
+    rating_status_period = fields.Selection([
+            ('daily','every day'), ('weekly','every week'), ('bimonthly','twice a month'), 
+            ('monthly','once a month'), ('quarterly','quarterly'), ('yearly','yearly')
+        ], 'Rating Frequency', default='monthly')
 
     @api.multi
     def action_view_task_rating(self):
@@ -68,9 +111,7 @@ class Project(models.Model):
         return self.action_view_task_rating()
 
 
-
 class Rating(models.Model):
-
     _inherit = "rating.rating"
 
     @api.model

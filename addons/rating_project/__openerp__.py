@@ -9,10 +9,11 @@ This module Allows a customer to give rating on Project.
     'website': 'http://odoo.com',
     'depends': [
         'rating',
-        'project'
+        'sale_service'
     ],
     'data': [
         'data/project_data.xml',
+        'data/project_cron.xml',
         'views/project_view.xml',
         'views/project_dashboard.xml',
     ],
