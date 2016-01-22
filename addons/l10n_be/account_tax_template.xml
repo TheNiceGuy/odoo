@@ -90,7 +90,7 @@
             <field name="applicability">taxes</field>
         </record>
         <record id="tax_tag_83" model="account.account.tag">
-            <field name="name">Belgium VAT Form: grid 82</field>
+            <field name="name">Belgium VAT Form: grid 83</field>
             <field name="applicability">taxes</field>
         </record>
         <record id="tax_tag_84" model="account.account.tag">
@@ -111,6 +111,22 @@
         </record>
         <record id="tax_tag_88" model="account.account.tag">
             <field name="name">Belgium VAT Form: grid 88</field>
+            <field name="applicability">taxes</field>
+        </record>
+        <record id="tax_tag_81_not_deductible" model="account.account.tag">
+            <field name="name">Belgium VAT Form: Tax not deductible (grid 81)</field>
+            <field name="applicability">taxes</field>
+        </record>
+        <record id="tax_tag_82_not_deductible" model="account.account.tag">
+            <field name="name">Belgium VAT Form: Tax not deductible (grid 82)</field>
+            <field name="applicability">taxes</field>
+        </record>
+        <record id="tax_tag_83_not_deductible" model="account.account.tag">
+            <field name="name">Belgium VAT Form: Tax not deductible (grid 83)</field>
+            <field name="applicability">taxes</field>
+        </record>
+        <record id="tax_tag_85_not_deductible" model="account.account.tag">
+            <field name="name">Belgium VAT Form: Tax not deductible (grid 85)</field>
             <field name="applicability">taxes</field>
         </record>
 
@@ -853,7 +869,7 @@
             <field name="amount_type">percent</field>
             <field name="type_tax_use">none</field>
             <field name="chart_template_id" ref="l10nbe_chart_template"/>
-            <field name="tag_ids" eval="[(6,0,[ref('tax_tag_82'), ref('tax_tag_85')])]"/>
+            <field name="tag_ids" eval="[(6,0,[ref('tax_tag_82_not_deductible'), ref('tax_tag_85_not_deductible')])]"/>
         </record>
         <record id="attn_VAT-IN-V82-CAR-EXC-C2" model="account.tax.template">
             <field name="sequence">722</field>
