@@ -828,22 +828,22 @@
                 <form string="Manufacturing Orders">
                 <header>
                     <button name="button_mark_done" attrs="{'invisible': [('check_to_done', '=', False)]}" string="Mark as Done" type="object"/>
-                    <button name="%(act_mrp_product_produce)d" attrs="{'invisible': [('availability', '=', 'none')]}" string="Produce" type="action" class="oe_highlight"/>
+                    <button name="%(act_mrp_product_produce)d" attrs="{'invisible': ['|', ('state', '!=', 'planned'), ('availability', '=', 'none')]}" string="Produce" type="action" class="oe_highlight"/>
                     <button name="action_assign" attrs="{'invisible': [('availability', '=', 'assigned')]}" string="Check availability" type="object" class="oe_highlight"/>
-                    <button name="force_assign" attrs="{'invisible': [('availability', '=', 'assigned')]}" string="Force availability" type="object"/>
                     <button name="button_plan" attrs="{'invisible': ['|', ('state', '!=', 'confirmed'), ('routing_id', '=', False)]}" type="object" string="Plan"/>
-                    <button name="button_cancel" states="confirmed,planned,progress" string="Cancel Production"/>
+                    <button name="%(act_mrp_product_produce)d" attrs="{'invisible': ['|', ('state', '=', 'planned'), ('availability', '=', 'none')]}" string="Produce" type="action"/>
+                    <button name="post_inventory" string="Post Inventory" type="object" attrs="{'invisible': [('post_visible', '=', False)]}" class="oe_highlight"/>
+                    <field name="post_visible" invisible="1"/>
                     <button name="button_scrap" type="object" string="Scrap" attrs="{'invisible': [('state', 'in', ('cancel'))]}"/>
                     <field name="state" widget="statusbar" statusbar_visible="confirmed,progress,done" statusbar_colors='{"confirmed":"blue"}'/>
                 </header>
                 <sheet>
                     <div class="oe_button_box">
-                        <button name="%(action_mrp_workorder_production_specific)d" type="action" attrs="{'invisible': [('workcenter_line_ids', '=', [])]}" class="oe_stat_button">
+                        <button name="%(action_mrp_workorder_production_specific)d" type="action" attrs="{'invisible': [('workcenter_line_ids', '=', [])]}" class="oe_stat_button" icon="fa-play-circle-o">
                             <span class="o_stat_value"><field name="nb_done" widget="statinfo" nolabel="1"/> / <field name="nb_orders" widget="statinfo" nolabel="1"/></span><br/>
                             <span class="o_stat_text">Work Orders</span>
                         </button>
                         <button name="%(action_mrp_production_moves)d" type="action" string="Moves" class="oe_stat_button" icon="fa-arrows-v"/>
-                        
                         <field name="workcenter_line_ids" invisible="1"/>
                     </div>
                     <div class="oe_title">
@@ -894,15 +894,7 @@
                     </group>
                     <notebook>
                         <page string="Consumed Materials">
-                            <field name="move_line_ids" attrs="{'invisible': [('consume_operation_ids', '!=', [])]}" readonly="1">
-                                <tree>
-                                    <field name="product_id"/>
-                                    <field name="product_uom_qty"/>
-                                    <field name="product_uom"/>
-                                    <field name="state" invisible="1"/>
-                                </tree>
-                            </field>
-                            <field name="consume_operation_ids" attrs="{'invisible': [('consume_operation_ids', '=', [])]}" options="{'reload_on_button': True}" context="{'default_location_id': location_src_id, 'default_location_dest_id': location_dest_id}">
+                            <field name="consume_operation_ids" options="{'reload_on_button': True}" context="{'default_location_id': location_src_id, 'default_location_dest_id': location_dest_id}">
                                 <tree editable="bottom" default_order="production_state,id" decoration-danger="qty_done&gt;product_qty" decoration-success="qty_done==product_qty and production_state!='done'" decoration-muted="production_state=='done'">
                                     <field name="package_id" groups="stock.group_tracking_lot" invisible="1"/>
                                     <field name="product_id" on_change="product_id_change(product_id, product_uom_id, product_qty)" required="1" attrs="{'readonly': [('fresh_record', '=', False)]}"/>
@@ -917,6 +909,7 @@
                                     <field name="result_package_id" groups="stock.group_tracking_lot" context="{'location_id': location_dest_id}" invisible="1"/>-->
                                     <field name="state" invisible="1"/>
                                     <field name="production_state" invisible="1"/>
+                                    <field name="qty_reserved"/>
                                     <field name="product_qty" readonly="1" attrs="{'required': [('product_id', '!=', False)]}"/>
                                     <field name="qty_done" attrs="{'readonly': ['|', ('production_state', '=', 'done'), ('lots_visible', '=', True)]}"/>
                                     <button name="split_lot" string="Lot Split" type="object" icon="fa-list" groups="stock.group_production_lot"

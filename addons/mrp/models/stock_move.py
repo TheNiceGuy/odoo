@@ -181,10 +181,6 @@ class StockMove(models.Model):
             res = res | new_moves
         return res
     
-    
-    
-    
-    
     def _prepare_pack_ops(self, quants, forced_qties, entire_packages=False, owner_id=False, context=None):
         """ returns a list of dict, ready to be used in create() of stock.pack.operation.
 

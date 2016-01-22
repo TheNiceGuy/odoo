@@ -38,6 +38,7 @@ class StockPackOperation(models.Model):
     production_state = fields.Selection([('confirmed', 'Confirmed'), ('done', 'Done')], default='confirmed', string='Production State', copy=False)
     lots_visible = fields.Boolean('Lots visible', compute='_compute_lots_visible')
     state = fields.Char('State', compute='_compute_lots_visible')
+    qty_reserved = fields.Float('Qty Reserved')
 
     def _prepare_values_extra_move(self, product, remaining_qty):
         """
@@ -83,6 +84,13 @@ class StockPackOperation(models.Model):
             move_list = move_obj.browse(moves)
             move_list.action_confirm()
         return moves
+
+
+class StockPackOperationLot(models.Model):
+    _inherit = 'stock.pack.operation.lot'
+    
+    qty_reserved = fields.Float('Qty Reserved')
+    
 
 
 class StockWarehouse(models.Model):
