@@ -122,7 +122,11 @@ class MrpProduction(models.Model):
             produced_qty += produced_product.product_qty
         self.check_to_done = True if produced_qty >= self.product_qty else False
 
-
+    @api.multi
+    @api.depends('consume_operation_ids', 'produce_operation_ids')
+    def _compute_post_visible(self):
+        for order in self:
+            order.post_visible = any([x.qty_done > 0 for x in order.consume_operation_ids]) and any([x.qty_done > 0 for x in order.produce_operation_ids])
 
     name = fields.Char(string='Reference', required=True, readonly=True, states={'confirmed': [('readonly', False)]}, copy=False,
                        default=lambda self: self.env['ir.sequence'].next_by_code('mrp.production') or '/')
@@ -162,7 +166,6 @@ class MrpProduction(models.Model):
                                        domain=[('state', 'not in', ('done', 'cancel'))], readonly=True)
     move_created_ids2 = fields.One2many('stock.move', 'production_id', 'Produced Products',
                                         domain=[('state', 'in', ('done', 'cancel'))], readonly=True)
-    
     consume_operation_ids = fields.One2many('stock.pack.operation', 'production_raw_id', string="Consume Operations")
     produce_operation_ids = fields.One2many('stock.pack.operation', 'production_finished_id', string="Produce Operations")
     workcenter_line_ids = fields.One2many('mrp.production.workcenter.line', 'production_id', string='Work Centers Utilisation',
@@ -172,6 +175,8 @@ class MrpProduction(models.Model):
     state = fields.Selection([('confirmed', 'Confirmed'), ('planned', 'Planned'), ('progress', 'In Progress'), ('done', 'Done'), ('cancel', 'Cancelled')], 'State', default='confirmed', copy=False)
     availability = fields.Selection([('assigned', 'Available'), ('partially_available', 'Partially available'), ('none', 'None'), ('waiting', 'Waiting')], compute='_compute_availability', store=True, default="none")
     picking_type_id = fields.Many2one('stock.picking.type', 'Picking Type', default=_default_picking_type, required=True)
+    post_visible = fields.Boolean('Inventory Post Visible', compute='_compute_post_visible', help='Technical field to check when we can post')
+    
 
 #     state = fields.Selection(
 #         [('draft', 'New'), ('cancel', 'Cancelled'), ('confirmed', 'Awaiting Raw Materials'),
@@ -426,36 +431,99 @@ class MrpProduction(models.Model):
 
     def do_prepare_partial(self):
         pack_operation_obj = self.env['stock.pack.operation']
-
+        pack_lot_obj = self.env['stock.pack.operation.lot']
         #get list of existing operations and delete them
         existing_operation_ids = pack_operation_obj.search([('production_raw_id', 'in', self.ids), ('production_state', '!=', 'done')])
         if existing_operation_ids:
-            existing_operation_ids.unlink()
+            existing_operation_ids.write({'qty_reserved': 0.0, 'qty_done': 0.0})
+            #TODO: put packlots at 0 too
         for production in self:
-            
             # prepare Consume Lines
             forced_qties = {}  # Quantity remaining after calculating reserved quants
             total_quants = self.env['stock.quant']
             total_moves = self.env['stock.move']
             #Calculate packages, reserved quants, qtys of this picking's moves
-            
             for move in production.move_line_ids:
                 if move.state not in ('assigned', 'confirmed', 'waiting'):
                     continue
                 total_moves |= move
                 move_quants = move.reserved_quant_ids
                 total_quants |= move_quants
-                forced_qty = (move.state == 'assigned') and move.product_qty - sum([x.qty for x in move_quants]) or 0
+                forced_qty = move.product_qty - sum([x.qty for x in move_quants])
                 #if we used force_assign() on the move, or if the move is incoming, forced_qty > 0
                 if float_compare(forced_qty, 0, precision_rounding=move.product_id.uom_id.rounding) > 0:
                     if forced_qties.get(move.product_id):
                         forced_qties[move.product_id] += forced_qty
                     else:
                         forced_qties[move.product_id] = forced_qty
-            for vals in total_moves._prepare_pack_ops(total_quants, forced_qties):
-                vals['fresh_record'] = False
-                vals['production_raw_id'] = production.id
-                pack_operation_obj.create(vals)
+            # Existing reservations:
+            ops_todo = {}
+            ops_reserved = {}
+            lots_todo = {}
+            lots_reserved = {}
+            for quant in total_quants:
+                if quant.qty <= 0: 
+                    continue
+                key = (quant.product_id.id, quant.package_id.id, quant.owner_id.id, quant.location_id.id)
+                packops = production.consume_operation_ids.filtered(lambda x: (key == (x.product_id.id, x.package_id.id, x.owner_id.id, x.location_id.id)) and x.production_state != 'done')#x.product_id.id == quant.product_id.id and quant.package_id.id == x.package_id.id and quant.location_id.id == x.location_id.id)
+                if packops:
+                    # Add to existing packages
+                    ops = packops[0]
+                else:
+                    ops = pack_operation_obj.create({'product_qty': 0,
+                                                    'product_id': quant.product_id.id,
+                                                    'package_id': quant.package_id.id,
+                                                    'owner_id': quant.owner_id.id,
+                                                    'location_id': quant.location_id.id,
+                                                    'location_dest_id': quant.product_id.property_stock_production.id,
+                                                    'product_uom_id': quant.product_id.uom_id.id,
+                                                    'production_raw_id': production.id,
+                                                    })
+                ops_todo.setdefault(ops.id , 0)
+                ops_reserved.setdefault(ops.id , 0)
+                ops_todo[ops.id] += quant.qty
+                ops_reserved[ops.id] += quant.qty
+                if quant.lot_id:
+                    lots = self.env['stock.pack.operation.lot'] #browse record
+                    if packops:
+                        for pack in packops:
+                            lots |= [x.id for x in pack.pack_lot_ids if x.lot_id.id == quant.lot_id.id]
+                    if lots:
+                        lot = lots[0]
+                    else:
+                        lot = pack_lot_obj.create({'lot_id': quant.lot_id, 'qty': 0.0, 'qty_todo': 0, 'operation_id': pack.id})
+                    lots_todo.set_default(lot.id)
+                    lots_todo[lot.id] += quant.qty
+                    lots_reserved.set_default(lot.id)
+                    lots_reserved[lots.id] += quant.qty
+            
+            # Do something with forced quantities
+            for product in forced_qties:
+                packops = production.consume_operation_ids.filtered(lambda x: (product.id == x.product_id.id) and x.production_state != 'done')#x.product_id.id == quant.product_id.id and quant.package_id.id == x.package_id.id and quant.location_id.id == x.location_id.id)
+                if packops:
+                    # Add to existing packages
+                    ops = packops[0]
+                else:
+                    ops = pack_operation_obj.create({'product_qty': 0,
+                                                    'product_id': product.id,
+                                                    'package_id': False,
+                                                    #TODO:'owner_id': ops.owner_id.id,
+                                                    'location_id': production.location_src_id.id,
+                                                    'location_dest_id': product.property_stock_production.id,
+                                                    'product_uom_id': product.uom_id.id,
+                                                    'production_raw_id': production.id,
+                                                    })
+                ops_todo.setdefault(ops.id , 0)
+                ops_todo[ops.id] += forced_qties[product]
+
+            # Now update all existing pack operations
+            for ops in ops_todo.keys() + ops_reserved.keys():
+                ops_rec = pack_operation_obj.browse(ops)
+                #TODO: reduce to one write instead
+                if ops_todo.get(ops):
+                    ops_rec.product_qty = ops_todo[ops]
+                if ops_reserved.get(ops):
+                    ops_rec.qty_reserved = ops_reserved[ops]
 
     def do_prepare_partial_produce(self):
         pack_operation_obj = self.env['stock.pack.operation']
@@ -675,6 +743,11 @@ class MrpProduction(models.Model):
         return True
 
     @api.multi
+    def post_inventory(self):
+        self.do_transfer() #TODO: Need to give back move_ids done for consumed_for relationship
+        self.do_transfer_finished()
+
+    @api.multi
     def action_produce(self, production_qty, production_mode, wizard=False):
         """ To produce final product based on production mode (consume/consume&produce).
         If Production mode is consume, all stock move lines of raw materials will be done/consumed.
@@ -696,8 +769,7 @@ class MrpProduction(models.Model):
                                                     'product_qty': production_qty,
                                                     'location_id': self.location_src_id.id,
                                                     'location_dest_id': self.location_dest_id.id})
-        self.do_transfer() #TODO: Need to give back move_ids done for consumed_for relationship
-        self.do_transfer_finished()
+        #TODO: Change cpnsumed products
         return True 
 
     def _make_production_produce_line(self):
@@ -841,6 +913,7 @@ class MrpProduction(models.Model):
                         stock_moves = stock_moves | prev_move
             if stock_moves:
                 stock_moves.action_confirm()
+            production.action_assign()
         return True
 
     @api.multi
@@ -850,17 +923,15 @@ class MrpProduction(models.Model):
         """
         for production in self:
             production.move_line_ids.action_assign()
-            warning_state = production.move_line_ids.filtered(lambda x: x.state != 'available')
-            if production.availability in ('assigned', 'partially_available'):
-                production.do_prepare_partial()
+            production.do_prepare_partial()
         return True
 
-    @api.multi
-    def force_assign(self):
-        for order in self:
-            order.move_line_ids.force_assign()
-            order.do_prepare_partial()
-        return True
+#     @api.multi
+#     def force_assign(self):
+#         for order in self:
+#             order.move_line_ids.force_assign()
+#             order.do_prepare_partial()
+#         return True
 
     @api.multi
     def button_scrap(self):
