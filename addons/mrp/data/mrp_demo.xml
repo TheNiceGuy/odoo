@@ -21,7 +21,6 @@
             <field name="image" type="base64" file="mrp/static/img/product_assembly-image.jpg"/>
         </record>
 
-
         <!-- Resource: mrp.workcenter -->
 
         <record id="mrp_workcenter_0" model="mrp.workcenter">
@@ -75,6 +74,7 @@
             <field name="name">Long time assembly</field>
             <field name="hour_nbr">5</field>
             <field name="sequence">15</field>
+            <field name="worksheet" type="base64" file="mrp/static/img/laptop-worksheet.png"/>
         </record>
 
         <record id="mrp_routing_workcenter_3" model="mrp.routing.workcenter">
@@ -83,6 +83,7 @@
             <field name="name">Testing</field>
             <field name="hour_nbr">1</field>
             <field name="sequence">10</field>
+            <field name="worksheet" type="base64" file="mrp/static/img/laptop-worksheet.png"/>
         </record>
 
         <record id="mrp_routing_workcenter_4" model="mrp.routing.workcenter">
@@ -91,6 +92,7 @@
             <field name="name">Packing</field>
             <field name="hour_nbr">0.5</field>
             <field name="sequence">5</field>
+            <field name="worksheet" type="base64" file="mrp/static/img/laptop-worksheet.png"/>
         </record>
 
         <record id="mrp_routing_workcenter_2" model="mrp.routing.workcenter">
