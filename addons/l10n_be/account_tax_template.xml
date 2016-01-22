@@ -592,7 +592,7 @@
             <field name="amount_type">percent</field>
             <field name="type_tax_use">purchase</field>
             <field name="chart_template_id" ref="l10nbe_chart_template"/>
-            <field name="tag_ids" eval="[(6,0,[ref('tax_tag_87'), ref('tax_tag_81') ref('tax_tag_85')])]"/>
+            <field name="tag_ids" eval="[(6,0,[ref('tax_tag_87'), ref('tax_tag_81'), ref('tax_tag_85')])]"/>
         </record>
         <record id="attn_VAT-IN-V82-21-CC-C1" model="account.tax.template">
             <field name="sequence">511</field>
