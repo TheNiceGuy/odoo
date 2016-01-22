@@ -1326,9 +1326,6 @@
                 <field name="show_state" invisible="1"/>
                 <field name="check_produce_qty" invisible="1"/>
             </header>
-            <div class="alert alert-warning text-center" attrs="{'invisible': [('alert_message', '=', False)]}">
-                <button name="button_alert" type="object" class="oe_link"><field name="alert_message"/></button>
-            </div>
             <group>
                 <group>
                     <field name="product" string="To Produce"/>
@@ -1340,6 +1337,12 @@
                         <field name="availability" widget="bullet_state" options="{'classes': {'assigned': 'success', 'waiting': 'danger'}}"/>
                     </div>
                     <field name="sequence" invisible="1"/>
+                </group>
+                <group>
+                    <div class="alert alert-danger text-center" attrs="{'invisible': [('alert_message', '=', False)]}">
+                        <field name="alert_message"/>
+                        <button name="button_alert" type="object" string="X" class="close"/>
+                    </div>
                 </group>
             </group>
             <notebook>

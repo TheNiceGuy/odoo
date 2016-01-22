@@ -920,10 +920,10 @@ class MrpProductionWorkcenterLine(models.Model):
         msg = ''
         for workorder in self:
             domain = [
-                '|', ('picking_type_id', '=', workorder.production_id.picking_type_id.id),
-                '|', ('bom_id', '=', workorder.production_id.bom_id.id),
-                '|', ('workcenter_id', '=', workorder.workcenter_id.id),
-                '&', ('workorder_id', '=', workorder.id), ('nb_occurrences', '>', 0)
+                '|', '|', '|', ('picking_type_id', '=', workorder.production_id.picking_type_id.id),
+                ('bom_id', '=', workorder.production_id.bom_id.id),
+                ('workcenter_id', '=', workorder.workcenter_id.id),
+                ('workorder_id', '=', workorder.id), ('nb_occurrences', '>', 0)
             ]
             alerts = MrpAlert.search(domain)
             if alerts:
@@ -1179,7 +1179,7 @@ class MrpAlert(models.Model):
     _description = "MRP Alert"
 
     name = fields.Char(required=True, copy=False)
-    message = fields.Char()
+    message = fields.Char(required=True)
     workorder_id = fields.Many2one('mrp.production.workcenter.line', string="WorkOrder")
     picking_type_id = fields.Many2one('stock.picking.type', string="Picking Type")
     production_id = fields.Many2one('mrp.production', string='Manufacturing Order')
