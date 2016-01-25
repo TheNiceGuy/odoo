@@ -1332,9 +1332,9 @@
                     <field name="sequence" invisible="1"/>
                 </group>
                 <group>
-                    <div class="alert alert-danger text-center" attrs="{'invisible': [('alert_message', '=', False)]}">
-                        <field name="alert_message"/>
-                        <button name="button_alert" type="object" string="X" class="close"/>
+                    <div class="alert alert-danger text-center" attrs="{'invisible': [('inv_message', '=', False)]}">
+                        <a href="#" class="close" data-dismiss="alert" aria-label="close">X</a>
+                        <field name="inv_message" style="height: 50px;"/>
                     </div>
                 </group>
             </group>
@@ -1345,7 +1345,7 @@
             <page string="Time Tracking">
                 <group>
                     <group>
-                        <field name="alert_ids" invisible="True"/>
+                        <field name="inv_message_ids" invisible="True"/>
                         <label for="date_planned_start" string="Planned Date"/>
                         <div class="o_row">
                             <field name="date_planned_start"/>
@@ -1446,7 +1446,7 @@
         <field name="name">mrp.production.workcenter.line.calendar</field>
         <field name="model">mrp.production.workcenter.line</field>
         <field name="arch" type="xml">
-            <calendar color="product" date_stop="date_finished" date_start="date_start" string="Operations">
+            <calendar color="workcenter_id" date_stop="date_planned_end" date_start="date_planned_start" string="Operations">
                 <field name="workcenter_id"/>
                 <field name="production_id"/>
             </calendar>
@@ -1902,58 +1902,70 @@
         </field>
     </record>
 
-    <!-- MRP Alert-->
-    <record id="mrp_alert_form_view" model="ir.ui.view">
-            <field name="name">mrp.alert.form</field>
-            <field name="model">mrp.alert</field>
+    <!-- Inventory Messages-->
+    <record id="inventory_message_form_view" model="ir.ui.view">
+            <field name="name">inventory.message.form</field>
+            <field name="model">inventory.message</field>
             <field name="arch" type="xml">
-                <form string="Alert">
+                <form string="Inventory Message">
                     <sheet>
                         <div class="oe_title">
-                            <h1><field name="name" placeholder="Alert"/></h1>
+                            <h1><field name="name" placeholder="Inventory Message"/></h1>
                         </div>
                         <group>
                             <group>
-                                <field name="alert_type"/>
-                                <field name="workorder_id"/>
-                                <field name="message"/>
-                                <field name="nb_occurrences" invisible="True"/>
-                                <field name="user_ids" widget="many2many_tags" readonly="True"/>
+                                <field name="picking_type_id" widget="selection"/>
+                                <field name="code" invisible="True"/>
                             </group>
                             <group>
-                                <field name="picking_type_id"/>
-                                <field name="production_id"/>
-                                <field name="workcenter_id"/>
+                                <field name="workcenter_id" attrs="{'invisible': [('code', '!=', 'mrp_operation')]}"/>
                                 <field name="product_id"/>
                                 <field name="bom_id"/>
+                                <field name="valid_until"/>
                             </group>
                         </group>
+                        <field name="message" widget="html" editor_height="450px"/>
                     </sheet>
                 </form>
             </field>
         </record>
 
-        <record id="mrp_alert_tree_view" model="ir.ui.view">
-            <field name="name">mrp.alert.tree</field>
-            <field name="model">mrp.alert</field>
+        <record id="inventory_message_tree_view" model="ir.ui.view">
+            <field name="name">inventory.message.tree</field>
+            <field name="model">inventory.message</field>
             <field name="arch" type="xml">
                 <tree>
-                    <field name="name"/>
-                    <field name="alert_type"/>
+                    <field name="valid_until" string="Validity Date"/>
+                    <field name="picking_type_id" string="Operation Type"/>
+                    <field name="product_id"/>
                     <field name="message"/>
                 </tree>
             </field>
         </record>
 
-    <record model="ir.actions.act_window" id="action_mrp_alert">
-        <field name="name">MRP Alert</field>
+        <record id="inventory_message_search_view" model="ir.ui.view">
+            <field name="name">inventory.message.search</field>
+            <field name="model">inventory.message</field>
+            <field name="arch" type="xml">
+                <search string="Search">
+                    <field name="picking_type_id"/>
+                    <group expand='0' string='Group by...'>
+                        <filter string='Picking Type' name="picktype" context="{'group_by': 'picking_type_id'}"/>
+                    </group>
+               </search>
+           </field>
+        </record>
+
+    <record model="ir.actions.act_window" id="action_inventory_message">
+        <field name="name">Inventory Messages</field>
         <field name="type">ir.actions.act_window</field>
-        <field name="res_model">mrp.alert</field>
+        <field name="res_model">inventory.message</field>
         <field name="view_type">form</field>
         <field name="view_mode">tree,form</field>
     </record>
 
-    <menuitem id="menu_mrp_alert"
-          parent="menu_mrp_configuration"
-          action="action_mrp_alert"/>
+    <menuitem id="menu_inventory_messages"
+          parent="menu_mrp_manufacturing"
+          action="action_inventory_message"
+          sequence="26"/>
 </odoo>

@@ -4,7 +4,7 @@
 from collections import OrderedDict
 from openerp import api, fields, models, _
 from openerp.exceptions import AccessError, UserError, Warning
-from openerp.tools import float_compare, float_is_zero, DEFAULT_SERVER_DATETIME_FORMAT
+from openerp.tools import float_compare, float_is_zero, DEFAULT_SERVER_DATETIME_FORMAT, html2plaintext
 import openerp.addons.decimal_precision as dp
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -990,22 +990,22 @@ class MrpProductionWorkcenterLine(models.Model):
                 workorder.check_produce_qty = True
 
     @api.depends('production_id', 'workcenter_id', 'production_id.bom_id', 'production_id.picking_type_id')
-    def _get_alert_message(self):
-        MrpAlert = self.env['mrp.alert']
+    def _get_inventory_message(self):
+        InventoryMessage = self.env['inventory.message']
         msg = ''
         for workorder in self:
-            domain = [
-                '|', '|', '|', ('picking_type_id', '=', workorder.production_id.picking_type_id.id),
-                ('bom_id', '=', workorder.production_id.bom_id.id),
-                ('workcenter_id', '=', workorder.workcenter_id.id),
-                ('workorder_id', '=', workorder.id), ('nb_occurrences', '>', 0)
-            ]
-            alerts = MrpAlert.search(domain)
-            if alerts:
-                for alert in alerts:
-                    msg += "".join(alert.message) + ','
-                workorder.alert_message = msg
-                workorder.alert_ids = [(6, 0, [alert.id for alert in alerts])]
+            if workorder.production_id or workorder.workcenter_id:
+                domain = [
+                    '|', '|', ('picking_type_id', '=', workorder.production_id.picking_type_id.id),
+                    ('bom_id', '=', workorder.production_id.bom_id.id),
+                    ('workcenter_id', '=', workorder.workcenter_id.id),
+                    ('valid_until', '>=', fields.Date.today())
+                ]
+                messages = InventoryMessage.search(domain)
+                for invmessage in messages:
+                    msg += "".join(invmessage.message)
+                workorder.inv_message = msg
+                workorder.inv_message_ids = [(6, 0, messages.ids)]
 
     name = fields.Char(string='Work Order', required=True)
     workcenter_id = fields.Many2one('mrp.workcenter', string='Work Center', required=True)
@@ -1033,8 +1033,8 @@ class MrpProductionWorkcenterLine(models.Model):
     worksheet = fields.Binary('Worksheet', related='operation_id.worksheet', readonly=True)
     show_state = fields.Boolean(compute='_get_current_state')
     check_produce_qty = fields.Boolean(compute='_check_produce_qty')
-    alert_message = fields.Char(compute="_get_alert_message")
-    alert_ids = fields.One2many('mrp.alert', compute='_get_alert_message', string='Alert')
+    inv_message = fields.Html(compute="_get_inventory_message")
+    inv_message_ids = fields.One2many('inventory.message', compute='_get_inventory_message', string='Messages')
 
     def _get_current_state(self):
         for order in self:
@@ -1042,12 +1042,6 @@ class MrpProductionWorkcenterLine(models.Model):
                 order.show_state = True
             else:
                 order.show_state = False
-
-    @api.multi
-    def button_alert(self):
-        for alert in self.alert_ids:
-            alert.user_ids = [(4, self.env.uid)]
-            alert.nb_occurrences -= 1
 
     # Plan should disappear -> created when doing production
     @api.multi
@@ -1249,21 +1243,32 @@ class MrpUnbuild(models.Model):
     #TODO: need quants defined here
 
 
-class MrpAlert(models.Model):
-    _name = "mrp.alert"
-    _description = "MRP Alert"
+class InventoryMessage(models.Model):
+    _name = "inventory.message"
+    _description = "Inventory Message"
 
-    name = fields.Char(required=True, copy=False)
-    message = fields.Char(required=True)
-    workorder_id = fields.Many2one('mrp.production.workcenter.line', string="WorkOrder")
-    picking_type_id = fields.Many2one('stock.picking.type', string="Picking Type")
-    production_id = fields.Many2one('mrp.production', string='Manufacturing Order')
+    @api.depends('message')
+    def _get_note_first_line(self):
+        for invmessage in self:
+            invmessage.name = (invmessage.message and html2plaintext(invmessage.message) or "").strip().replace('*', '').split("\n")[0]
+
+    @api.model
+    def _default_valid_until(self):
+        return datetime.today() + relativedelta(days=7)
+
+    name = fields.Text(compute='_get_note_first_line', store=True)
+    message = fields.Html(required=True)
+    picking_type_id = fields.Many2one('stock.picking.type', string="Alert on Operation")
+    code = fields.Selection(related='picking_type_id.code', store=True)
     product_id = fields.Many2one('product.product', string="Product")
     bom_id = fields.Many2one('mrp.bom', 'Bill of Material')
     workcenter_id = fields.Many2one('mrp.workcenter', string='Work Center')
-    user_ids = fields.Many2many('res.users', string='Consumed by', readonly=True)
-    nb_occurrences = fields.Integer(string='Occurrences', default=3, readonly=True)
-    alert_type = fields.Selection([('product', 'Product'), ('bom', 'Bill of Material'), ('picktype', 'Picking Type'), ('workcenter', 'Workcenter'), ('production', 'Manufacturing Order')])
+    valid_until = fields.Date(default=_default_valid_until)
+
+    @api.onchange('product_id')
+    def onchange_product_id(self):
+        if self.product_id:
+            self.bom_id = self.env['mrp.bom']._bom_find(product=self.product_id, properties=[])
 
 
 class StockScrap(models.Model):
