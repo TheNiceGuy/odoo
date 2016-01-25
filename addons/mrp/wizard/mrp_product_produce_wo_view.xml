@@ -9,17 +9,18 @@
             <field name="model">mrp.product.produce.wo</field>
             <field name="arch" type="xml">
                 <form string="Produce">
-                    <div class="o_row">
-                        <label for="product_id"/>
-                        <field name="product_id"/>
-                    </div>
-                    <div class="o_row">
-                        <label for="product_qty" />
-                        <field name="product_qty"/>
-                        <field name="product_uom_id"/>
-                    </div>
+                    <group>
+                        <group>
+                            <field name="product_id" options="{'no_open': True}"/>
+                            <label for="product_qty" />
+                            <div class="o_row">
+                                <field name="product_qty"/>
+                                <field name="product_uom_id" options="{'no_open': True}"/>
+                            </div>
+                        </group>
+                    </group>
                     <footer>
-                        <button name="do_produce" type="object" string="Confirm" class="btn-primary"/>
+                        <button name="do_produce" type="object" string="Confirm Production" class="btn-primary"/>
                         <button string="Cancel" class="btn-default" special="cancel" />
                     </footer>
                 </form>
@@ -27,7 +28,7 @@
         </record>
 
         <record id="act_mrp_product_produce_wo" model="ir.actions.act_window">
-            <field name="name">Produce</field>
+            <field name="name">Work Order Production</field>
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">mrp.product.produce.wo</field>
             <field name="view_type">form</field>
