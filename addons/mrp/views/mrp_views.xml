@@ -1057,8 +1057,10 @@
             <field name="arch" type="xml">
                 <search string="Search Production">
                     <field name="name" string="Production" filter_domain="['|',('name','ilike',self),('origin','ilike',self)]"/>
+                    <filter string="Production Orders" name="orders" domain="[('state', 'in',('confirmed', 'progress', 'planned'))]"
+                        help="Manufacturing orders which are in confirmed, planned, inprogress state."/>
                     <filter string="To Do" name="todo" domain="[('state','=','confirmed')]"
-                        help="Manufacturing Orders which are in draft state."/>
+                        help="Manufacturing Orders which are in confirmed state."/>
                     <filter string="Ready" name="ready" domain="[('state','=','ready')]"
                         help="Manufacturing Orders which are ready to start production."/>
                     <filter string="In Progress" name="inprogress" domain="[('state','=','progress')]"
@@ -1088,7 +1090,7 @@
             <field name="view_mode">tree,kanban,form,calendar,pivot,graph,gantt</field>
             <field name="view_id" eval="False"/>
             <field name="search_view_id" ref="view_mrp_production_filter"/>
-            <field name="context">{'search_default_todo': True}</field>
+            <field name="context">{'search_default_orders': True}</field>
             <field name="help" type="html">
               <p class="oe_view_nocontent_create">
                 Click to create a manufacturing order.
