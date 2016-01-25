@@ -169,6 +169,7 @@
             <field name="model">mrp.workcenter</field>
             <field name="arch" type="xml">
                 <tree string="Work Center">
+                    <field name="sequence" widget="handle"/>
                     <field name="name"/>
                     <field name="code"/>
                     <field name="company_id" groups="base.group_multi_company"/>
@@ -960,7 +961,7 @@
             <field name="arch" type="xml">
                 <tree decoration-bf="message_needaction==True" decoration-info="state in ('draft','confirmed')" decoration-danger="date_planned&lt;current_date and state not in ('done','cancel')" decoration-muted="state in ('done','cancel')" string="Manufacturing Orders">
                     <field name="message_needaction" invisible="1"/>
-                    <field name="priority" widget="handle"/> <!-- TODO: Need to convert to integer or use sequence in order too -->
+                    <field name="priority" invisible="1"/>
                     <field name="name"/>
                     <field name="date_planned"/>
                     <field name="product_id"/>

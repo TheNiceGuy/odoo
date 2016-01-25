@@ -19,7 +19,7 @@ class MrpProduction(models.Model):
     _description = 'Manufacturing Order'
     _date_name = 'date_planned'
     _inherit = ['mail.thread', 'ir.needaction_mixin']
-    _order = 'priority desc, date_planned asc'
+    _order = 'date_planned asc, priority desc'
 
     def _src_id_default(self):
         try:
