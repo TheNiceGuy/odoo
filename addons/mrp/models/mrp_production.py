@@ -758,16 +758,23 @@ class MrpProduction(models.Model):
         self.ensure_one()
         # Filter produce line, otherwise create one:
         produce_operations = self.produce_operation_ids.filtered(lambda x: x.production_state == 'confirmed' and x.product_id.id == self.product_id.id)
+        #TODO: byproducts?
+        ratio = 1.0
         if produce_operations:
             produce_operations[0].qty_done = production_qty
+            ratio = production_qty / produce_operations[0].product_qty
         else:
             self.env['stock.pack.operation'].create({'product_id': self.product_id.id,
                                                     'product_uom_id': self.product_uom_id.id,
                                                     'product_qty': production_qty,
                                                     'location_id': self.location_src_id.id,
                                                     'location_dest_id': self.location_dest_id.id})
-        #TODO: Change cpnsumed products
-        return True 
+        # TODO: Change consumed products
+        # The rounding used can be changed
+        consume_operations = self.consume_operation_ids.filtered(lambda x: x.production_state == 'confirmed')
+        for operation in consume_operations:
+            operation.qty_done = ratio * operation.product_qty
+        return True
 
     def _make_production_produce_line(self):
         procs = self.env['procurement.order'].search([('production_id', '=', self.id)])

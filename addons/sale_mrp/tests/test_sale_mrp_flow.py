@@ -279,6 +279,7 @@ class TestSaleMrpFlow(common.TransactionCase):
         produce_d = self.ProductProduce.with_context({'active_ids': [mnf_product_d.id], 'active_id': mnf_product_d.id}).create({
             'product_qty': 20})
         produce_d.do_produce()
+        mnf_product_d.post_inventory()
 
         # Check state of manufacturing order.
         self.assertEqual(mnf_product_d.state, 'confirmed', 'Manufacturing order should still be in confirmed state.')
@@ -328,6 +329,7 @@ class TestSaleMrpFlow(common.TransactionCase):
         produce_a = self.ProductProduce.with_context(
             {'active_ids': [mnf_product_a.id], 'active_id': mnf_product_a.id}).create({})
         produce_a.do_produce()
+        mnf_product_a.post_inventory()
 
         # Check state of manufacturing order product A.
         self.assertEqual(mnf_product_a.state, 'confirmed', 'Manufacturing order should still be in confirmed state.')

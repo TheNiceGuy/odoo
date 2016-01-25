@@ -53,7 +53,6 @@ class TestBomWithServiceTypeProduct(common.TransactionCase):
         context = {"lang": "en_US", "tz": False, "search_default_Current": 1, "active_model": "ir.ui.menu", "active_ids": [self.mrp_production_action.id], "active_id": self.mrp_production_action.id, }
 
         self.assertEqual(self.mrp_production_service_mo1.state, 'confirmed', "Production order should be confirmed.")
-        self.mrp_production_service_mo1.force_assign()
 
     #I produce product.
         context.update({'active_id': self.mrp_production_service_mo1.id})
