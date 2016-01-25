@@ -63,6 +63,8 @@ class MrpProductProduceWo(models.TransientModel):
         new_index = old_index + 1
         if new_index < len(workorders):
             workorder_next = self.env['mrp.production.workcenter.line'].browse(workorders[new_index])
-            if workorder_next.state == 'confirmed':
+            if workorder_next.state == 'pending':
                 workorder_next.state = 'ready'
+        if workorder.qty_produced >= workorder.qty:
+            workorder.button_finish()
         return {}

@@ -116,11 +116,12 @@ class MrpProduction(models.Model):
     @api.depends('move_created_ids2')
     def _check_to_done(self):
         produced_qty = 0
-        for produced_product in self.move_created_ids2:
-            if (produced_product.scrapped) or (produced_product.product_id.id != self.product_id.id):
-                continue
-            produced_qty += produced_product.product_qty
-        self.check_to_done = True if produced_qty >= self.product_qty else False
+        for production in self:
+            for produced_product in production.move_created_ids2:
+                if (produced_product.scrapped) or (produced_product.product_id.id != production.product_id.id):
+                    continue
+                produced_qty += produced_product.product_qty
+            production.check_to_done = True if produced_qty >= production.product_qty else False
 
     @api.multi
     @api.depends('consume_operation_ids', 'produce_operation_ids')
@@ -195,7 +196,7 @@ class MrpProduction(models.Model):
     product_tmpl_id = fields.Many2one('product.template', related='product_id.product_tmpl_id', string='Product')
     categ_id = fields.Many2one('product.category', related='product_tmpl_id.categ_id', string='Product Category', readonly=True, store=True)
     check_to_done = fields.Boolean(compute="_check_to_done", string="Check Produced Qty")
-
+    check_move_state = fields.Boolean(string="Check Move State")
 
     _sql_constraints = [
         ('name_uniq', 'unique(name, company_id)', 'Reference must be unique per Company!'),
@@ -917,7 +918,6 @@ class MrpProduction(models.Model):
                         stock_moves = stock_moves | prev_move
             if stock_moves:
                 stock_moves.action_confirm()
-            production.action_assign()
         return True
 
     @api.multi
@@ -928,7 +928,15 @@ class MrpProduction(models.Model):
         for production in self:
             production.move_line_ids.action_assign()
             production.do_prepare_partial()
+            status  = any([x.state != 'assigned' for x in production.move_line_ids])
+            if status:
+                production.check_move_state = True
         return True
+
+    @api.multi
+    def close_warning_message(self):
+        self.ensure_one()
+        self.check_move_state = False
 
 #     @api.multi
 #     def force_assign(self):
@@ -967,10 +975,11 @@ class MrpProductionWorkcenterLine(models.Model):
                 workorder.started_since = running[0]
 
     @api.multi
-    @api.depends('time_ids')
     def _compute_delay(self):
         for workorder in self:
-            workorder.delay = sum([x.duration for x in workorder.time_ids if x.state == "done"])
+            duration = sum(workorder.time_ids.filtered(lambda x: x.state == 'done').mapped('duration'))
+            workorder.delay = duration
+            workorder.delay_stop = duration
 
     @api.multi
     @api.depends('consume_operation_ids')
@@ -1019,6 +1028,7 @@ class MrpProductionWorkcenterLine(models.Model):
     date_start = fields.Datetime('Effective Start Date')
     date_finished = fields.Datetime('Effective End Date')
     delay = fields.Float('Real Duration', compute='_compute_delay', readonly=True)
+    delay_stop = fields.Float('Stop Duration', compute='_compute_delay', readonly=True)
     qty_produced = fields.Float('Qty Produced', readonly=True, help="The number of products already handled by this work order", default=0.0) #TODO: decimal precision
     operation_id = fields.Many2one('mrp.routing.workcenter', 'Operation') #Should be used differently as BoM can change in the meantime
     move_line_ids = fields.One2many('stock.move', 'workorder_id', 'Moves')
@@ -1142,17 +1152,39 @@ class MrpUnbuild(models.Model):
     _inherit = ['mail.thread']
     _order = 'id desc'
 
+    def _src_id_default(self):
+        try:
+            location = self.env.ref('stock.stock_location_stock')
+            location.check_access_rule('read')
+        except (AccessError, ValueError):
+            location = False
+        return location
+
+    def _dest_id_default(self):
+        try:
+            location = self.env.ref('stock.stock_location_stock')
+            location.check_access_rule('read')
+        except (AccessError, ValueError):
+            location = False
+        return location
+
     name = fields.Char(string='Reference', required=True, readonly=True, copy=False, default='New')
-    product_id = fields.Many2one('product.product', string="Product", required=True)
-    product_qty = fields.Float('Quantity', required=True)
-    product_uom_id = fields.Many2one('product.uom', string="Unit of Measure", required=True)
-    bom_id = fields.Many2one('mrp.bom', 'Bill of Material', required=True, domain=[('product_tmpl_id', '=', 'product_id.product_tmpl_id')])  # Add domain
-    mo_id = fields.Many2one('mrp.production', string='Manufacturing Order')
-    lot_id = fields.Many2one('stock.production.lot', 'Lot', domain="[('product_id','=', product_id)]")
-    location_id = fields.Many2one('stock.location', 'Location', required=True)
+    product_id = fields.Many2one('product.product', string="Product", required=True, states={'done': [('readonly', True)]})
+    product_qty = fields.Float('Quantity', required=True, states={'done': [('readonly', True)]})
+    product_uom_id = fields.Many2one('product.uom', string="Unit of Measure", required=True, states={'done': [('readonly', True)]})
+    bom_id = fields.Many2one('mrp.bom', 'Bill of Material', required=True, domain=[('product_tmpl_id', '=', 'product_id.product_tmpl_id')], states={'done': [('readonly', True)]})  # Add domain
+    mo_id = fields.Many2one('mrp.production', string='Manufacturing Order', states={'done': [('readonly', True)]})
+    lot_id = fields.Many2one('stock.production.lot', 'Lot', domain="[('product_id','=', product_id)]", states={'done': [('readonly', True)]})
+    location_id = fields.Many2one('stock.location', 'Location', required=True, default=_src_id_default, states={'done': [('readonly', True)]})
     consume_line_ids = fields.One2many('stock.move', 'unbuild_raw_material_id', string="Consume Product", readonly=True)
     produce_line_ids = fields.One2many('stock.move', 'unbuild_id', readonly=True)
     state = fields.Selection([('draft', 'Draft'), ('done', 'Done')], default='draft', index=True)
+    location_dest_id = fields.Many2one('stock.location', string='Destination Location', required=True, default=_dest_id_default, states={'done': [('readonly', True)]})
+
+    @api.constrains('product_qty')
+    def _check_qty(self):
+        if self.product_qty <= 0:
+            raise ValueError(_('Unbuild product quantity cannot be negative or zero!'))
 
     def _prepare_lines(self, properties=None):
         # search BoM structure and route
@@ -1181,7 +1213,7 @@ class MrpUnbuild(models.Model):
                     'product_uom_qty': line['product_uom_qty'],
                     'unbuild_id': order.id,
                     'location_id': order.product_id.property_stock_production.id,
-                    'location_dest_id': order.location_id.id,
+                    'location_dest_id': order.location_dest_id.id,
                     'origin': order.name,
                 }
                 stock_moves = stock_moves | self.env['stock.move'].create(vals)
@@ -1219,7 +1251,6 @@ class MrpUnbuild(models.Model):
         if self.mo_id:
             self.product_id = self.mo_id.product_id.id
             self.product_qty = self.mo_id.product_qty
-            self.location_id = self.mo_id.location_src_id.id
 
     @api.onchange('product_id')
     def onchange_product_id(self):
@@ -1229,21 +1260,9 @@ class MrpUnbuild(models.Model):
 
     @api.multi
     def button_unbuild(self):
+        self.consume_line_ids.action_done()
         self.produce_line_ids.action_done()
         self.write({'state': 'done'})
-
-    @api.multi
-    def button_open_move(self):
-        stock_moves = self.env['stock.move'].search([('origin', '=', self.name)])
-        return {
-            'name': _('Stock Moves'),
-            'view_type': 'form',
-            'view_mode': 'tree',
-            'res_model': 'stock.move',
-            'view_id': False,
-            'type': 'ir.actions.act_window',
-            'domain': [('id', 'in', stock_moves.ids)],
-        }
 
 
     #TODO: need quants defined here
