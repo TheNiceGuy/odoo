@@ -80,7 +80,6 @@ class TestOrderProcess(TestOrderDemo):
         self.env['procurement.order'].run_scheduler()
 
         # The production order is Waiting Goods, will force production which should set consume lines as available
-        self.mrp_production_test1.force_assign()
         self.mrp_production_test1.button_plan()
         
 
