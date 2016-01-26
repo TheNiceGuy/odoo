@@ -51,3 +51,18 @@ class MrpWorkcenter(models.Model):
         for obj in self:
             if obj.capacity <= 0.0:
                 raise ValueError(_('The capacity must be strictly positive.'))
+            
+
+class MrpWorkOrderConsume(models.Model):
+
+    _name = 'mrp.production.workcenter.line.consume'
+    
+    workorder_id = fields.Many2one('mrp.production.workcenter.line', 'Work Order')
+    product_id = fields.Many2one('product.product', 'Product')
+    product_qty = fields.Float('Quantity')
+    lot_id = fields.Many2one('stock.production.lot', 'Lot')
+    #sequence = fields.Integer('Sequence')
+    processed = fields.Boolean('Processed', default=False)
+    final_lot_id = fields.Many2one('stock.production.lot', 'Final Lot')
+    final_qty = fields.Float('Quantity')
+    

@@ -61,12 +61,23 @@ class MrpProductProduce(models.TransientModel):
         production = self._get_product_id()
         return production and self.env['product.product'].browse(production).tracking or False
 
+    @api.model
+    def _get_operation_ids(self):
+        if self._context and self._context.get("active_id"):
+            production = self.env['mrp.production'].browse(self._context['active_id'])
+        ids_list = []
+        for operation in production.consume_operation_ids:
+            if operation.product_id.tracking != 'none':
+                ids_list.append(operation.id)
+        return ids_list
+
     product_id = fields.Many2one('product.product', default=_get_product_id)
     product_qty = fields.Float(string='Quantity', digits=dp.get_precision('Product Unit of Measure'), required=True, default=_get_product_qty)
     product_uom_id = fields.Many2one('product.uom', 'Unit of Measure', default=_get_production_uom)
     lot_id = fields.Many2one('stock.production.lot', string='Lot')  # Should only be visible when it is consume and produce mode
 #    consume_lines = fields.One2many('mrp.product.produce.line', 'produce_id', string='Products Consumed')
     tracking = fields.Selection(related='product_id.tracking', selection=[('serial', 'By Unique Serial Number'), ('lot', 'By Lots'), ('none', 'No Tracking')], default=_get_track)
+    operation_ids = fields.Many2many('stock.pack.operation', 'mrp_product_produce_stock_operation_rel', string="Operations To Supply Lots", default=_get_operation_ids)
 
     @api.multi
     def do_produce(self):

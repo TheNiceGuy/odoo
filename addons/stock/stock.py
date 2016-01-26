@@ -4520,7 +4520,7 @@ class stock_pack_operation(osv.osv):
             if pack.product_id.tracking != 'none':
                 qty_done = sum([x.qty for x in pack.pack_lot_ids])
                 self.pool['stock.pack.operation'].write(cr, uid, [pack.id], {'qty_done': qty_done}, context=context)
-        return {'type': 'ir.actions.act_window_close'}
+        return True
 
     def split_lot(self, cr, uid, ids, context=None):
         context = context or {}
