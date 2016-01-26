@@ -41,6 +41,7 @@ class MrpProductProduceWo(models.TransientModel):
     product_id = fields.Many2one('product.product', readonly=True, string='Product', default=_get_product_id)
     product_qty = fields.Float(string='Quantity Manufactured', digits=dp.get_precision('Product Unit of Measure'), required=True, default=_get_product_qty)
     product_uom_id = fields.Many2one('product.uom', readonly=True, string='Unit of Measure', default=_get_uom_id)
+    operation_ids = fields.Many2many('stock.pack.operation', 'mrp_product_produce_wo_stock_operation_rel')
     #lot_id = fields.Many2one('stock.production.lot', string='Lot')  # Should only be visible when it is consume and produce mode
     #consume_lines = fields.One2many('mrp.product.produce.line', 'produce_id', string='Products Consumed')
     #tracking = fields.Selection(related='product_id.tracking', selection=[('serial', 'By Unique Serial Number'), ('lot', 'By Lots'), ('none', 'No Tracking')], default=_get_track)
@@ -51,20 +52,17 @@ class MrpProductProduceWo(models.TransientModel):
     def do_produce(self):
         self.ensure_one()
         workorder = self.env['mrp.production.workcenter.line'].browse(self._context.get('active_id'))
-        if workorder.move_line_ids:
+        prod_qty = {}
+        for move in workorder.move_line_ids:
             # Raise the qty that would have been consumed
-            pass
-            # Calculate
+            # Check qty for each product
+            prod_qty.setdefault(move.product_id.id, 0.0)
+            prod_qty[move.product_id.id] += move.product_qty
+        
+        # Now go through all operations and add them here:
+        
+        
+        workorder._add_qty(self.product_qty)
+        # Calculate
         # Add quantity to workorder
-        workorder.qty_produced += self.product_qty
-        # Next work order becomes available if not already
-        workorders = [x.id for x in workorder.production_id.workcenter_line_ids]
-        old_index = workorders.index(workorder.id)
-        new_index = old_index + 1
-        if new_index < len(workorders):
-            workorder_next = self.env['mrp.production.workcenter.line'].browse(workorders[new_index])
-            if workorder_next.state == 'pending':
-                workorder_next.state = 'ready'
-        if workorder.qty_produced >= workorder.qty:
-            workorder.button_finish()
         return {}
