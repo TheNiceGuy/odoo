@@ -30,6 +30,15 @@ class StockPackOperation(models.Model):
                 pack.state = state
             if pack.pack_lot_ids:
                 pack.lots_visible=True
+
+
+# Not necessarily good idea
+#     @api.multi
+#     @api.depends('workorder_id')
+#     def _compute_qty_todo_wo(self):
+#         for packop in self:
+#             if packop.workorder_id:
+#                 
     
     picking_id = fields.Many2one('stock.picking', 'Picking', required=False)
     production_raw_id = fields.Many2one('mrp.production', 'Manufacturing Order')
@@ -39,6 +48,7 @@ class StockPackOperation(models.Model):
     lots_visible = fields.Boolean('Lots visible', compute='_compute_lots_visible')
     state = fields.Char('State', compute='_compute_lots_visible')
     qty_reserved = fields.Float('Qty Reserved')
+    qty_todo_wo = fields.Float('Qty Done', compute='_compute_qty_todo_wo')
 
     def _prepare_values_extra_move(self, product, remaining_qty):
         """

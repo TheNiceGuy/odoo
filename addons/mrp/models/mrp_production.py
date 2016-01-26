@@ -327,11 +327,13 @@ class MrpProduction(models.Model):
             for workorder in production.workcenter_line_ids:
                 workcenter = workorder.workcenter_id
                 capacity = workcenter.capacity
-                # Check initial capacity
+                # Check initial capacity 
+                #TODO: check production_state != 'done'
                 wos = workorder_obj.search([
                     ('workcenter_id', '=', workcenter.id),
                     ('date_planned_start', '<', start_date), 
-                    ('date_planned_end', '>', start_date)])
+                    ('date_planned_end', '>', start_date),
+                    ])
                 init_cap = sum([x.capacity_planned for x in wos])
                 cr = self._cr
                 cr.execute("""SELECT date, cap FROM 
