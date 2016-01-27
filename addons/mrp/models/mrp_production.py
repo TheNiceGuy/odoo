@@ -239,21 +239,21 @@ class MrpProduction(models.Model):
 
     @api.multi
     def button_plan(self):
-        self.ensure_one()
-        self.write({'state': 'planned'})
-                # Create work orders
-        #TODO: Need to find solutions for properties
-        results, results2 = self._prepare_lines(properties=None)
         WorkOrder = self.env['mrp.production.workcenter.line']
-        firsttime = True
-        for line in results2:
-            if firsttime:
-                firsttime = False
-                line['state'] = 'ready'
-            line['production_id'] = self.id
-            WorkOrder.create(line)
-        #Let us try to plan the order
-        self._plan_workorder()
+        for order in self.filtered(lambda x: x.routing_id and x.state == 'confirmed'):
+            order.write({'state': 'planned'})
+                    # Create work orders
+            #TODO: Need to find solutions for properties
+            results, results2 = order._prepare_lines(properties=None)
+            firsttime = True
+            for line in results2:
+                if firsttime:
+                    firsttime = False
+                    line['state'] = 'ready'
+                line['production_id'] = order.id
+                WorkOrder.create(line)
+            #Let us try to plan the order
+            order._plan_workorder()
 
     @api.multi
     def button_mark_done(self):
