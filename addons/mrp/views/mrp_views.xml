@@ -895,7 +895,7 @@
                     <notebook>
                         <page string="Consumed Materials">
                             <field name="consume_operation_ids" options="{'reload_on_button': True}" context="{'default_location_id': location_src_id, 'default_location_dest_id': location_dest_id}">
-                                <tree editable="bottom" default_order="production_state,id" decoration-danger="qty_done&gt;product_qty" decoration-success="qty_done==product_qty and production_state!='done'" decoration-muted="production_state=='done'">
+                                <tree editable="bottom" delete="0" default_order="production_state,id" decoration-danger="qty_done&gt;product_qty" decoration-success="qty_done==product_qty and production_state!='done'" decoration-muted="production_state=='done'">
                                     <field name="package_id" groups="stock.group_tracking_lot" invisible="1"/>
                                     <field name="product_id" on_change="product_id_change(product_id, product_uom_id, product_qty)" required="1" attrs="{'readonly': [('fresh_record', '=', False)]}"/>
                                     <field name="fresh_record" invisible="1"/>
@@ -921,7 +921,7 @@
                         </page>
                         <page string="Finished Products">
                             <field name="produce_operation_ids" options="{'reload_on_button': True}" context="{'default_picking_id': id, 'default_location_id': location_src_id, 'default_location_dest_id': location_dest_id}">
-                                <tree editable="bottom" default_order="production_state,id" decoration-danger="qty_done&gt;product_qty" decoration-success="qty_done==product_qty and production_state!='done'" decoration-muted="production_state=='done'">
+                                <tree editable="bottom" delete="0" default_order="production_state,id" decoration-danger="qty_done&gt;product_qty" decoration-success="qty_done==product_qty and production_state!='done'" decoration-muted="production_state=='done'">
                                     <field name="package_id" groups="stock.group_tracking_lot" invisible="1"/>
                                     <field name="product_id" on_change="product_id_change(product_id, product_uom_id, product_qty)" required="1" attrs="{'readonly': [('fresh_record', '=', False)]}"/>
                                     <field name="fresh_record" invisible="1"/>
@@ -1287,7 +1287,7 @@
         <field name="name">mrp.production.workcenter.line.tree</field>
         <field name="model">mrp.production.workcenter.line</field>
         <field name="arch" type="xml">
-            <tree string="Work Orders" decoration-success="date_planned_start&gt;=current_date and state == 'ready'" decoration-muted="state in ('done','cancel')" decoration-danger="date_planned_start&lt;current_date and state in ('ready')">
+            <tree string="Work Orders" delete="0" decoration-success="date_planned_start&gt;=current_date and state == 'ready'" decoration-muted="state in ('done','cancel')" decoration-danger="date_planned_start&lt;current_date and state in ('ready')">
                 <field name="sequence" widget="handle"/>
                 <field name="name"/>
                 <field name="date_planned_start"/>
@@ -1305,7 +1305,7 @@
         <field name="name">mrp.production.workcenter.line.form</field>
         <field name="model">mrp.production.workcenter.line</field>
         <field name="arch" type="xml">
-            <form string="Production Workcenter">
+            <form string="Production Workcenter" delete="0">
             <header>
                 <button name="button_start" type="object" string="Start Working" attrs="{'invisible': [('state', '!=', 'pending')]}"/>
                 <button name="button_start" type="object" string="Start Working" attrs="{'invisible': [('state', '!=', 'ready')]}" class="btn-success"/>
@@ -1342,7 +1342,7 @@
             <page string="Work Instruction" attrs="{'invisible': [('worksheet', '=', False)]}">
                 <field name="worksheet" widget="image"/>
             </page>
-            <page string="Time Tracking">
+            <page string="Time Tracking" groups="mrp.group_mrp_manager">
                 <group>
                     <group>
                         <field name="alert_ids" invisible="True"/>
@@ -1393,7 +1393,7 @@
                     </field>
                 </group>
             </page>
-            <page string="Miscellaneous">
+            <page string="Miscellaneous" groups="mrp.group_mrp_manager">
                 <group>
                     <group>
                         
@@ -1406,7 +1406,7 @@
                 </group>
             </page>
             </notebook>
-            <div class="oe_chatter">
+            <div class="oe_chatter" groups="mrp.group_mrp_manager">
                 <field name="message_follower_ids" widget="mail_followers"/>
                 <field name="message_ids" widget="mail_thread"/>
             </div>

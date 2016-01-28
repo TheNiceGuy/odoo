@@ -486,18 +486,18 @@ class MrpProduction(models.Model):
                 ops_todo[ops.id] += quant.qty
                 ops_reserved[ops.id] += quant.qty
                 if quant.lot_id:
-                    lots = self.env['stock.pack.operation.lot'] #browse record
+                    lots = []#self.env['stock.pack.operation.lot'] #browse record
                     if packops:
                         for pack in packops:
-                            lots |= [x.id for x in pack.pack_lot_ids if x.lot_id.id == quant.lot_id.id]
+                            lots += [x.id for x in pack.pack_lot_ids if x.lot_id.id == quant.lot_id.id]
                     if lots:
                         lot = lots[0]
                     else:
-                        lot = pack_lot_obj.create({'lot_id': quant.lot_id, 'qty': 0.0, 'qty_todo': 0, 'operation_id': pack.id})
-                    lots_todo.set_default(lot.id)
+                        lot = pack_lot_obj.create({'lot_id': quant.lot_id.id, 'qty': 0.0, 'qty_todo': 0, 'operation_id': ops.id})
+                    lots_todo.setdefault(lot.id, 0.0)
                     lots_todo[lot.id] += quant.qty
-                    lots_reserved.set_default(lot.id)
-                    lots_reserved[lots.id] += quant.qty
+                    lots_reserved.setdefault(lot.id, 0.0)
+                    lots_reserved[lot.id] += quant.qty
             
             # Do something with forced quantities
             for product in forced_qties:
@@ -518,7 +518,7 @@ class MrpProduction(models.Model):
                 ops_todo.setdefault(ops.id , 0)
                 ops_todo[ops.id] += forced_qties[product]
 
-            # Now update all existing pack operations
+            # Now update all existing pack operations and pack operation lots
             for ops in ops_todo.keys() + ops_reserved.keys():
                 ops_rec = pack_operation_obj.browse(ops)
                 #TODO: reduce to one write instead
@@ -526,6 +526,9 @@ class MrpProduction(models.Model):
                     ops_rec.product_qty = ops_todo[ops]
                 if ops_reserved.get(ops):
                     ops_rec.qty_reserved = ops_reserved[ops]
+            for lot in lots_todo.keys():
+                lot_rec = pack_lot_obj.browse(lot)
+                lot_rec.qty_todo = lots_todo[lot]
 
     def do_prepare_partial_produce(self):
         pack_operation_obj = self.env['stock.pack.operation']
