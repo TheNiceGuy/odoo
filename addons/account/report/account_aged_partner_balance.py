@@ -257,7 +257,10 @@ class ReportAgedPartnerBalance(models.AbstractModel):
             account_type = ['payable','receivable']
 
         without_partner_movelines = self._get_move_lines_with_out_partner(data['form'], account_type, date_from, target_move)
+        tot_list = self.total_account
         partner_movelines = self._get_partner_move_lines(data['form'], account_type, date_from, target_move)
+        for i in range(7):
+            self.total_account[i] += tot_list[i]
         movelines = partner_movelines + without_partner_movelines
         docargs = {
             'doc_ids': self.ids,
