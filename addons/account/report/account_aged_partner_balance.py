@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import time
-from openerp import api, models
+from openerp import api, models, _
 
 
 class ReportAgedPartnerBalance(models.AbstractModel):
@@ -39,37 +39,29 @@ class ReportAgedPartnerBalance(models.AbstractModel):
         if not partner_ids:
             return []
 
-        # This dictionary will store the debit-credit for all partners, using partner_id as key.
-        totals = {}
-        cr.execute('SELECT l.partner_id, SUM(l.debit-l.credit) \
-                    FROM account_move_line AS l, account_account, account_move am \
-                    WHERE (l.account_id = account_account.id) AND (l.move_id = am.id) \
-                    AND (am.state IN %s)\
-                    AND (account_account.internal_type IN %s)\
-                    AND (l.partner_id IN %s)\
-                    AND (l.date <= %s)\
-                    AND l.company_id = %s \
-                    GROUP BY l.partner_id ', (tuple(move_state), tuple(account_type), tuple(partner_ids), date_from, user_company))
-        partner_totals = cr.fetchall()
-        for partner_id, amount in partner_totals:
-            totals[partner_id] = amount
-
-        # This dictionary will store the future or past of all partners
+        # This dictionary will store the not due amount of all partners
         future_past = {}
-        cr.execute('SELECT l.partner_id, SUM(l.debit - l.credit) \
-                FROM account_move_line AS l, account_account, account_move am \
-                WHERE (l.account_id = account_account.id) AND (l.move_id = am.id)\
-                    AND (am.state IN %s)\
-                    AND (account_account.internal_type IN %s)\
+        query = '''SELECT l.id
+                FROM account_move_line AS l, account_account, account_move am
+                WHERE (l.account_id = account_account.id) AND (l.move_id = am.id)
+                    AND (am.state IN %s)
+                    AND (account_account.internal_type IN %s)
                     AND (COALESCE(l.date_maturity,l.date) > %s)\
-                    AND (l.partner_id IN %s)\
-                    AND l.reconciled IS FALSE\
-                    AND l.date <= %s \
-                    AND l.company_id = %s \
-                    GROUP BY l.partner_id', (tuple(move_state), tuple(account_type), date_from, tuple(partner_ids), date_from, user_company))
-        partner_totals = cr.fetchall()
-        for partner_id, amount in partner_totals:
-            future_past[partner_id] = amount
+                    AND (l.partner_id IN %s)
+                AND (l.date <= %s)
+                AND l.company_id = %s'''
+        cr.execute(query, (tuple(move_state), tuple(account_type), date_from, tuple(partner_ids), date_from, user_company))
+        aml_ids = cr.fetchall()
+        aml_ids = aml_ids and [x[0] for x in aml_ids] or []
+        for line in self.env['account.move.line'].browse(aml_ids):
+            if line.partner_id.id not in future_past:
+                future_past[line.partner_id.id] = 0.0
+            line_amount = line.amount_residual
+            for partial_line in (line.matched_debit_ids + line.matched_credit_ids):
+                if partial_line.create_date > date_from + ' 23:59:59':
+                    line_amount = line.balance
+                    break
+            future_past[line.partner_id.id] += line_amount
 
         # Use one query per period and store results in history (a list variable)
         # Each history will contain: history[1] = {'<partner_id>': <partner_debit-credit>}
@@ -158,34 +150,28 @@ class ReportAgedPartnerBalance(models.AbstractModel):
         ## put a total of 0
         for i in range(7):
             self.total_account.append(0)
-        totals = {}
-        cr.execute('SELECT SUM(l.debit - l.credit) \
-                    FROM account_move_line AS l, account_account, account_move am \
-                    WHERE (l.account_id = account_account.id) AND (l.move_id = am.id)\
-                    AND (am.state IN %s)\
-                    AND (l.partner_id IS NULL)\
-                    AND (account_account.internal_type IN %s)\
-                    AND l.reconciled IS FALSE \
-                    AND (l.date <= %s)\
-                    AND l.company_id = %s\
-                    ',(tuple(move_state), tuple(account_type), date_from, user_company))
-        total_amount = cr.fetchall()
-        for amount in total_amount:
-            totals['Unknown Partner'] = amount[0]
-        future_past = {}
-        cr.execute('SELECT SUM(l.debit-l.credit) \
-                FROM account_move_line AS l, account_account, account_move am \
-                WHERE (l.account_id = account_account.id) AND (l.move_id = am.id)\
-                    AND (am.state IN %s)\
-                    AND (l.partner_id IS NULL)\
-                    AND (account_account.internal_type IN %s)\
+
+        # This dictionary will store the not due amount of the unkown partner
+        future_past = {'Unkown Partner': 0}
+        query = '''SELECT l.id
+                FROM account_move_line AS l, account_account, account_move am
+                WHERE (l.account_id = account_account.id) AND (l.move_id = am.id)
+                    AND (am.state IN %s)
+                    AND (account_account.internal_type IN %s)
                     AND (COALESCE(l.date_maturity,l.date) > %s)\
-                    AND l.reconciled IS FALSE\
-                    AND l.company_id = %s\
-                    ', (tuple(move_state), tuple(account_type), date_from, user_company))
-        total_amount = cr.fetchall()
-        for amount in total_amount:
-            future_past['Unknown Partner'] = amount[0]
+                    AND (l.partner_id IS NULL)
+                AND (l.date <= %s)
+                AND l.company_id = %s'''
+        cr.execute(query, (tuple(move_state), tuple(account_type), date_from, date_from, user_company))
+        aml_ids = cr.fetchall()
+        aml_ids = aml_ids and [x[0] for x in aml_ids] or []
+        for line in self.env['account.move.line'].browse(aml_ids):
+            line_amount = line.amount_residual
+            for partial_line in (line.matched_debit_ids + line.matched_credit_ids):
+                if partial_line.create_date > date_from + ' 23:59:59':
+                    line_amount = line.balance
+                    break
+            future_past['Unknown Partner'] += line_amount
 
         history = []
         for i in range(5):
@@ -201,21 +187,26 @@ class ReportAgedPartnerBalance(models.AbstractModel):
                 dates_query += ' < %s)'
                 args_list += (form[str(i)]['stop'],)
             args_list += (date_from, user_company)
-            cr.execute('SELECT SUM(l.debit - l.credit)\
-                    FROM account_move_line AS l, account_account, account_move am \
-                    WHERE (l.account_id = account_account.id) AND (l.move_id = am.id)\
-                        AND (am.state IN %s)\
-                        AND (account_account.internal_type IN %s)\
-                        AND (l.partner_id IS NULL)\
-                        AND l.reconciled IS FALSE\
-                        AND ' + dates_query + '\
-                    AND (l.date <= %s)\
-                    AND l.company_id = %s\
-                    GROUP BY l.partner_id', args_list)
-            total_amount = cr.fetchall()
+            query = '''SELECT l.id
+                    FROM account_move_line AS l, account_account, account_move am
+                    WHERE (l.account_id = account_account.id) AND (l.move_id = am.id)
+                        AND (am.state IN %s)
+                        AND (account_account.internal_type IN %s)
+                        AND (l.partner_id IS NULL)
+                        AND ''' + dates_query + '''
+                    AND (l.date <= %s)
+                    AND l.company_id = %s'''
+            cr.execute(query, args_list)
             history_data = {}
-            for amount in total_amount:
-                history_data['Unknown Partner'] = amount[0]
+            aml_ids = cr.fetchall()
+            aml_ids = aml_ids and [x[0] for x in aml_ids] or []
+            for line in self.env['account.move.line'].browse(aml_ids):
+                line_amount = line.amount_residual
+                for partial_line in (line.matched_debit_ids + line.matched_credit_ids):
+                    if partial_line.create_date > date_from + ' 23:59:59':
+                        line_amount = line.balance
+                        break
+                history_data['Unknown Partner'] += line_amount
             history.append(history_data)
 
         values = {}
@@ -232,13 +223,10 @@ class ReportAgedPartnerBalance(models.AbstractModel):
             self.total_account[(i)] = self.total_account[(i)] + (during and during[0] or 0)
             values[str(i)] = during and during[0] or 0.0
 
-        total = False
-        if totals.has_key( 'Unknown Partner' ):
-            total = [ totals['Unknown Partner'] ]
-        values['total'] = total and total[0] or 0.0
+        values['total'] = sum([values['direction']] + [values[str(i)] for i in range(5)])
         ## Add for total
-        self.total_account[(i+1)] = self.total_account[(i+1)] + (total and total[0] or 0.0)
-        values['name'] = 'Unknown Partner'
+        self.total_account[(i + 1)] += values['total']
+        values['name'] = _('Unknown Partner')
 
         if values['total']:
             res.append(values)
@@ -247,7 +235,7 @@ class ReportAgedPartnerBalance(models.AbstractModel):
         totals = {}
         for r in res:
             total += float(r['total'] or 0.0)
-            for i in range(5)+['direction']:
+            for i in range(5) + ['direction']:
                 totals.setdefault(str(i), 0.0)
                 totals[str(i)] += float(r[str(i)] or 0.0)
         return res
