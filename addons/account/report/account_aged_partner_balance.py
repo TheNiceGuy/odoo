@@ -152,7 +152,7 @@ class ReportAgedPartnerBalance(models.AbstractModel):
             self.total_account.append(0)
 
         # This dictionary will store the not due amount of the unkown partner
-        future_past = {'Unkown Partner': 0}
+        future_past = {'Unknown Partner': 0}
         query = '''SELECT l.id
                 FROM account_move_line AS l, account_account, account_move am
                 WHERE (l.account_id = account_account.id) AND (l.move_id = am.id)
@@ -197,7 +197,7 @@ class ReportAgedPartnerBalance(models.AbstractModel):
                     AND (l.date <= %s)
                     AND l.company_id = %s'''
             cr.execute(query, args_list)
-            history_data = {}
+            history_data = {'Unknown Partner': 0}
             aml_ids = cr.fetchall()
             aml_ids = aml_ids and [x[0] for x in aml_ids] or []
             for line in self.env['account.move.line'].browse(aml_ids):
