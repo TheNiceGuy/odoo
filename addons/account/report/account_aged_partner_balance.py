@@ -107,8 +107,6 @@ class ReportAgedPartnerBalance(models.AbstractModel):
             aml_ids = cr.fetchall()
             aml_ids = aml_ids and [x[0] for x in aml_ids] or []
             for line in self.env['account.move.line'].browse(aml_ids):
-                if line.partner_id.id not in partner_list
-
                 if line.partner_id.id not in partners_amount:
                     partners_amount[line.partner_id.id] = 0.0
                 line_amount = line.amount_residual
