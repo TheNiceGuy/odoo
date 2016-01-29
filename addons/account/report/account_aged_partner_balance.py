@@ -25,8 +25,8 @@ class ReportAgedPartnerBalance(models.AbstractModel):
             reconciled_after_date += [row[0], row[1]]
         if reconciled_after_date:
             reconciliation_clause = '(l.reconciled IS FALSE OR l.id IN %s)'
-            arg_list.append(tuple(reconciled_after_date))
-        arg_list.append(date_from, user_company)
+            arg_list += (tuple(reconciled_after_date),)
+        arg_list += (date_from, user_company)
         query = '''
             SELECT DISTINCT res_partner.id AS id, res_partner.name AS name, UPPER(res_partner.name) AS uppername
             FROM res_partner,account_move_line AS l, account_account, account_move am
