@@ -257,6 +257,7 @@ class MrpProduction(models.Model):
                 moves.write({'workorder_id': wo.id})
             for move in wo.move_line_ids:
                 self.env['mrp.production.workcenter.line.consume'].create({'product_id': move.product_id.id, 'workorder_id': wo.id})
+        
         #Let us try to plan the order
         self._plan_workorder()
 
@@ -739,7 +740,7 @@ class MrpProduction(models.Model):
         #TODO: byproducts?
         ratio = 1.0
         if produce_operations:
-            produce_operations[0].qty_done = production_qty
+            produce_operations[0].qty_done += production_qty
             ratio = production_qty / produce_operations[0].product_qty
         else:
             self.env['stock.pack.operation'].create({'product_id': self.product_id.id,
@@ -751,7 +752,7 @@ class MrpProduction(models.Model):
         # The rounding used can be changed
         consume_operations = self.consume_operation_ids.filtered(lambda x: x.production_state == 'confirmed')
         for operation in consume_operations:
-            operation.qty_done = ratio * operation.product_qty
+            operation.qty_done += ratio * operation.product_qty
         return True
 
     def _make_production_produce_line(self):
@@ -1014,20 +1015,72 @@ class MrpProductionWorkcenterLine(models.Model):
     alert_message = fields.Char(compute="_get_alert_message")
     alert_ids = fields.One2many('mrp.alert', compute='_get_alert_message', string='Alert')
     consume_line_ids = fields.One2many('mrp.production.workcenter.line.consume', 'workorder_id', 'Consume Lines')
-    final_lot_id = fields.Many2one('stock.production.lot', 'Current Final Lot Working On') # Might need to become separate object when doing multiple in parallel
+    active_consume_line_ids = fields.One2many('mrp.production.workcenter.line.consume', 'workorder_id', 'Active Consume Lines', domain=[('processed', '=', False)])
+    final_lot_id = fields.Many2one('stock.production.lot', 'Current Final Lot Working On', domain="[('product_id', '=', product_id)]") # Might need to become separate object when doing multiple in parallel
     qty_producing = fields.Float('Qty Producing')
 
+
+    def _add_qty(self, product_qty):
+        '''
+            Adds qty to workorder and checks if the next workorder should be put to ready
+        '''
+        self.ensure_one()
+        self.qty_produced += product_qty
+        # Next work order becomes available if not already
+        workorders = [x.id for x in self.production_id.workcenter_line_ids]
+        old_index = workorders.index(self.id)
+        new_index = old_index + 1
+        if new_index < len(workorders):
+            workorder_next = self.env['mrp.production.workcenter.line'].browse(workorders[new_index])
+            if workorder_next.state == 'confirmed':
+                workorder_next.state = 'ready'
+
+    @api.multi
     def record_production(self):
         self.ensure_one()
         if not self.consume_line_ids:
             #TODO: should return action
-            return
-        for consume in self.consume_line_ids:
-            # Add quantities to pack opeations in production order
+            data_obj = self.env['ir.model.data']
+            action = data_obj.xmlid_to_res_id('mrp.act_mrp_product_produce_wo')
+            act_obj = self.env['ir.actions.act_window']
+            result = act_obj.read([action])[0]
+            return result
             
+        if self.qty_producing <= 0:
+            raise UserError(_('You should specify a positive quantity you are producing'))
+        for consume in self.consume_line_ids:
+            # Add quantities to pack operations in production order
             consume.processed = True
-
-
+            consume_ops = self.production_id.consume_operation_ids.filtered(lambda x: x.product_id.id == consume.product_id.id)
+            if not consume_ops:
+                # Need to see, we could create it on the fly too
+                raise UserError('You deleted something')
+            if not consume.lot_id: #maybe need to check tracking of the different products
+                consume_ops[0].qty_done += consume.product_qty
+            else:
+                pack_lots = []
+                for ops in consume_ops:
+                    # Find ops 
+                    pack_lots += [x for x in ops.pack_lot_ids if x.lot_id.id == consume.lot_id.id]
+                if pack_lots:
+                    pack_lots[0].qty += consume.product_qty
+                    pack_lots[0].operation_id.qty_done += consume.product_qty
+                    consume.operation_id = pack_lots[0].operation_id.id
+                    consume.final_lot_id = self.final_lot_id
+                    consume.final_qty = self.qty_producing
+                else:
+                    oplot = self.env['stock.pack.operation.lot'].create({'operation_id': consume_ops[0].id, 'lot_id': consume.lot_id.id, 'qty': consume.product_qty})
+                    consume.operation_id = consume_ops[0].id
+                    consume.final_lot_id = self.final_lot_id
+                    consume.final_qty = self.qty_producing
+        #Recreate consume lines
+        for move in self.move_line_ids:
+            self.env['mrp.production.workcenter.line.consume'].create({'product_id': move.product_id.id, 'workorder_id': self.id})
+        #Augment qty
+        self._add_qty(self.qty_producing)
+        #Resetting qty (we assume lot stays the same more or less)
+        self.qty_producing = 0.0
+        
     def _get_current_state(self):
         for order in self:
             if order.time_ids.filtered(lambda x : x.user_id.id == self.env.user.id and x.state == 'running'):

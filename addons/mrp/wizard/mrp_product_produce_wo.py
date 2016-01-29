@@ -62,15 +62,8 @@ class MrpProductProduceWo(models.TransientModel):
         # Now go through all operations and add them here:
         
         
+        workorder._add_qty(self.product_qty)
         # Calculate
         # Add quantity to workorder
-        workorder.qty_produced += self.product_qty
-        # Next work order becomes available if not already
-        workorders = [x.id for x in workorder.production_id.workcenter_line_ids]
-        old_index = workorders.index(workorder.id)
-        new_index = old_index + 1
-        if new_index < len(workorders):
-            workorder_next = self.env['mrp.production.workcenter.line'].browse(workorders[new_index])
-            if workorder_next.state == 'confirmed':
-                workorder_next.state = 'ready'
+        
         return {}

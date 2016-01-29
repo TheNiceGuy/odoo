@@ -52,7 +52,6 @@ class MrpWorkcenter(models.Model):
                 raise ValueError(_('The capacity must be strictly positive.'))
             
 
-            
 class MrpWorkOrderConsume(models.Model):
 
     _name = 'mrp.production.workcenter.line.consume'
@@ -65,5 +64,4 @@ class MrpWorkOrderConsume(models.Model):
     processed = fields.Boolean('Processed', default=False)
     final_lot_id = fields.Many2one('stock.production.lot', 'Final Lot')
     final_qty = fields.Float('Quantity')
-    
     
