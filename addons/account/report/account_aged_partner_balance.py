@@ -16,18 +16,30 @@ class ReportAgedPartnerBalance(models.AbstractModel):
         move_state = ['draft', 'posted']
         if target_move == 'posted':
             move_state = ['posted']
-        cr.execute('SELECT DISTINCT res_partner.id AS id,\
-                    res_partner.name AS name \
-                FROM res_partner,account_move_line AS l, account_account, account_move am\
-                WHERE (l.account_id = account_account.id) \
-                    AND (l.move_id = am.id) \
-                    AND (am.state IN %s)\
-                    AND (account_account.internal_type IN %s)\
-                    AND l.reconciled IS FALSE\
-                    AND (l.partner_id = res_partner.id)\
-                    AND (l.date <= %s)\
-                    AND l.company_id = %s \
-                ORDER BY res_partner.name', (tuple(move_state), tuple(account_type), date_from, user_company))
+        arg_list = (tuple(move_state), tuple(account_type))
+        #build the reconciliation clause to see what partner needs to be printed
+        reconciliation_clause = '(l.reconciled IS FALSE)'
+        cr.execute('SELECT debit_move_id, credit_move_id FROM account_partial_reconcile where create_date > %s', (date_from,))
+        reconciled_after_date = []
+        for row in cr.fetchall():
+            reconciled_after_date += [row[0], row[1]]
+        if reconciled_after_date:
+            reconciliation_clause = '(l.reconciled IS FALSE OR l.id IN %s)'
+            arg_list.append(tuple(reconciled_after_date))
+        arg_list.append(date_from, user_company)
+        query = '''
+            SELECT DISTINCT res_partner.id AS id, res_partner.name AS name, UPPER(res_partner.name) AS uppername
+            FROM res_partner,account_move_line AS l, account_account, account_move am
+            WHERE (l.account_id = account_account.id)
+                AND (l.move_id = am.id)
+                AND (am.state IN %s)
+                AND (account_account.internal_type IN %s)
+                AND ''' + reconciliation_clause + '''
+                AND (l.partner_id = res_partner.id)
+                AND (l.date <= %s)
+                AND l.company_id = %s
+            ORDER BY UPPER(res_partner.name)'''
+        cr.execute(query, arg_list)
 
         partners = cr.dictfetchall()
         # put a total of 0
@@ -95,6 +107,8 @@ class ReportAgedPartnerBalance(models.AbstractModel):
             aml_ids = cr.fetchall()
             aml_ids = aml_ids and [x[0] for x in aml_ids] or []
             for line in self.env['account.move.line'].browse(aml_ids):
+                if line.partner_id.id not in partner_list
+
                 if line.partner_id.id not in partners_amount:
                     partners_amount[line.partner_id.id] = 0.0
                 line_amount = line.amount_residual
