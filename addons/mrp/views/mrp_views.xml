@@ -1339,6 +1339,20 @@
                 </group>
             </group>
             <notebook>
+            <page string="Work Instruction Consumption" attrs="{'invisible': [('consume_line_ids', '=', [])]}">
+                <group>
+                    <field name="final_lot_id"/>
+                    <field name="qty_producing"/>
+                    <field name="consume_line_ids" domain="[('processed', '=', False)]">
+                        <tree>
+                            <field name="product_id"/>
+                            <field name="processed" invisible="1"/>
+                            <field name="lot_id"/>
+                            <field name="product_qty"/>
+                        </tree>
+                    </field>
+                </group>
+            </page>
             <page string="Work Instruction" attrs="{'invisible': [('worksheet', '=', False)]}">
                 <field name="worksheet" widget="image"/>
             </page>

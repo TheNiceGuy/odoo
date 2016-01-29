@@ -251,7 +251,12 @@ class MrpProduction(models.Model):
                 firsttime = False
                 line['state'] = 'ready'
             line['production_id'] = self.id
-            WorkOrder.create(line)
+            wo = WorkOrder.create(line)
+            moves = self.env['stock.move'].search([('operation_id','=', wo.operation_id.id), ('raw_material_production_id', '=', self.id)])
+            if moves:
+                moves.write({'workorder_id': wo.id})
+            for move in wo.move_line_ids:
+                self.env['mrp.production.workcenter.line.consume'].create({'product_id': move.product_id.id, 'workorder_id': wo.id})
         #Let us try to plan the order
         self._plan_workorder()
 
@@ -377,38 +382,6 @@ class MrpProduction(models.Model):
                                  'date_planned_end': to_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT),
                                  'capacity_planned': from_capacity})
                 start_date = to_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)
-
-
-    @api.multi
-    def _compute_planned_workcenter(self, mini=False):
-        """ Computes planned and finished dates for work order.
-        @return: Calculated date
-        """
-        dt_end = datetime.now()
-        context = self.env.context or {}
-        for po in self: #Maybe need to make difference between different pos
-            dt_end = po.date_planned_start and datetime.strptime(po.date_planned_start, '%Y-%m-%d %H:%M:%S') or datetime.now()
-            old = None
-            for wci in range(len(po.workcenter_line_ids)):
-                wc  = po.workcenter_line_ids[wci]
-                if (old is None) or (wc.sequence>old):
-                    dt = dt_end
-                if context.get('__last_update'):
-                    del context['__last_update']
-                if (wc.date_planned_start < dt.strftime('%Y-%m-%d %H:%M:%S')) or mini:
-                    wc.write({
-                        'date_planned_start': dt.strftime('%Y-%m-%d %H:%M:%S')
-                    })
-                    i = wc.workcenter_id.calendar_id.interval_get(dt, wc.hour)
-                    if i:
-                        i = i[0]
-                        dt_end = max(dt_end, i[-1][1])
-                else:
-                    dt_end = datetime.strptime(wc.date_planned_end, '%Y-%m-%d %H:%M:%S')
-                if dt_end:
-                    wc.write({'date_planned_end': dt_end.strftime('%Y-%m-%d %H:%M:%S')})
-                old = wc.sequence or 0
-        return dt_end
 
     @api.multi
     def action_cancel(self):
@@ -1040,6 +1013,20 @@ class MrpProductionWorkcenterLine(models.Model):
     check_produce_qty = fields.Boolean(compute='_check_produce_qty')
     alert_message = fields.Char(compute="_get_alert_message")
     alert_ids = fields.One2many('mrp.alert', compute='_get_alert_message', string='Alert')
+    consume_line_ids = fields.One2many('mrp.production.workcenter.line.consume', 'workorder_id', 'Consume Lines')
+    final_lot_id = fields.Many2one('stock.production.lot', 'Current Final Lot Working On') # Might need to become separate object when doing multiple in parallel
+    qty_producing = fields.Float('Qty Producing')
+
+    def record_production(self):
+        self.ensure_one()
+        if not self.consume_line_ids:
+            #TODO: should return action
+            return
+        for consume in self.consume_line_ids:
+            # Add quantities to pack opeations in production order
+            
+            consume.processed = True
+
 
     def _get_current_state(self):
         for order in self:
@@ -1249,7 +1236,6 @@ class MrpUnbuild(models.Model):
             'type': 'ir.actions.act_window',
             'domain': [('id', 'in', stock_moves.ids)],
         }
-
 
     #TODO: need quants defined here
 
