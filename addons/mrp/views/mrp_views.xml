@@ -854,9 +854,10 @@
                     <button name="action_assign" attrs="{'invisible': [('availability', '=', 'assigned')]}" string="Check availability" type="object" class="oe_highlight"/>
                     <button name="button_plan" attrs="{'invisible': ['|', ('state', '!=', 'confirmed'), ('routing_id', '=', False)]}" type="object" string="Plan"/>
                     <button name="%(act_mrp_product_produce)d" attrs="{'invisible': ['|', ('state', '=', 'planned'), ('availability', '=', 'none')]}" string="Produce" type="action"/>
-                    <button name="post_inventory" string="Post Inventory" type="object" attrs="{'invisible': [('post_visible', '=', False)]}" class="oe_highlight"/>
+                    <button name="post_inventory" string="Post Inventory" type="object" attrs="{'invisible': [('post_visible', '=', False)]}"/>
                     <field name="post_visible" invisible="1"/>
                     <button name="button_scrap" type="object" string="Scrap" attrs="{'invisible': [('state', 'in', ('cancel'))]}"/>
+                    <field name="warning_message" nolabel="1" class="label label-danger" attrs="{'invisible': ['|',('availability', 'in', ('assigned', 'partially_available')), ('state', '!=', 'confirmed')]}"/>
                     <field name="state" widget="statusbar" statusbar_visible="confirmed,progress,done" statusbar_colors='{"confirmed":"blue"}'/>
                 </header>
                 <sheet>
@@ -870,12 +871,6 @@
                         <button name="%(action_mrp_production_moves)d" type="action" string="Inventory Moves" class="oe_stat_button" icon="fa-arrows-v" attrs="{'invisible': [('state', 'not in', ('progress', 'done'))]}"/>
                         <field name="workcenter_line_ids" invisible="1"/>
                     </div>
-                    <div class="alert alert-warning text-center" attrs="{'invisible': ['|', ('availability', '=', 'assigned'), ('check_move_state', '=', False)]}">
-                        <button class="close" name="close_warning_message" type="object" string="X"/>
-                        <div>
-                            <strong>Raw materials are not all available, check the quantity reserved in the buttom of the manufacturing order.</strong>
-                        </div>
-                    </div>
                     <div class="oe_title">
                         <h1><field name="name" placeholder="Manufacturing Reference" nolabel="1"/></h1>
                     </div>
@@ -883,7 +878,6 @@
                         <group>
                             <field name="availability" invisible="1"/>
                             <field name="check_to_done" invisible="1"/>
-                            <field name="check_move_state" invisible="1"/>
                             <field name="product_id" domain="[('bom_ids','!=',False),('bom_ids.bom_type','!=','phantom')]" context='{"default_type": "product"}'/>
                             <field name="product_tmpl_id" invisible="1"/>
                             <label for="product_qty"/>
@@ -1768,7 +1762,7 @@
                     <sheet>
                         <div class="oe_button_box" name="button_box">
                             <button class="oe_stat_button" name="%(action_mrp_unbuild_moves)d"
-                                    string="Moves" type="action" icon="fa-arrows-v"/>
+                                    string="Moves" type="action" icon="fa-arrows-v" states="done"/>
                         </div>
                         <div class="oe_title">
                             <h1><field name="name" placeholder="Unbuild Order" nolabel="1"/></h1>
@@ -1837,7 +1831,8 @@
           <p class="oe_view_nocontent_create">
             Click to start a new Unbuild Order
           </p><p>
-            Unbuild orders can be used to unbuild stuff you make. 
+            An unbuild order will do a reverse bill of materials, unbuilding products
+            you produced, but you can also use it to unbulid products you purchased.
           </p>
         </field>
     </record>
@@ -1992,9 +1987,10 @@
             <field name="arch" type="xml">
                 <tree>
                     <field name="valid_until" string="Validity Date"/>
-                    <field name="picking_type_id" string="Operation Type"/>
+                    <field name="create_uid" string="Auther"/>
+                    <field name="picking_type_id" string="Operation"/>
                     <field name="product_id"/>
-                    <field name="message"/>
+                    <field name="name" string="Message"/>
                 </tree>
             </field>
         </record>
@@ -2005,6 +2001,8 @@
             <field name="arch" type="xml">
                 <search string="Search">
                     <field name="picking_type_id"/>
+                    <filter string="Active Messages" name="active_message" domain="[('valid_until','&gt;=', current_date)]"/>
+                    <filter string="My Messages" name="my_messages" domain="[('create_uid', '=', uid)]"/>
                     <group expand='0' string='Group by...'>
                         <filter string='Picking Type' name="picktype" context="{'group_by': 'picking_type_id'}"/>
                     </group>
@@ -2018,6 +2016,18 @@
         <field name="res_model">inventory.message</field>
         <field name="view_type">form</field>
         <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="oe_view_nocontent_create">
+                Click to create a new message.
+            </p><p>
+                Use messages to warn manufacturing or inventory people about any change in the
+                products, process, or actions to take care of. (e.g; Warning, the bill of material changed,
+                check the details in new worksheet)
+            </p><p>
+                Messages can be configurred to appear during any operation: receptions, delivery orders,
+                manufacturing orders, work orders, etc.
+            </p>
+        </field>
     </record>
 
     <menuitem id="menu_inventory_messages"
