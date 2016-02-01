@@ -2,6 +2,7 @@
 
 import time
 from openerp import api, models, _
+from openerp.tools import float_is_zero
 
 
 class ReportAgedPartnerBalance(models.AbstractModel):
@@ -68,11 +69,15 @@ class ReportAgedPartnerBalance(models.AbstractModel):
         for line in self.env['account.move.line'].browse(aml_ids):
             if line.partner_id.id not in future_past:
                 future_past[line.partner_id.id] = 0.0
-            line_amount = line.amount_residual
-            for partial_line in (line.matched_debit_ids + line.matched_credit_ids):
-                if partial_line.create_date > date_from + ' 23:59:59':
-                    line_amount = line.balance
-                    break
+            line_amount = line.balance
+            if line.balance == 0:
+                continue
+            for partial_line in line.matched_debit_ids:
+                if partial_line.create_date[:10] <= date_from:
+                    line_amount += partial_line.amount
+            for partial_line in line.matched_credit_ids:
+                if partial_line.create_date[:10] <= date_from:
+                    line_amount -= partial_line.amount
             future_past[line.partner_id.id] += line_amount
 
         # Use one query per period and store results in history (a list variable)
@@ -109,12 +114,16 @@ class ReportAgedPartnerBalance(models.AbstractModel):
             for line in self.env['account.move.line'].browse(aml_ids):
                 if line.partner_id.id not in partners_amount:
                     partners_amount[line.partner_id.id] = 0.0
-                line_amount = line.amount_residual
-                for partial_line in (line.matched_debit_ids + line.matched_credit_ids):
-                    if partial_line.create_date > date_from + ' 23:59:59':
-                        line_amount = line.balance
-                        break
-                
+                line_amount = line.balance
+                if line.balance == 0:
+                    continue
+                for partial_line in line.matched_debit_ids:
+                    if partial_line.create_date[:10] <= date_from:
+                        line_amount += partial_line.amount
+                for partial_line in line.matched_credit_ids:
+                    if partial_line.create_date[:10] <= date_from:
+                        line_amount -= partial_line.amount
+
                 partners_amount[line.partner_id.id] += line_amount
             history.append(partners_amount)
 
@@ -122,31 +131,36 @@ class ReportAgedPartnerBalance(models.AbstractModel):
             values = {}
             # Query here is replaced by one query which gets the all the partners their 'after' value
             after = False
-            if future_past.has_key(partner['id']): # Making sure this partner actually was found by the query
-                after = [ future_past[partner['id']] ]
+            if partner['id'] in future_past:  # Making sure this partner actually was found by the query
+                after = [future_past[partner['id']]]
 
             self.total_account[6] = self.total_account[6] + (after and after[0] or 0.0)
             values['direction'] = after and after[0] or 0.0
+            if not float_is_zero(values['direction'], precision_rounding=self.env.user.company_id.currency_id.rounding):
+                at_least_one_amount = True
 
             for i in range(5):
                 during = False
-                if history[i].has_key(partner['id']):
-                    during = [ history[i][partner['id']] ]
+                if partner['id'] in history[i]:
+                    during = [history[i][partner['id']]]
                 # Adding counter
                 self.total_account[(i)] = self.total_account[(i)] + (during and during[0] or 0)
                 values[str(i)] = during and during[0] or 0.0
+                if not float_is_zero(values[str(i)], precision_rounding=self.env.user.company_id.currency_id.rounding):
+                    at_least_one_amount = True
             values['total'] = sum([values['direction']] + [values[str(i)] for i in range(5)])
             ## Add for total
             self.total_account[(i + 1)] += values['total']
             values['name'] = partner['name']
 
-            res.append(values)
+            if at_least_one_amount:
+                res.append(values)
 
         total = 0.0
         totals = {}
         for r in res:
             total += float(r['total'] or 0.0)
-            for i in range(5)+['direction']:
+            for i in range(5) + ['direction']:
                 totals.setdefault(str(i), 0.0)
                 totals[str(i)] += float(r[str(i)] or 0.0)
         return res
@@ -163,7 +177,7 @@ class ReportAgedPartnerBalance(models.AbstractModel):
         for i in range(7):
             self.total_account.append(0)
 
-        # This dictionary will store the not due amount of the unkown partner
+        # This dictionary will store the not due amount of the unknown partner
         future_past = {'Unknown Partner': 0}
         query = '''SELECT l.id
                 FROM account_move_line AS l, account_account, account_move am
@@ -178,11 +192,15 @@ class ReportAgedPartnerBalance(models.AbstractModel):
         aml_ids = cr.fetchall()
         aml_ids = aml_ids and [x[0] for x in aml_ids] or []
         for line in self.env['account.move.line'].browse(aml_ids):
-            line_amount = line.amount_residual
-            for partial_line in (line.matched_debit_ids + line.matched_credit_ids):
-                if partial_line.create_date > date_from + ' 23:59:59':
-                    line_amount = line.balance
-                    break
+            line_amount = line.balance
+            if line.balance == 0:
+                continue
+            for partial_line in line.matched_debit_ids:
+                if partial_line.create_date[:10] <= date_from:
+                    line_amount += partial_line.amount
+            for partial_line in line.matched_credit_ids:
+                if partial_line.create_date[:10] <= date_from:
+                    line_amount -= partial_line.amount
             future_past['Unknown Partner'] += line_amount
 
         history = []
@@ -213,25 +231,29 @@ class ReportAgedPartnerBalance(models.AbstractModel):
             aml_ids = cr.fetchall()
             aml_ids = aml_ids and [x[0] for x in aml_ids] or []
             for line in self.env['account.move.line'].browse(aml_ids):
-                line_amount = line.amount_residual
-                for partial_line in (line.matched_debit_ids + line.matched_credit_ids):
-                    if partial_line.create_date > date_from + ' 23:59:59':
-                        line_amount = line.balance
-                        break
+                line_amount = line.balance
+                if line.balance == 0:
+                    continue
+                for partial_line in line.matched_debit_ids:
+                    if partial_line.create_date[:10] <= date_from:
+                        line_amount += partial_line.amount
+                for partial_line in line.matched_credit_ids:
+                    if partial_line.create_date[:10] <= date_from:
+                        line_amount -= partial_line.amount
                 history_data['Unknown Partner'] += line_amount
             history.append(history_data)
 
         values = {}
         after = False
-        if future_past.has_key('Unknown Partner'):
-            after = [ future_past['Unknown Partner'] ]
+        if 'Unknown Partner' in future_past:
+            after = [future_past['Unknown Partner']]
         self.total_account[6] = self.total_account[6] + (after and after[0] or 0.0)
         values['direction'] = after and after[0] or 0.0
 
         for i in range(5):
             during = False
-            if history[i].has_key('Unknown Partner'):
-                during = [ history[i]['Unknown Partner'] ]
+            if 'Unknown Partner' in history[i]:
+                during = [history[i]['Unknown Partner']]
             self.total_account[(i)] = self.total_account[(i)] + (during and during[0] or 0)
             values[str(i)] = during and during[0] or 0.0
 
