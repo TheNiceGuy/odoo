@@ -196,7 +196,7 @@ class MrpProduction(models.Model):
     product_tmpl_id = fields.Many2one('product.template', related='product_id.product_tmpl_id', string='Product')
     categ_id = fields.Many2one('product.category', related='product_tmpl_id.categ_id', string='Product Category', readonly=True, store=True)
     check_to_done = fields.Boolean(compute="_check_to_done", string="Check Produced Qty")
-    check_move_state = fields.Boolean(string="Check Move State")
+    warning_message = fields.Char(default='Raw material not available!', readonly=True)
 
     _sql_constraints = [
         ('name_uniq', 'unique(name, company_id)', 'Reference must be unique per Company!'),
@@ -910,11 +910,6 @@ class MrpProduction(models.Model):
             if status:
                 production.check_move_state = True
         return True
-
-    @api.multi
-    def close_warning_message(self):
-        self.ensure_one()
-        self.check_move_state = False
 
 #     @api.multi
 #     def force_assign(self):
