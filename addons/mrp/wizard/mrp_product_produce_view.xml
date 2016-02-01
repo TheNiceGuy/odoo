@@ -23,13 +23,13 @@
                                         attrs="{'required': [('tracking', '!=', 'none')]}"
                                         groups="stock.group_production_lot"/>
                         </group>
-                        <field name="operation_ids">
+                        <field name="operation_ids" nolabel="1">
                             <tree>
                                 <field name="package_id" groups="stock.group_tracking_lot" invisible="1"/>
-                                    <field name="product_id" on_change="product_id_change(product_id, product_uom_id, product_qty)" required="1" attrs="{'readonly': [('fresh_record', '=', False)]}"/>
+                                    <field name="product_id" on_change="product_id_change(product_id, product_uom_id, product_qty)" required="1" attrs="{'readonly': [('fresh_record', '=', False)]}" string="Products Requiring a Lot Number"/>
                                     <field name="fresh_record" invisible="1"/>
-                                    <field name="product_uom_id" attrs="{'readonly': [('fresh_record', '=', False)]}" groups="product.group_uom"/>
                                     <field name="lots_visible" invisible="1"/>
+                                    <field name="product_uom_id" attrs="{'readonly': [('fresh_record', '=', False)], 'invisible': [('lots_visible', '=', False)]}" groups="product.group_uom"/>
                                     <field name="owner_id" groups="stock.group_tracking_owner"/>
                                     <field name="location_id" domain="[('id', 'child_of', parent.location_id)]" invisible="1"/>
                                     <field name="location_dest_id" domain="[('id', 'child_of', parent.location_dest_id)]" invisible="1"/>
@@ -45,7 +45,7 @@
                         </field>
                     </group>
                     <footer>
-                        <button name="do_produce" type="object" string="Consume &amp; Produce" class="btn-primary"/>
+                        <button name="do_produce" type="object" string="Record Production" class="btn-primary"/>
                         <button string="Cancel" class="btn-default" special="cancel" />
                     </footer>
                 </form>

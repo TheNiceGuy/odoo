@@ -1050,13 +1050,8 @@ class MrpProductionWorkcenterLine(models.Model):
     def record_production(self):
         self.ensure_one()
         if not self.consume_line_ids:
-            #TODO: should return action
-            data_obj = self.env['ir.model.data']
-            action = data_obj.xmlid_to_res_id('mrp.act_mrp_product_produce_wo')
-            act_obj = self.env['ir.actions.act_window']
-            result = act_obj.read([action])[0]
-            return result
-            
+            return self.env.ref('mrp.act_mrp_product_produce_wo').read()[0]
+
         if self.qty_producing <= 0:
             raise UserError(_('You should specify a positive quantity you are producing'))
         for consume in self.consume_line_ids:
@@ -1335,12 +1330,12 @@ class InventoryMessage(models.Model):
 
     name = fields.Text(compute='_get_note_first_line', store=True)
     message = fields.Html(required=True)
-    picking_type_id = fields.Many2one('stock.picking.type', string="Alert on Operation")
+    picking_type_id = fields.Many2one('stock.picking.type', string="Alert on Operation", required=True)
     code = fields.Selection(related='picking_type_id.code', store=True)
-    product_id = fields.Many2one('product.product', string="Product")
+    product_id = fields.Many2one('product.product', string="Product", required=True)
     bom_id = fields.Many2one('mrp.bom', 'Bill of Material')
     workcenter_id = fields.Many2one('mrp.workcenter', string='Work Center')
-    valid_until = fields.Date(default=_default_valid_until)
+    valid_until = fields.Date(default=_default_valid_until, required=True)
 
     @api.onchange('product_id')
     def onchange_product_id(self):
