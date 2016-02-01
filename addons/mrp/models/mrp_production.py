@@ -196,7 +196,7 @@ class MrpProduction(models.Model):
     product_tmpl_id = fields.Many2one('product.template', related='product_id.product_tmpl_id', string='Product')
     categ_id = fields.Many2one('product.category', related='product_tmpl_id.categ_id', string='Product Category', readonly=True, store=True)
     check_to_done = fields.Boolean(compute="_check_to_done", string="Check Produced Qty")
-    check_move_state = fields.Boolean(string="Check Move State")
+    warning_message = fields.Char(default='Raw materials not available!', readonly=True)
 
     _sql_constraints = [
         ('name_uniq', 'unique(name, company_id)', 'Reference must be unique per Company!'),
@@ -911,11 +911,6 @@ class MrpProduction(models.Model):
                 production.check_move_state = True
         return True
 
-    @api.multi
-    def close_warning_message(self):
-        self.ensure_one()
-        self.check_move_state = False
-
 #     @api.multi
 #     def force_assign(self):
 #         for order in self:
@@ -981,13 +976,16 @@ class MrpProductionWorkcenterLine(models.Model):
         InventoryMessage = self.env['inventory.message']
         msg = ''
         for workorder in self:
-            if workorder.production_id or workorder.workcenter_id:
-                domain = [
-                    '|', '|', ('picking_type_id', '=', workorder.production_id.picking_type_id.id),
+            domain = []
+            if workorder.production_id:
+                domain += [
+                    '|', ('picking_type_id', '=', workorder.production_id.picking_type_id.id),
                     ('bom_id', '=', workorder.production_id.bom_id.id),
-                    ('workcenter_id', '=', workorder.workcenter_id.id),
-                    ('valid_until', '>=', fields.Date.today())
                 ]
+            if workorder.workcenter_id:
+                domain += [('workcenter_id', '=', workorder.workcenter_id.id)]
+            if domain:
+                domain += [('valid_until', '>=', fields.Date.today())]
                 messages = InventoryMessage.search(domain)
                 for invmessage in messages:
                     msg += "".join(invmessage.message)
@@ -1050,13 +1048,8 @@ class MrpProductionWorkcenterLine(models.Model):
     def record_production(self):
         self.ensure_one()
         if not self.consume_line_ids:
-            #TODO: should return action
-            data_obj = self.env['ir.model.data']
-            action = data_obj.xmlid_to_res_id('mrp.act_mrp_product_produce_wo')
-            act_obj = self.env['ir.actions.act_window']
-            result = act_obj.read([action])[0]
-            return result
-            
+            return self.env.ref('mrp.act_mrp_product_produce_wo').read()[0]
+
         if self.qty_producing <= 0:
             raise UserError(_('You should specify a positive quantity you are producing'))
         for consume in self.consume_line_ids:
@@ -1335,12 +1328,12 @@ class InventoryMessage(models.Model):
 
     name = fields.Text(compute='_get_note_first_line', store=True)
     message = fields.Html(required=True)
-    picking_type_id = fields.Many2one('stock.picking.type', string="Alert on Operation")
+    picking_type_id = fields.Many2one('stock.picking.type', string="Alert on Operation", required=True)
     code = fields.Selection(related='picking_type_id.code', store=True)
-    product_id = fields.Many2one('product.product', string="Product")
+    product_id = fields.Many2one('product.product', string="Product", required=True)
     bom_id = fields.Many2one('mrp.bom', 'Bill of Material')
     workcenter_id = fields.Many2one('mrp.workcenter', string='Work Center')
-    valid_until = fields.Date(default=_default_valid_until)
+    valid_until = fields.Date(default=_default_valid_until, required=True)
 
     @api.onchange('product_id')
     def onchange_product_id(self):

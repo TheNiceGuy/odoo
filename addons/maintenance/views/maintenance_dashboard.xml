@@ -39,7 +39,7 @@
                                         <div class="row">
                                             <div class="col-xs-9">
                                                 <a name="%(equipment_request_action_cal)d" type="action" domain="[('maintenance_team_id', '=', active_id)]">
-                                                    Scheduled Maintenance
+                                                    Scheduled
                                                 </a>
                                             </div>
                                             <div class="col-xs-3">

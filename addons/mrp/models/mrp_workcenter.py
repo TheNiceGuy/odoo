@@ -15,20 +15,6 @@ class MrpWorkcenter(models.Model):
     _description = 'Work Center'
     _inherits = {'resource.resource': "resource_id"}
 
-    @api.depends('order_ids')
-    def _compute_orders(self):
-        WorkcenterLine = self.env['mrp.production.workcenter.line']
-        for workcenter in self:
-            workcenter.nb_orders = WorkcenterLine.search_count([('workcenter_id', '=', workcenter.id), ('state', '!=', 'done')]) #('state', 'in', ['pending', 'startworking'])
-            workcenter.count_ready_order = WorkcenterLine.search_count([('workcenter_id', '=', workcenter.id), ('state', '=', 'ready')])
-            workcenter.count_progress_order = WorkcenterLine.search_count([('workcenter_id', '=', workcenter.id), ('state', '=', 'progress')])
-
-    def _compute_status(self):
-        for workcenter in self:
-            if workcenter.count_progress_order:
-                workcenter.status = 'done'
-            else:
-                workcenter.status = 'normal'
 
     note = fields.Text(string='Description', help="Description of the Work Center. ")
     capacity = fields.Float(string='Capacity', default=1.0, help="Number of work orders this Work Center can do in parallel. If this Work Center represents a team of 5 workers, the capacity is 5.")
@@ -42,8 +28,25 @@ class MrpWorkcenter(models.Model):
     color = fields.Integer('Color')
     count_ready_order = fields.Integer(compute='_compute_orders', string="Total Ready Orders")
     count_progress_order = fields.Integer(compute='_compute_orders', string="Total Running Orders")
-    status = fields.Selection([('normal', 'Work order is not running'), ('blocked', 'Work center is block'), ('done', 'Work order is running')],
-                                    string='Status', compute="_compute_status")
+    stage_id = fields.Selection([('normal', 'Normal'), ('blocked', 'Blocked'), ('done', 'In Progress')], string='Status', default="normal", store=True, compute="_compute_stages")
+
+    @api.multi
+    @api.depends('order_ids', 'order_ids.state')
+    def _compute_stages(self):
+        for workcenter in self:
+            if workcenter.count_progress_order:
+                workcenter.stage_id = 'done'
+            else:
+                workcenter.stage_id = 'normal'
+
+
+    @api.depends('order_ids')
+    def _compute_orders(self):
+        WorkcenterLine = self.env['mrp.production.workcenter.line']
+        for workcenter in self:
+            workcenter.nb_orders = WorkcenterLine.search_count([('workcenter_id', '=', workcenter.id), ('state', '!=', 'done')]) #('state', 'in', ['pending', 'startworking'])
+            workcenter.count_ready_order = WorkcenterLine.search_count([('workcenter_id', '=', workcenter.id), ('state', '=', 'ready')])
+            workcenter.count_progress_order = WorkcenterLine.search_count([('workcenter_id', '=', workcenter.id), ('state', '=', 'progress')])
 
     @api.multi
     @api.constrains('capacity')
@@ -65,4 +68,3 @@ class MrpWorkOrderConsume(models.Model):
     processed = fields.Boolean('Processed', default=False)
     final_lot_id = fields.Many2one('stock.production.lot', 'Final Lot')
     final_qty = fields.Float('Quantity')
-    

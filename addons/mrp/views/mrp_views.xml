@@ -384,8 +384,8 @@
                 <kanban class="oe_background_grey o_kanban_dashboard o_workcenter_kanban" create="0">
                     <field name="name"/>
                     <field name="color"/>
-                    <field name="status"/>
                     <field name="nb_orders"/>
+                     <field name="stage_id"/>
                     <templates>
                         <t t-name="kanban-box">
                             <div t-attf-class="#{kanban_color(record.color.raw_value)}">
@@ -433,14 +433,20 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-xs-6 o_kanban_primary_left">
-                                            <div class="pull-left">
-                                                <t t-if="record.status.raw_value == 'done'">
-                                                    <span class="oe_kanban_status oe_kanban_status_green" title="Work order is Running"/>
-                                                </t>
-                                                <t t-if="record.status.raw_value == 'normal'">
-                                                    <span class="oe_kanban_status" title="Work Order is not Running"/>
-                                                </t>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xs-6 o_kanban_primary_left" style="position:absolute;">
+                                            <t t-if="record.stage_id.raw_value == 'normal'">
+                                                <t t-set="status" t-value="'Work orders is not running'"/>
+                                            </t>
+                                            <t t-if="record.stage_id.raw_value == 'blocked'">
+                                                <t t-set="status" t-value="'Work orders is blocked'"/>
+                                            </t>
+                                            <t t-if="record.stage_id.raw_value == 'done'">
+                                                <t t-set="status" t-value="'Work orders is running'"/>
+                                            </t>
+                                            <div t-att-title="status">
+                                                <field name="stage_id" widget="kanban_state_selection"/>
                                             </div>
                                         </div>
                                     </div>
@@ -448,10 +454,10 @@
                                     <div class="row">
                                         <div class="col-xs-6 o_kanban_card_manage_section o_kanban_manage_view">
                                             <div class="o_kanban_card_manage_title">
-                                                <span>Actions</span>
+                                                <span>New</span>
                                             </div>
                                             <div name="plan_order">
-                                                <a name="%(action_work_orders)d" type="action">Plan More Orders</a>
+                                                <a name="%(action_work_orders)d" type="action">Plan Orders</a>
                                             </div>
                                         </div>
                                         <div class="col-xs-6 o_kanban_card_manage_section o_kanban_manage_new">
@@ -459,10 +465,10 @@
                                                 <span>Reports</span>
                                             </div>
                                             <div>
-                                                <a name="%(action_work_orders)d" type="action">Work Center Efficiency</a>
+                                                <a name="%(action_work_orders)d" type="action">Efficiency</a>
                                             </div>
                                             <div>
-                                                <a name="%(action_work_orders)d" type="action" context="{'search_default_waiting': 1}">Orders Waiting Availability</a>
+                                                <a name="%(action_work_orders)d" type="action" context="{'search_default_waiting': 1}">Waiting Availability</a>
                                             </div>
                                         </div>
                                     </div>
@@ -851,9 +857,10 @@
                     <button name="action_assign" attrs="{'invisible': [('availability', '=', 'assigned')]}" string="Check availability" type="object" class="oe_highlight"/>
                     <button name="button_plan" attrs="{'invisible': ['|', ('state', '!=', 'confirmed'), ('routing_id', '=', False)]}" type="object" string="Plan"/>
                     <button name="%(act_mrp_product_produce)d" attrs="{'invisible': ['|', ('state', '=', 'planned'), ('availability', '=', 'none')]}" string="Produce" type="action"/>
-                    <button name="post_inventory" string="Post Inventory" type="object" attrs="{'invisible': [('post_visible', '=', False)]}" class="oe_highlight"/>
+                    <button name="post_inventory" string="Post Inventory" type="object" attrs="{'invisible': [('post_visible', '=', False)]}"/>
                     <field name="post_visible" invisible="1"/>
                     <button name="button_scrap" type="object" string="Scrap" attrs="{'invisible': [('state', 'in', ('cancel'))]}"/>
+                    <field name="warning_message" nolabel="1" class="label label-danger" attrs="{'invisible': ['|', '|', ('availability', '=', 'assigned'), ('state', '!=', 'confirmed'), ('consume_operation_ids', '=', [])]}"/>
                     <field name="state" widget="statusbar" statusbar_visible="confirmed,progress,done" statusbar_colors='{"confirmed":"blue"}'/>
                 </header>
                 <sheet>
@@ -867,12 +874,6 @@
                         <button name="%(action_mrp_production_moves)d" type="action" string="Inventory Moves" class="oe_stat_button" icon="fa-arrows-v" attrs="{'invisible': [('state', 'not in', ('progress', 'done'))]}"/>
                         <field name="workcenter_line_ids" invisible="1"/>
                     </div>
-                    <div class="alert alert-warning text-center" attrs="{'invisible': ['|', ('availability', '=', 'assigned'), ('check_move_state', '=', False)]}">
-                        <button class="close" name="close_warning_message" type="object" string="X"/>
-                        <div>
-                            <strong>Raw materials are not all available, check the quantity reserved in the buttom of the manufacturing order.</strong>
-                        </div>
-                    </div>
                     <div class="oe_title">
                         <h1><field name="name" placeholder="Manufacturing Reference" nolabel="1"/></h1>
                     </div>
@@ -880,7 +881,6 @@
                         <group>
                             <field name="availability" invisible="1"/>
                             <field name="check_to_done" invisible="1"/>
-                            <field name="check_move_state" invisible="1"/>
                             <field name="product_id" domain="[('bom_ids','!=',False),('bom_ids.bom_type','!=','phantom')]" context='{"default_type": "product"}'/>
                             <field name="product_tmpl_id" invisible="1"/>
                             <label for="product_qty"/>
@@ -1362,12 +1362,10 @@
                     </div>
                     <field name="sequence" invisible="1"/>
                 </group>
-                <group>
-                    <div class="alert alert-danger text-center" attrs="{'invisible': [('inv_message', '=', False)]}">
-                        <a href="#" class="close" data-dismiss="alert" aria-label="close">X</a>
-                        <field name="inv_message" style="height: 50px;"/>
-                    </div>
-                </group>
+                <div class="alert alert-warning alert-dismissible text-center" role="alert" attrs="{'invisible': [('inv_message_ids', '=', [])]}">
+                    <a href="#" class="close" data-dismiss="alert" aria-label="close">x</a>
+                    <field name="inv_message" style="height: 50px;"/>
+                </div>
             </group>
             <notebook>
             <page string="Work Instruction Consumption" attrs="{'invisible': [('consume_line_ids', '=', [])]}">
@@ -1705,16 +1703,10 @@
               parent="menu_mrp_workorder_planning"/>
 
 
-    <menuitem id="menu_mrp_mps"
-          name="Master Production Schedule"
-          parent="menu_mrp_reporting"
-          action="mrp_workorder_todo"
-          sequence="5"/>
-
     <menuitem id="menu_mrp_traceability"
-          name="Lots Traceability"
+          name="Traceability: Lots"
           parent="menu_mrp_reporting"
-          action="mrp_workorder_todo"
+          action="stock.action_production_lot_form"
           sequence="10"/>
 
     <menuitem id="menu_mrp_production_report"
@@ -1773,7 +1765,7 @@
                     <sheet>
                         <div class="oe_button_box" name="button_box">
                             <button class="oe_stat_button" name="%(action_mrp_unbuild_moves)d"
-                                    string="Moves" type="action" icon="fa-arrows-v"/>
+                                    string="Moves" type="action" icon="fa-arrows-v" states="done"/>
                         </div>
                         <div class="oe_title">
                             <h1><field name="name" placeholder="Unbuild Order" nolabel="1"/></h1>
@@ -1842,7 +1834,8 @@
           <p class="oe_view_nocontent_create">
             Click to start a new Unbuild Order
           </p><p>
-            Unbuild orders can be used to unbuild stuff you make. 
+            An unbuild order will do a reverse bill of materials, unbuilding products
+            you produced, but you can also use it to unbuild products you purchased.
           </p>
         </field>
     </record>
@@ -1973,18 +1966,15 @@
             <field name="arch" type="xml">
                 <form string="Inventory Message">
                     <sheet>
-                        <div class="oe_title">
-                            <h1><field name="name" placeholder="Inventory Message"/></h1>
-                        </div>
                         <group>
                             <group>
                                 <field name="picking_type_id" widget="selection"/>
                                 <field name="code" invisible="True"/>
                             </group>
                             <group>
-                                <field name="workcenter_id" attrs="{'invisible': [('code', '!=', 'mrp_operation')]}"/>
                                 <field name="product_id"/>
-                                <field name="bom_id"/>
+                                <field name="bom_id" attrs="{'invisible': [('code', '!=', 'mrp_operation')]}"/>
+                                <field name="workcenter_id" attrs="{'invisible': [('code', '!=', 'mrp_operation')]}"/>
                                 <field name="valid_until"/>
                             </group>
                         </group>
@@ -2000,9 +1990,10 @@
             <field name="arch" type="xml">
                 <tree>
                     <field name="valid_until" string="Validity Date"/>
-                    <field name="picking_type_id" string="Operation Type"/>
+                    <field name="create_uid" string="Author"/>
+                    <field name="picking_type_id" string="Operation"/>
                     <field name="product_id"/>
-                    <field name="message"/>
+                    <field name="name" string="Message"/>
                 </tree>
             </field>
         </record>
@@ -2013,6 +2004,8 @@
             <field name="arch" type="xml">
                 <search string="Search">
                     <field name="picking_type_id"/>
+                    <filter string="Active Messages" name="active_message" domain="[('valid_until','&gt;=', current_date)]"/>
+                    <filter string="My Messages" name="my_messages" domain="[('create_uid', '=', uid)]"/>
                     <group expand='0' string='Group by...'>
                         <filter string='Picking Type' name="picktype" context="{'group_by': 'picking_type_id'}"/>
                     </group>
@@ -2026,6 +2019,18 @@
         <field name="res_model">inventory.message</field>
         <field name="view_type">form</field>
         <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="oe_view_nocontent_create">
+                Click to create a new message.
+            </p><p>
+                Use messages to warn manufacturing or inventory people about any change in the
+                products, process, or actions to take care of. (e.g; Warning, the bill of material changed,
+                check the details in new worksheet)
+            </p><p>
+                Messages can be configurred to appear during any operation: receptions, delivery orders,
+                manufacturing orders, work orders, etc.
+            </p>
+        </field>
     </record>
 
     <menuitem id="menu_inventory_messages"
