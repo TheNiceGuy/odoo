@@ -84,6 +84,13 @@
             <field name="res_model">stock.scrap</field>
             <field name="view_type">form</field>
             <field name="view_mode">tree,form</field>
+            <field name="help" type="html">
+              <p class="oe_view_nocontent_create">
+                Click to scrap products.
+              </p><p>
+                Products you scrap will be removed from the stock and moved to a specific scrap location, for reporting purposes.
+              </p>
+            </field>
         </record>
 
         <record id="stock_scrap_form_view2" model="ir.ui.view">
