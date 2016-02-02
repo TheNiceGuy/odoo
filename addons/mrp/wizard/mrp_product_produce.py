@@ -19,69 +19,69 @@ class MrpProductProduce(models.TransientModel):
     _name = "mrp.product.produce"
     _description = "Product Produce"
 
-    @api.model
-    def _get_product_qty(self):
-        """ To obtain product quantity
-        :param self: The object pointer.
-        :param cr: A database cursor
-        :param uid: ID of the user currently logged in
-        :param context: A standard dictionary
-        :return: Quantity
-        """
-        production = self.env['mrp.production'].browse(self._context['active_id'])
-        done = 0.0
-        produce_operations = production.produce_operation_ids.filtered(lambda x: x.production_state != 'done' and x.product_id.id == production.product_id.id)
-        result = 0.0
-        if produce_operations:
-            result = produce_operations[0].qty_done or produce_operations[0].product_qty
-        return result
 
     @api.model
-    def _get_product_id(self):
-        """ To obtain product id
-        :return: id
+    def default_get(self, fields):
         """
-        production = False
-        if self._context and self._context.get("active_id"):
-            production = self.env['mrp.production'].browse(self._context['active_id'])
-        return production and production.product_id.id or False
-
-    @api.model
-    def _get_production_uom(self):
-        """ To obtain product id
-        :return: id
         """
-        production = False
-        if self._context and self._context.get("active_id"):
+        res = super(MrpProductProduce, self).default_get(fields)
+        if self._context and self._context.get('active_id'):
             production = self.env['mrp.production'].browse(self._context['active_id'])
-        return production and production.product_uom_id.id or False
+            if production._check_serial():
+                res['product_qty'] = 1.0
+            else:
+                produce_operations = production.produce_operation_ids.filtered(lambda x: x.production_state != 'done' and x.product_id.id == production.product_id.id)
+                if produce_operations:
+                    res['product_qty'] = produce_operations[0].qty_done or produce_operations[0].product_qty
+            res['product_id'] = production.product_id.id
+            res['product_uom_id'] = production.product_uom_id.id
+            res['serial'] = production._check_serial()
+            lines = []
+            for consume in production.active_consume_line_ids:
+                lines += [(0, 0, {'product_id': consume.product_id.id,
+                               'product_qty': consume.product_qty,
+                               'lot_id': consume.lot_id.id})]
+            res['consume_line_ids'] = lines
+            print res
+        return res
 
     @api.model
     def _get_track(self):
-        production = self._get_product_id()
-        return production and self.env['product.product'].browse(production).tracking or False
-
-    @api.model
-    def _get_operation_ids(self):
-        if self._context and self._context.get("active_id"):
+        production = False
+        if self._context and self._context.get('active_id'):
             production = self.env['mrp.production'].browse(self._context['active_id'])
-        ids_list = []
-        for operation in production.consume_operation_ids:
-            if operation.product_id.tracking != 'none':
-                ids_list.append(operation.id)
-        return ids_list
+        return production and production.product_id.tracking or 'none'
 
-    product_id = fields.Many2one('product.product', default=_get_product_id)
-    product_qty = fields.Float(string='Quantity', digits=dp.get_precision('Product Unit of Measure'), required=True, default=_get_product_qty)
-    product_uom_id = fields.Many2one('product.uom', 'Unit of Measure', default=_get_production_uom)
+    product_id = fields.Many2one('product.product')
+    product_qty = fields.Float(string='Quantity', digits=dp.get_precision('Product Unit of Measure'), required=True)
+    product_uom_id = fields.Many2one('product.uom', 'Unit of Measure')
     lot_id = fields.Many2one('stock.production.lot', string='Lot')  # Should only be visible when it is consume and produce mode
 #    consume_lines = fields.One2many('mrp.product.produce.line', 'produce_id', string='Products Consumed')
     tracking = fields.Selection(related='product_id.tracking', selection=[('serial', 'By Unique Serial Number'), ('lot', 'By Lots'), ('none', 'No Tracking')], default=_get_track)
-    operation_ids = fields.Many2many('stock.pack.operation', 'mrp_product_produce_stock_operation_rel', string="Operations To Supply Lots", default=_get_operation_ids)
+    serial = fields.Boolean('Serial Tracking')
+    #operation_ids = fields.Many2many('stock.pack.operation', 'mrp_product_produce_stock_operation_rel', string="Operations To Supply Lots", default=_get_operation_ids)
+    #consume_line_ids = fields.Many2many('mrp.production.consume', 'mrp_product_produce_production_consume_rel', default=_get_consume_ids)
+    consume_line_ids = fields.One2many('mrp.product.produce.line', 'produce_id', 'Consume lines')
 
     @api.multi
     def do_produce(self):
         production_id = self._context.get('active_id', False)
         assert production_id, "Production Id should be specified in context as a Active ID."
-        self.env['mrp.production'].browse(production_id).action_produce(self.product_qty, self)
+        production = self.env['mrp.production'].browse(production_id) 
+        for line in self.consume_line_ids:
+            consume = production.active_consume_line_ids.filtered(lambda x: (x.product_id.id == line.product_id.id) and (x.lot_id.id == False)) 
+            consume.lot_id = line.lot_id.id
+            consume.product_qty = line.product_qty
+        production.action_produce(self.product_qty, self.lot_id, self)
         return {}
+
+
+class MrpProductProduceLine(models.TransientModel):
+    _name='mrp.product.produce.line'
+    
+    produce_id = fields.Many2one('mrp.product.produce')
+    product_id = fields.Many2one('product.product', 'Product')
+    product_qty = fields.Float('Quantity')
+    tracking = fields.Selection(related='product_id.tracking', selection=[('serial', 'By Unique Serial Number'), ('lot', 'By Lots'), ('none', 'No Tracking')])
+    lot_id = fields.Many2one('stock.production.lot', 'Lot', required=True)
+    

@@ -853,11 +853,11 @@
                 <form string="Manufacturing Orders">
                 <header>
                     <button name="button_mark_done" attrs="{'invisible': [('check_to_done', '=', False)]}" string="Mark as Done" type="object"/>
-                    <button name="%(act_mrp_product_produce)d" attrs="{'invisible': ['|', ('state', '!=', 'planned'), ('availability', '=', 'none')]}" string="Produce" type="action" class="oe_highlight"/>
+                    <button name="%(act_mrp_product_produce)d" attrs="{'invisible': ['|', ('state', '!=', 'planned')]}" string="Produce" type="action" class="oe_highlight"/>
                     <button name="action_assign" attrs="{'invisible': [('availability', '=', 'assigned')]}" string="Check availability" type="object" class="oe_highlight"/>
                     <button name="button_plan" attrs="{'invisible': ['|', ('state', '!=', 'confirmed'), ('routing_id', '=', False)]}" type="object" string="Plan"/>
-                    <button name="%(act_mrp_product_produce)d" attrs="{'invisible': ['|', ('state', '=', 'planned'), ('availability', '=', 'none')]}" string="Produce" type="action"/>
-                    <button name="post_inventory" string="Post Inventory" type="object" attrs="{'invisible': [('post_visible', '=', False)]}"/>
+                    <button name="%(act_mrp_product_produce)d" attrs="{'invisible': ['|', ('state', '=', 'planned')]}" string="Produce" type="action"/>
+                    <button name="post_inventory" string="Post Inventory" type="object" attrs="{'invisible': [('post_visible', '=', False)]}" class="oe_highlight"/>
                     <field name="post_visible" invisible="1"/>
                     <button name="button_scrap" type="object" string="Scrap" attrs="{'invisible': [('state', 'in', ('cancel'))]}"/>
                     <field name="warning_message" nolabel="1" class="label label-danger" attrs="{'invisible': ['|', '|', ('availability', '=', 'assigned'), ('state', '!=', 'confirmed'), ('consume_operation_ids', '=', [])]}"/>
