@@ -510,6 +510,7 @@ class MrpProduction(models.Model):
         existing_operation_ids = pack_operation_obj.search([('production_finished_id', 'in', self.ids), ('production_state', '!=', 'done')])
         if existing_operation_ids:
             existing_operation_ids.unlink()
+        import pdb; pdb.set_trace()
         for production in self:
             # prepare Consume Lines
             forced_qties = {}  # Quantity remaining after calculating reserved quants
@@ -523,7 +524,7 @@ class MrpProduction(models.Model):
                 # Nothing is reserved here normally, so we could skip it
                 move_quants = move.reserved_quant_ids
                 total_quants |= move_quants
-                forced_qty = (move.state == 'assigned') and move.product_qty - sum([x.qty for x in move_quants]) or 0
+                forced_qty = move.product_qty
                 #if we used force_assign() on the move, or if the move is incoming, forced_qty > 0
                 if float_compare(forced_qty, 0, precision_rounding=move.product_id.uom_id.rounding) > 0:
                     if forced_qties.get(move.product_id):
@@ -618,11 +619,8 @@ class MrpProduction(models.Model):
                 if operation.qty_done < 0:
                     raise UserError(_('No negative quantities allowed'))
                 if operation.qty_done > 0:
-                    remainder = operation.product_qty - operation.qty_done
                     operation.write({'product_qty': operation.qty_done})
-                    if remainder:
-                        operation.copy({'product_qty': remainder, 'qty_done': 0.0})
-            
+
             consume_operation_ids = production.consume_operation_ids.filtered(lambda x: x.production_state != 'done' and x.qty_done > 0)
             # Do what would have been done otherwise
             need_rereserve, all_op_processed = production.move_line_ids.recompute_remaining_qty(consume_operation_ids)
@@ -674,15 +672,12 @@ class MrpProduction(models.Model):
         for production in self:
             produce_operation_ids = production.produce_operation_ids.filtered(lambda x: x.production_state != 'done')
             
-            #Split pack operations first
+            # Split pack operations first
             for operation in produce_operation_ids:
                 if operation.qty_done < 0:
                     raise UserError(_('No negative quantities allowed'))
                 if operation.qty_done > 0:
-                    remainder = operation.product_qty - operation.qty_done
                     operation.write({'product_qty': operation.qty_done})
-                    if remainder:
-                        operation.copy({'product_qty': remainder, 'qty_done': 0.0})
             
             produce_operation_ids = production.produce_operation_ids.filtered(lambda x: x.production_state != 'done' and x.qty_done > 0)
             # Do what would have been done otherwise
@@ -711,6 +706,7 @@ class MrpProduction(models.Model):
                 elif float_compare(remaining_qty,0, precision_rounding=move.product_id.uom_id.rounding) > 0 and \
                             float_compare(remaining_qty, move.product_qty, precision_rounding=move.product_id.uom_id.rounding) < 0:
                     new_move = stock_move_obj.split(move, remaining_qty)
+                    self.env['stock.move'].browse(new_move).write({'production_id': production.id})
                     todo_move_ids.append(move.id)
                     #Assign move as it was assigned before
                     toassign_move_ids.append(new_move)
@@ -724,10 +720,13 @@ class MrpProduction(models.Model):
     @api.multi
     def post_inventory(self):
         self.do_transfer() #TODO: Need to give back move_ids done for consumed_for relationship
+        #self.do_prepare_partial()
         self.do_transfer_finished()
+        self.action_assign()
+        #self.do_prepare_partial_produce()
 
     @api.multi
-    def action_produce(self, production_qty, wizard=False):
+    def action_produce(self, production_qty, lot=False, wizard=False):
         """ All stock move lines of raw materials will be done/consumed
         and stock move lines of final product will be also done/produced.
         :param production_qty: specify qty to produce in the uom of the production order
@@ -738,10 +737,15 @@ class MrpProduction(models.Model):
         # Filter produce line, otherwise create one:
         produce_operations = self.produce_operation_ids.filtered(lambda x: x.production_state == 'confirmed' and x.product_id.id == self.product_id.id)
         #TODO: byproducts?
+        
         ratio = 1.0
         if produce_operations:
             produce_operations[0].qty_done += production_qty
             ratio = production_qty / produce_operations[0].product_qty
+            if produce_operations[0].product_id.tracking != 'none': #And picking type
+                lots = [x.lot_id.id == lot.id for x in produce_operations[0].pack_lot_ids]
+                if lots:
+                    lot[0].qty_done += production_qty
         else:
             self.env['stock.pack.operation'].create({'product_id': self.product_id.id,
                                                     'product_uom_id': self.product_uom_id.id,
@@ -905,6 +909,10 @@ class MrpProduction(models.Model):
         """
         for production in self:
             production.move_line_ids.action_assign()
+            to_assign_produce = production.move_created_ids.filtered(lambda x: x.state != 'assigned')
+            if to_assign_produce:
+                to_assign_produce.action_assign()
+                production.do_prepare_partial_produce()
             production.do_prepare_partial()
             status  = any([x.state != 'assigned' for x in production.move_line_ids])
             if status:

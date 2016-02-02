@@ -30,6 +30,8 @@ class MrpProductProduce(models.TransientModel):
         """
         production = self.env['mrp.production'].browse(self._context['active_id'])
         done = 0.0
+        if production.product_id.tracking == 'serial': #TODO: Or if one of the components is with serial numbers 
+            return 1.0
         produce_operations = production.produce_operation_ids.filtered(lambda x: x.production_state != 'done' and x.product_id.id == production.product_id.id)
         result = 0.0
         if produce_operations:
@@ -83,5 +85,5 @@ class MrpProductProduce(models.TransientModel):
     def do_produce(self):
         production_id = self._context.get('active_id', False)
         assert production_id, "Production Id should be specified in context as a Active ID."
-        self.env['mrp.production'].browse(production_id).action_produce(self.product_qty, self)
+        self.env['mrp.production'].browse(production_id).action_produce(self.product_qty, self.lot_id, self)
         return {}
