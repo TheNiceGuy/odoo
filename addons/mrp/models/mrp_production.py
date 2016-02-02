@@ -177,8 +177,8 @@ class MrpProduction(models.Model):
     availability = fields.Selection([('assigned', 'Available'), ('partially_available', 'Partially available'), ('none', 'None'), ('waiting', 'Waiting')], compute='_compute_availability', store=True, default="none")
     picking_type_id = fields.Many2one('stock.picking.type', 'Picking Type', default=_default_picking_type, required=True)
     post_visible = fields.Boolean('Inventory Post Visible', compute='_compute_post_visible', help='Technical field to check when we can post')
-    
-
+    consume_line_ids = fields.One2many('mrp.production.consume', 'production_id', 'Consume Lines')
+    active_consume_line_ids = fields.One2many('mrp.production.consume', 'production_id', 'Active Consume Lines', domain=[('processed', '=', False)])
 #     state = fields.Selection(
 #         [('draft', 'New'), ('cancel', 'Cancelled'), ('confirmed', 'Awaiting Raw Materials'),
 #             ('ready', 'Ready to Produce'), ('in_production', 'Production Started'), ('done', 'Done')],
@@ -247,6 +247,7 @@ class MrpProduction(models.Model):
             #TODO: Need to find solutions for properties
             results, results2 = order._prepare_lines(properties=None)
             firsttime = True
+            last_wo = False
             for line in results2:
                 if firsttime:
                     firsttime = False
@@ -257,9 +258,16 @@ class MrpProduction(models.Model):
                 if moves:
                     moves.write({'workorder_id': wo.id})
                 for move in wo.move_line_ids:
-                    self.env['mrp.production.workcenter.line.consume'].create({'product_id': move.product_id.id, 'workorder_id': wo.id})
-            #Let us try to plan the order
+                    if move.product_id.tracking != 'none':
+                        self.env['mrp.production.consume'].create({'product_id': move.product_id.id, 'workorder_id': wo.id})
+                last_wo = wo
+            #Let us try to plan the order --> better all at once
             order._plan_workorder()
+            if last_wo:
+                for move in last_wo.production_id.move_line_ids:
+                    if not move.workorder_id:
+                        if move.product_id.tracking != 'none':
+                            self.env['mrp.production.consume'].create({'product_id': move.product_id.id, 'workorder_id': last_wo.id})
 
     @api.multi
     def button_mark_done(self):
@@ -523,7 +531,7 @@ class MrpProduction(models.Model):
                 # Nothing is reserved here normally, so we could skip it
                 move_quants = move.reserved_quant_ids
                 total_quants |= move_quants
-                forced_qty = (move.state == 'assigned') and move.product_qty - sum([x.qty for x in move_quants]) or 0
+                forced_qty = move.product_qty
                 #if we used force_assign() on the move, or if the move is incoming, forced_qty > 0
                 if float_compare(forced_qty, 0, precision_rounding=move.product_id.uom_id.rounding) > 0:
                     if forced_qties.get(move.product_id):
@@ -618,11 +626,8 @@ class MrpProduction(models.Model):
                 if operation.qty_done < 0:
                     raise UserError(_('No negative quantities allowed'))
                 if operation.qty_done > 0:
-                    remainder = operation.product_qty - operation.qty_done
                     operation.write({'product_qty': operation.qty_done})
-                    if remainder:
-                        operation.copy({'product_qty': remainder, 'qty_done': 0.0})
-            
+
             consume_operation_ids = production.consume_operation_ids.filtered(lambda x: x.production_state != 'done' and x.qty_done > 0)
             # Do what would have been done otherwise
             need_rereserve, all_op_processed = production.move_line_ids.recompute_remaining_qty(consume_operation_ids)
@@ -674,15 +679,12 @@ class MrpProduction(models.Model):
         for production in self:
             produce_operation_ids = production.produce_operation_ids.filtered(lambda x: x.production_state != 'done')
             
-            #Split pack operations first
+            # Split pack operations first
             for operation in produce_operation_ids:
                 if operation.qty_done < 0:
                     raise UserError(_('No negative quantities allowed'))
                 if operation.qty_done > 0:
-                    remainder = operation.product_qty - operation.qty_done
                     operation.write({'product_qty': operation.qty_done})
-                    if remainder:
-                        operation.copy({'product_qty': remainder, 'qty_done': 0.0})
             
             produce_operation_ids = production.produce_operation_ids.filtered(lambda x: x.production_state != 'done' and x.qty_done > 0)
             # Do what would have been done otherwise
@@ -711,6 +713,7 @@ class MrpProduction(models.Model):
                 elif float_compare(remaining_qty,0, precision_rounding=move.product_id.uom_id.rounding) > 0 and \
                             float_compare(remaining_qty, move.product_qty, precision_rounding=move.product_id.uom_id.rounding) < 0:
                     new_move = stock_move_obj.split(move, remaining_qty)
+                    self.env['stock.move'].browse(new_move).write({'production_id': production.id})
                     todo_move_ids.append(move.id)
                     #Assign move as it was assigned before
                     toassign_move_ids.append(new_move)
@@ -724,10 +727,38 @@ class MrpProduction(models.Model):
     @api.multi
     def post_inventory(self):
         self.do_transfer() #TODO: Need to give back move_ids done for consumed_for relationship
+        #self.do_prepare_partial()
         self.do_transfer_finished()
+        self.action_assign()
+        
+        #self.do_prepare_partial_produce()
+
+    def create_consume_lines(self):
+        for move in self.move_line_ids:
+            if (move.product_id.tracking != 'none') and not move.workorder_id:
+#Only necessary when multiple serial numbers for creating one piece!
+#                 if move.product_id.tracking == 'serial':
+#                     for x in range(round(move.product_qty)):
+#                         self.env['mrp.production.consume'].create({'product_id': move.product_id.id, 'production_id': self.id})
+#                 else:
+                self.env['mrp.production.consume'].create({'product_id': move.product_id.id, 'production_id': self.id, 
+                                                           'product_qty': (move.product_id.tracking == 'serial') and 1.0 or 0.0})
+
+    def _check_serial(self):
+        '''
+            Checks if the production should help with this
+        '''
+        self.ensure_one()
+        for move in self.move_created_ids:
+            if move.product_id.tracking == 'serial':
+                return True
+        for move in self.move_line_ids:
+            if move.product_id.tracking == 'serial':
+                return True
+        return False
 
     @api.multi
-    def action_produce(self, production_qty, wizard=False):
+    def action_produce(self, production_qty, lot=False, wizard=False):
         """ All stock move lines of raw materials will be done/consumed
         and stock move lines of final product will be also done/produced.
         :param production_qty: specify qty to produce in the uom of the production order
@@ -742,6 +773,10 @@ class MrpProduction(models.Model):
         if produce_operations:
             produce_operations[0].qty_done += production_qty
             ratio = production_qty / produce_operations[0].product_qty
+            if produce_operations[0].product_id.tracking != 'none': #And picking type
+                lots = [x.lot_id.id == lot.id for x in produce_operations[0].pack_lot_ids]
+                if lots:
+                    lot[0].qty_done += production_qty
         else:
             self.env['stock.pack.operation'].create({'product_id': self.product_id.id,
                                                     'product_uom_id': self.product_uom_id.id,
@@ -751,8 +786,36 @@ class MrpProduction(models.Model):
         # TODO: Change consumed products
         # The rounding used can be changed
         consume_operations = self.consume_operation_ids.filtered(lambda x: x.production_state == 'confirmed')
+        #Change pack operations
         for operation in consume_operations:
-            operation.qty_done += ratio * operation.product_qty
+            if operation.product_id.tracking == 'none':
+                operation.qty_done += ratio * operation.product_qty
+        for consume in self.active_consume_line_ids:
+            consume.processed = True
+            consume_ops = self.consume_operation_ids.filtered(lambda x: x.product_id.id == consume.product_id.id)
+            if consume.product_id.tracking == 'serial':
+                consume.product_qty = 1.0
+            if not consume_ops:
+                # Need to see, we could create it on the fly too
+                raise UserError('You deleted something')
+            else:
+                pack_lots = []
+                for ops in consume_ops:
+                    # Find ops 
+                    pack_lots += [x for x in ops.pack_lot_ids if x.lot_id.id == consume.lot_id.id]
+                if pack_lots:
+                    pack_lots[0].qty += consume.product_qty
+                    pack_lots[0].operation_id.qty_done += consume.product_qty
+                    consume.operation_id = pack_lots[0].operation_id.id
+                    consume.final_lot_id = lot.id
+                    consume.final_qty = production_qty
+                else:
+                    oplot = self.env['stock.pack.operation.lot'].create({'operation_id': consume_ops[0].id, 'lot_id': consume.lot_id.id, 'qty': consume.product_qty})
+                    consume_ops[0].qty_done += consume.product_qty
+                    consume.operation_id = consume_ops[0].id
+                    consume.final_lot_id = lot.id
+                    consume.final_qty = production_qty
+        self.create_consume_lines()
         return True
 
     def _make_production_produce_line(self):
@@ -896,6 +959,11 @@ class MrpProduction(models.Model):
                         stock_moves = stock_moves | prev_move
             if stock_moves:
                 stock_moves.action_confirm()
+            # Generate first consume lines
+            if not production.routing_id:
+                for move in production.move_line_ids:
+                    if (move.product_id.tracking != 'none'):
+                        self.env['mrp.production.consume'].create({'product_id': move.product_id.id, 'production_id': production.id})
         return True
 
     @api.multi
@@ -905,6 +973,10 @@ class MrpProduction(models.Model):
         """
         for production in self:
             production.move_line_ids.action_assign()
+            to_assign_produce = production.move_created_ids.filtered(lambda x: x.state != 'assigned')
+            if to_assign_produce:
+                to_assign_produce.action_assign()
+                production.do_prepare_partial_produce()
             production.do_prepare_partial()
             status  = any([x.state != 'assigned' for x in production.move_line_ids])
             if status:
@@ -1021,8 +1093,8 @@ class MrpProductionWorkcenterLine(models.Model):
     check_produce_qty = fields.Boolean(compute='_check_produce_qty')
     inv_message = fields.Html(compute="_get_inventory_message")
     inv_message_ids = fields.One2many('inventory.message', compute='_get_inventory_message', string='Messages')
-    consume_line_ids = fields.One2many('mrp.production.workcenter.line.consume', 'workorder_id', 'Consume Lines')
-    active_consume_line_ids = fields.One2many('mrp.production.workcenter.line.consume', 'workorder_id', 'Active Consume Lines', domain=[('processed', '=', False)])
+    consume_line_ids = fields.One2many('mrp.production.consume', 'workorder_id', 'Consume Lines')
+    active_consume_line_ids = fields.One2many('mrp.production.consume', 'workorder_id', 'Active Consume Lines', domain=[('processed', '=', False)])
     final_lot_id = fields.Many2one('stock.production.lot', 'Current Final Lot Working On', domain="[('product_id', '=', product_id)]") # Might need to become separate object when doing multiple in parallel
     qty_producing = fields.Float('Qty Producing')
 
@@ -1047,20 +1119,17 @@ class MrpProductionWorkcenterLine(models.Model):
     @api.multi
     def record_production(self):
         self.ensure_one()
-        if not self.consume_line_ids:
-            return self.env.ref('mrp.act_mrp_product_produce_wo').read()[0]
-
         if self.qty_producing <= 0:
             raise UserError(_('You should specify a positive quantity you are producing'))
-        for consume in self.consume_line_ids:
+        for consume in self.active_consume_line_ids:
             # Add quantities to pack operations in production order
             consume.processed = True
             consume_ops = self.production_id.consume_operation_ids.filtered(lambda x: x.product_id.id == consume.product_id.id)
             if not consume_ops:
                 # Need to see, we could create it on the fly too
                 raise UserError('You deleted something')
-            if not consume.lot_id: #maybe need to check tracking of the different products
-                consume_ops[0].qty_done += consume.product_qty
+            #if not consume.lot_id: #maybe need to check tracking of the different products
+            #    consume_ops[0].qty_done += consume.product_qty
             else:
                 pack_lots = []
                 for ops in consume_ops:
@@ -1079,12 +1148,13 @@ class MrpProductionWorkcenterLine(models.Model):
                     consume.final_qty = self.qty_producing
         #Recreate consume lines
         for move in self.move_line_ids:
-            self.env['mrp.production.workcenter.line.consume'].create({'product_id': move.product_id.id, 'workorder_id': self.id})
+            if move.product_id.tracking != 'none':
+                self.env['mrp.production.consume'].create({'product_id': move.product_id.id, 'workorder_id': self.id})
         #Augment qty
         self._add_qty(self.qty_producing)
         #Resetting qty (we assume lot stays the same more or less)
         self.qty_producing = 0.0
-        
+
     def _get_current_state(self):
         for order in self:
             if order.time_ids.filtered(lambda x : x.user_id.id == self.env.user.id and x.state == 'running'):
