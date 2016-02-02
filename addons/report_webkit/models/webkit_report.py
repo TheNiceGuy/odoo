@@ -8,21 +8,17 @@
 import subprocess
 import os
 import sys
-from openerp import report
 import tempfile
-import time
 import logging
 from functools import partial
 
-from report_helper import WebKitHelper
-import openerp
-from openerp.modules.module import get_module_resource
-from openerp.report.report_sxw import *
-from openerp import SUPERUSER_ID
-from openerp import tools
-from openerp.tools.translate import _
-from urllib import urlencode, quote as quote
-from openerp.exceptions import UserError
+from odoo import registry, tools, SUPERUSER_ID, _
+from odoo.modules.module import get_module_resource
+from odoo.report.report_sxw import *
+from urllib import urlencode, quote
+from odoo.exceptions import UserError
+
+from odoo.addons.report_webkit.models.report_helper import WebKitHelper
 
 _logger = logging.getLogger(__name__)
 
@@ -78,7 +74,7 @@ def webkit_report_extender(report_name):
     - uid The user id.
     - localcontext The context given to the template engine to render the templates for the
         current report. This is the context that should be modified.
-    - context The OpenERP context.
+    - context The Odoo context.
     """
     def fct1(fct):
         lst = _extender_functions.get(report_name)
@@ -223,7 +219,7 @@ class WebKitParser(report_sxw):
 
         # just try to find an xml id for the report
         cr = cursor
-        pool = openerp.registry(cr.dbname)
+        pool = registry(cr.dbname)
         found_xml_ids = pool["ir.model.data"].search(cr, uid, [["model", "=", "ir.actions.report.xml"], \
             ["res_id", "=", report_xml.id]], context=context)
         xml_id = None
@@ -330,7 +326,7 @@ class WebKitParser(report_sxw):
     def create(self, cursor, uid, ids, data, context=None):
         """We override the create function in order to handle generator
            Code taken from report openoffice. Thanks guys :) """
-        pool = openerp.registry(cursor.dbname)
+        pool = registry(cursor.dbname)
         ir_obj = pool['ir.actions.report.xml']
         report_xml_ids = ir_obj.search(cursor, uid,
                 [('report_name', '=', self.name[7:])], context=context)

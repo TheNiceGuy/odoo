@@ -71,6 +71,5 @@ TODO:
     'test': [
         "test/print.yml",
     ],
-    'installable': True,
     'auto_install': False,
 }
