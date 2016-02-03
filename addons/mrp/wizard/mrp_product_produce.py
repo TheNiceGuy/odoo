@@ -79,7 +79,7 @@ class MrpProductProduce(models.TransientModel):
             production = self.env['mrp.production'].browse(self._context['active_id'])
         ids_list = [x.id for x in production.consume_line_ids]
         return ids_list
-    
+
     product_id = fields.Many2one('product.product', default=_get_product_id)
     production_id = fields.Many2one('mrp.production', default=_get_production_id)
     product_qty = fields.Float(string='Quantity', digits=dp.get_precision('Product Unit of Measure'), required=True, default=_get_product_qty)
