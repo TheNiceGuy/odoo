@@ -55,8 +55,9 @@ class MrpWorkcenter(models.Model):
 
 class MrpWorkOrderConsume(models.Model):
 
-    _name = 'mrp.production.workcenter.line.consume'
+    _name = 'mrp.production.consume'
     
+    production_id = fields.Many2one('mrp.production', 'Production Order', help="When only related to production order")
     workorder_id = fields.Many2one('mrp.production.workcenter.line', 'Work Order')
     product_id = fields.Many2one('product.product', 'Product')
     product_qty = fields.Float('Quantity')
@@ -65,4 +66,3 @@ class MrpWorkOrderConsume(models.Model):
     processed = fields.Boolean('Processed', default=False)
     final_lot_id = fields.Many2one('stock.production.lot', 'Final Lot')
     final_qty = fields.Float('Quantity')
-    
