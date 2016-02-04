@@ -384,8 +384,8 @@
                 <kanban class="oe_background_grey o_kanban_dashboard o_workcenter_kanban" create="0">
                     <field name="name"/>
                     <field name="color"/>
-                    <field name="status"/>
                     <field name="nb_orders"/>
+                     <field name="stage_id"/>
                     <templates>
                         <t t-name="kanban-box">
                             <div t-attf-class="#{kanban_color(record.color.raw_value)}">
@@ -433,17 +433,11 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-xs-6 o_kanban_primary_left">
-                                            <div class="pull-left" style="margin-top: 11px">
-                                                <t t-if="record.status.raw_value == 'done'">
-                                                    <span class="oe_kanban_status oe_kanban_status_green" title="A work order is in progress."/>
-                                                </t>
-                                                <t t-if="record.status.raw_value == 'normal'">
-                                                    <span class="oe_kanban_status" title="No one currently producing."/>
-                                                </t>
-                                                <t t-if="record.status.raw_value == 'blocked'">
-                                                    <span class="oe_kanban_status oe_kanban_status_red" title="Workcenter blocked."/>
-                                                </t>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xs-6 o_kanban_primary_left" style="position:absolute;">
+                                            <div t-att-title="record.stage_id.value">
+                                                <field name="kanban_state" widget="kanban_state_selection"/>
                                             </div>
                                         </div>
                                     </div>
