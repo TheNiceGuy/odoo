@@ -49,16 +49,6 @@ class MrpProductProduce(models.TransientModel):
         return production and production.product_id.id or False
 
     @api.model
-    def _get_production_id(self):
-        """ To obtain product id
-        :return: id
-        """
-        production = False
-        if self._context and self._context.get("active_id"):
-            production = self.env['mrp.production'].browse(self._context['active_id'])
-        return production and production.id or False
-
-    @api.model
     def _get_production_uom(self):
         """ To obtain product id
         :return: id
@@ -77,11 +67,10 @@ class MrpProductProduce(models.TransientModel):
     def _get_consume_ids(self):
         if self._context and self._context.get("active_id"):
             production = self.env['mrp.production'].browse(self._context['active_id'])
-        ids_list = [x.id for x in production.consume_line_ids]
+        ids_list = [x.id for x in production.active_consume_line_ids]
         return ids_list
 
     product_id = fields.Many2one('product.product', default=_get_product_id)
-    production_id = fields.Many2one('mrp.production', default=_get_production_id)
     product_qty = fields.Float(string='Quantity', digits=dp.get_precision('Product Unit of Measure'), required=True, default=_get_product_qty)
     product_uom_id = fields.Many2one('product.uom', 'Unit of Measure', default=_get_production_uom)
     lot_id = fields.Many2one('stock.production.lot', string='Lot')  # Should only be visible when it is consume and produce mode

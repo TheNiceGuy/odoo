@@ -723,7 +723,32 @@ class MrpProduction(models.Model):
         #self.do_prepare_partial()
         self.do_transfer_finished()
         self.action_assign()
+        
         #self.do_prepare_partial_produce()
+
+    def create_consume_lines(self):
+        for move in self.move_line_ids:
+            if (move.product_id.tracking != 'none') and not move.workorder_id:
+#Only necessary when multiple serial numbers for creating one piece!
+#                 if move.product_id.tracking == 'serial':
+#                     for x in range(round(move.product_qty)):
+#                         self.env['mrp.production.consume'].create({'product_id': move.product_id.id, 'production_id': self.id})
+#                 else:
+                self.env['mrp.production.consume'].create({'product_id': move.product_id.id, 'production_id': self.id, 
+                                                           'product_qty': (move.product_id.tracking == 'serial') and 1.0 or 0.0})
+
+    def _check_serial(self):
+        '''
+            Checks if the production should help with this
+        '''
+        self.ensure_one()
+        for move in self.move_created_ids:
+            if move.product_id.tracking == 'serial':
+                return True
+        for move in self.move_line_ids:
+            if move.product_id.tracking == 'serial':
+                return True
+        return False
 
     @api.multi
     def action_produce(self, production_qty, lot=False, wizard=False):
@@ -737,7 +762,6 @@ class MrpProduction(models.Model):
         # Filter produce line, otherwise create one:
         produce_operations = self.produce_operation_ids.filtered(lambda x: x.production_state == 'confirmed' and x.product_id.id == self.product_id.id)
         #TODO: byproducts?
-        
         ratio = 1.0
         if produce_operations:
             produce_operations[0].qty_done += production_qty
@@ -755,9 +779,35 @@ class MrpProduction(models.Model):
         # TODO: Change consumed products
         # The rounding used can be changed
         consume_operations = self.consume_operation_ids.filtered(lambda x: x.production_state == 'confirmed')
+        #Change pack operations
         for operation in consume_operations:
             if operation.product_id.tracking == 'none':
                 operation.qty_done += ratio * operation.product_qty
+        for consume in self.active_consume_line_ids:
+            consume.processed = True
+            consume_ops = self.consume_operation_ids.filtered(lambda x: x.product_id.id == consume.product_id.id)
+            if consume.product_id.tracking == 'serial':
+                consume.product_qty = 1.0
+            if not consume_ops:
+                # Need to see, we could create it on the fly too
+                raise UserError('You deleted something')
+            else:
+                pack_lots = []
+                for ops in consume_ops:
+                    # Find ops 
+                    pack_lots += [x for x in ops.pack_lot_ids if x.lot_id.id == consume.lot_id.id]
+                if pack_lots:
+                    pack_lots[0].qty += consume.product_qty
+                    pack_lots[0].operation_id.qty_done += consume.product_qty
+                    consume.operation_id = pack_lots[0].operation_id.id
+                    consume.final_lot_id = lot.id
+                    consume.final_qty = production_qty
+                else:
+                    oplot = self.env['stock.pack.operation.lot'].create({'operation_id': consume_ops[0].id, 'lot_id': consume.lot_id.id, 'qty': consume.product_qty})
+                    consume.operation_id = consume_ops[0].id
+                    consume.final_lot_id = lot.id
+                    consume.final_qty = production_qty
+        self.create_consume_lines()
         return True
 
     def _make_production_produce_line(self):

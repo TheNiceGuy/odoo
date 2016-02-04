@@ -61,6 +61,7 @@ class MrpWorkOrderConsume(models.Model):
     workorder_id = fields.Many2one('mrp.production.workcenter.line', 'Work Order')
     product_id = fields.Many2one('product.product', 'Product')
     product_qty = fields.Float('Quantity')
+    tracking = fields.Selection(related='product_id.tracking', selection=[('serial', 'By Unique Serial Number'), ('lot', 'By Lots'), ('none', 'No Tracking')])
     lot_id = fields.Many2one('stock.production.lot', 'Lot')
     #sequence = fields.Integer('Sequence')
     processed = fields.Boolean('Processed', default=False)
