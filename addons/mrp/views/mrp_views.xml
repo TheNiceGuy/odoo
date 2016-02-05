@@ -1365,7 +1365,7 @@
                     </div>
                     <field name="sequence" invisible="1"/>
                 </group>
-                <div class="alert alert-warning alert-dismissible text-center" role="alert" attrs="{'invisible': [('inv_message', '=', False)]}">
+                <div class="alert alert-warning alert-dismissible text-center" role="alert" attrs="{'invisible': [('inv_message_ids', '=', [])]}">
                     <a href="#" class="close" data-dismiss="alert" aria-label="close">x</a>
                     <field name="inv_message" style="height: 50px;"/>
                 </div>

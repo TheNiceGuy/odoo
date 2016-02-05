@@ -981,13 +981,16 @@ class MrpProductionWorkcenterLine(models.Model):
         InventoryMessage = self.env['inventory.message']
         msg = ''
         for workorder in self:
-            if workorder.production_id or workorder.workcenter_id:
-                domain = [
-                    '|', '|', ('picking_type_id', '=', workorder.production_id.picking_type_id.id),
+            domain = []
+            if workorder.production_id:
+                domain += [
+                    '|', ('picking_type_id', '=', workorder.production_id.picking_type_id.id),
                     ('bom_id', '=', workorder.production_id.bom_id.id),
-                    ('workcenter_id', '=', workorder.workcenter_id.id),
-                    ('valid_until', '>=', fields.Date.today())
                 ]
+            if workorder.workcenter_id:
+                domain += [('workcenter_id', '=', workorder.workcenter_id.id)]
+            if domain:
+                domain += [('valid_until', '>=', fields.Date.today())]
                 messages = InventoryMessage.search(domain)
                 for invmessage in messages:
                     msg += "".join(invmessage.message)
