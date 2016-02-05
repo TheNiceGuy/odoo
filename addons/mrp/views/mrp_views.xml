@@ -436,8 +436,17 @@
                                     </div>
                                     <div class="row">
                                         <div class="col-xs-6 o_kanban_primary_left" style="position:absolute;">
-                                            <div t-att-title="record.stage_id.value">
-                                                <field name="kanban_state" widget="kanban_state_selection"/>
+                                            <t t-if="record.stage_id.raw_value == 'normal'">
+                                                <t t-set="status" t-value="'Work orders is not running'"/>
+                                            </t>
+                                            <t t-if="record.stage_id.raw_value == 'blocked'">
+                                                <t t-set="status" t-value="'Work orders is blocked'"/>
+                                            </t>
+                                            <t t-if="record.stage_id.raw_value == 'done'">
+                                                <t t-set="status" t-value="'Work orders is running'"/>
+                                            </t>
+                                            <div t-att-title="status">
+                                                <field name="stage_id" widget="kanban_state_selection"/>
                                             </div>
                                         </div>
                                     </div>
