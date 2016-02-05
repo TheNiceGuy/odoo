@@ -804,6 +804,7 @@ class MrpProduction(models.Model):
                     consume.final_qty = production_qty
                 else:
                     oplot = self.env['stock.pack.operation.lot'].create({'operation_id': consume_ops[0].id, 'lot_id': consume.lot_id.id, 'qty': consume.product_qty})
+                    consume_ops[0].qty_done += consume.product_qty
                     consume.operation_id = consume_ops[0].id
                     consume.final_lot_id = lot.id
                     consume.final_qty = production_qty
@@ -951,11 +952,11 @@ class MrpProduction(models.Model):
                         stock_moves = stock_moves | prev_move
             if stock_moves:
                 stock_moves.action_confirm()
-            
-            #Generate first consume lines
-            for move in production.move_line_ids:
-                if (move.product_id.tracking != 'none') and not move.workorder_id:
-                    self.env['mrp.production.consume'].create({'product_id': move.product_id.id, 'production_id': production.id})
+            # Generate first consume lines
+            if not production.routing_id:
+                for move in production.move_line_ids:
+                    if (move.product_id.tracking != 'none'):
+                        self.env['mrp.production.consume'].create({'product_id': move.product_id.id, 'production_id': production.id})
         return True
 
     @api.multi
