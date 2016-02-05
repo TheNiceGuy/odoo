@@ -851,7 +851,7 @@
                     <button name="post_inventory" string="Post Inventory" type="object" attrs="{'invisible': [('post_visible', '=', False)]}"/>
                     <field name="post_visible" invisible="1"/>
                     <button name="button_scrap" type="object" string="Scrap" attrs="{'invisible': [('state', 'in', ('cancel'))]}"/>
-                    <field name="warning_message" nolabel="1" class="label label-danger" attrs="{'invisible': ['|',('availability', 'in', ('assigned', 'partially_available')), ('state', '!=', 'confirmed')]}"/>
+                    <field name="warning_message" nolabel="1" class="label label-danger" attrs="{'invisible': ['|', '|', ('availability', '=', 'assigned'), ('state', '!=', 'confirmed'), ('consume_operation_ids', '=', [])]}"/>
                     <field name="state" widget="statusbar" statusbar_visible="confirmed,progress,done" statusbar_colors='{"confirmed":"blue"}'/>
                 </header>
                 <sheet>
@@ -1834,7 +1834,7 @@
             Click to start a new Unbuild Order
           </p><p>
             An unbuild order will do a reverse bill of materials, unbuilding products
-            you produced, but you can also use it to unbulid products you purchased.
+            you produced, but you can also use it to unbuild products you purchased.
           </p>
         </field>
     </record>
@@ -1992,7 +1992,7 @@
             <field name="arch" type="xml">
                 <tree>
                     <field name="valid_until" string="Validity Date"/>
-                    <field name="create_uid" string="Auther"/>
+                    <field name="create_uid" string="Author"/>
                     <field name="picking_type_id" string="Operation"/>
                     <field name="product_id"/>
                     <field name="name" string="Message"/>
