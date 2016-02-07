@@ -47,7 +47,7 @@ class StockScrap(models.Model):
         }
         move = StockMove.create(default_val)
         new_move = move.action_scrap(self.scrap_qty, self.scrap_location_id.id)
-        self.write({'move_id': new_move.id, 'state': 'done'})
+        self.write({'move_id': move.id, 'state': 'done'})
         return True
 
     @api.multi

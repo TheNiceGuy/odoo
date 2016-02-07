@@ -23,7 +23,7 @@ class report_workcenter_load(models.Model):
                     SUM(wl.hour) AS hour,
                     wl.workcenter_id as workcenter_id
                 FROM
-                    mrp_production_workcenter_line wl
+                    mrp_production_work_order wl
                     LEFT JOIN mrp_production p
                         ON p.id = wl.production_id
                 GROUP BY

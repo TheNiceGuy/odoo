@@ -53,116 +53,6 @@
             sequence="20"
             groups="base.group_no_one"/>
 
-        <!-- Property Group -->
-        <record id="mrp_property_group_form_view" model="ir.ui.view">
-            <field name="name">mrp.property.group.form</field>
-            <field name="model">mrp.property.group</field>
-            <field name="arch" type="xml">
-                <form string="Properties categories">
-                    <group>
-                        <field name="name"/>
-                    </group>
-                    <separator string="Description"/>
-                    <field name="description" nolabel="1"/>
-                </form>
-            </field>
-        </record>
-        <record id="mrp_property_group_action" model="ir.actions.act_window">
-            <field name="name">Property Groups</field>
-            <field name="type">ir.actions.act_window</field>
-            <field name="res_model">mrp.property.group</field>
-            <field name="view_type">form</field>
-            <field name="view_mode">tree,form</field>
-            <field name="help" type="html">
-              <p class="oe_view_nocontent_create">
-                Click to create a group of properties.
-              </p><p>
-                Define specific property groups that can be assigned to your
-                bill of materials and sales orders. Properties allows Odoo
-                to automatically select the right bill of materials according
-                to properties selected in the sales order by salesperson.
-              </p><p>
-                For instance, in the property group "Warranty", you an have
-                two properties: 1 year warranty, 3 years warranty. Depending
-                on the propoerties selected in the sales order, Odoo will
-                schedule a production using the matching bill of materials.
-              </p>
-            </field>
-        </record>
-        <menuitem id="menu_mrp_property_group_action"
-            action="mrp_property_group_action"
-            parent="menu_mrp_configuration"
-            groups="base.group_no_one,product.group_mrp_properties"
-            sequence="35"/>
-
-        <!-- Property  -->
-        <record id="mrp_property_tree_view" model="ir.ui.view">
-            <field name="name">mrp.property.tree</field>
-            <field name="model">mrp.property</field>
-            <field name="arch" type="xml">
-                <tree string="Properties">
-                    <field name="name"/>
-                    <field name="composition"/>
-                    <field name="group_id"/>
-                </tree>
-            </field>
-        </record>
-        <record id="mrp_property_form_view" model="ir.ui.view">
-            <field name="name">mrp.property.form</field>
-            <field name="model">mrp.property</field>
-            <field name="arch" type="xml">
-                <form string="Properties">
-                    <group col="4">
-                        <field colspan="4" name="name"/>
-                        <field name="group_id"/>
-                        <field name="composition"/>
-                    </group>
-                    <separator string="Description"/>
-                    <field name="description" nolabel="1"/>
-                </form>
-            </field>
-        </record>
-        <record id="view_mrp_property_search" model="ir.ui.view">
-            <field name="name">mrp.property.search</field>
-            <field name="model">mrp.property</field>
-            <field name="arch" type="xml">
-                <search string="Search">
-                    <field name="name" string="Name"/>
-                    <field name="composition"/>
-                    <field name="group_id" />
-                    <group expand="0" string="Group By">
-                        <filter string="Property Group" domain="[]" context="{'group_by':'group_id'}"/>
-                    </group>
-               </search>
-            </field>
-        </record>
-        <record id="mrp_property_action" model="ir.actions.act_window">
-            <field name="name">Properties</field>
-            <field name="type">ir.actions.act_window</field>
-            <field name="res_model">mrp.property</field>
-            <field name="view_type">form</field>
-            <field name="view_mode">tree,form</field>
-            <field name="search_view_id" ref="view_mrp_property_search"/>
-            <field name="help" type="html">
-              <p class="oe_view_nocontent_create">
-                Click to create a new property.
-              </p><p>
-                The Properties in Odoo are used to select the right bill of
-                materials for manufacturing a product when you have different
-                ways of building the same product.  You can assign several
-                properties to each bill of materials.  When a salesperson
-                creates a sales order, they can relate it to several properties
-                and Odoo will automatically select the BoM to use according
-                the needs.
-              </p>
-            </field>
-        </record>
-        <menuitem id="menu_mrp_property_action"
-            action="mrp_property_action"
-            groups="product.group_mrp_properties"
-            parent="menu_mrp_configuration"
-            sequence="30"/>
-
         <!-- Work Centers -->
         <record id="mrp_workcenter_tree_view" model="ir.ui.view">
             <field name="name">mrp.workcenter.tree</field>
@@ -291,9 +181,9 @@
             </field>
         </record>
 
-        <record id="view_mrp_production_workcenter_line_search" model="ir.ui.view">
-            <field name="name">mrp.production.workcenter.line.search</field>
-            <field name="model">mrp.production.workcenter.line</field>
+        <record id="view_mrp_production_work_order_search" model="ir.ui.view">
+            <field name="name">mrp.production.work.order.search</field>
+            <field name="model">mrp.production.work.order</field>
             <field name="arch" type="xml">
                 <search>
                     <field name="workcenter_id"/>
@@ -309,11 +199,11 @@
         <record id="action_work_orders" model="ir.actions.act_window">
             <field name="name">Work Orders</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">mrp.production.workcenter.line</field>
+            <field name="res_model">mrp.production.work.order</field>
             <field name="view_type">form</field>
             <field name="view_mode">tree,form,gantt,pivot,graph,calendar</field>
             <!--<field name="context">{'default_workcenter_id': }</field>-->
-            <field name="search_view_id" ref="view_mrp_production_workcenter_line_search"/>
+            <field name="search_view_id" ref="view_mrp_production_work_order_search"/>
             <field name="domain">[('workcenter_id', '=', active_id), ('state', '!=', 'done')]</field>
             <field name="help" type="html">
               <p class="oe_view_nocontent_create">
@@ -334,14 +224,12 @@
             <field name="arch" type="xml">
                 <tree decoration-bf="message_needaction==True" decoration-info="state in ('draft','confirmed')" decoration-danger="date_planned&lt;current_date and state not in ('done','cancel')" decoration-muted="state in ('done','cancel')" string="Manufacturing Orders">
                     <field name="message_needaction" invisible="1"/>
-                    <field name="priority" widget="handle"/> <!-- TODO: Need to convert to integer or use sequence in order too -->
                     <field name="name"/>
                     <field name="date_planned"/>
                     <field name="product_id"/>
                     <field name="product_qty" sum="Total Qty" string="Quantity"/>
                     <field name="product_uom_id" string="Unit of Measure" options="{'no_open':True,'no_create':True}" groups="product.group_uom"/>
                     <field name="routing_id" groups="mrp.group_mrp_routings"/>
-                    <field name="hour_total" sum="Total Hours" invisible="1"/>
                     <field name="origin"/>
                     <field name="state"/>
                 </tree>
@@ -407,7 +295,7 @@
                                             </t>
                                             <t  t-if="record.nb_orders.raw_value &lt;= 0">
                                                 <button class="btn btn-warning" name="%(act_product_mrp_production_workcenter)d" type="action">
-                                                    <span>Plan Manufacturing</span>
+                                                    <span>Plan Orders</span>
                                                 </button>
                                             </t>
                                         </div>
@@ -550,7 +438,7 @@
                         </group>
                         <notebook>
                             <page string="Work Center Operations">
-                                <field name="workcenter_line_ids" string="Operation"/>
+                                <field name="work_order_ids" string="Operation"/>
                             </page>
                             <page string="Notes">
                                 <field name="note"/>
@@ -658,8 +546,8 @@
                                     <field name="product_rounding" groups="mrp.group_rounding_efficiency"/>
                                     <field name="product_efficiency" groups="mrp.group_rounding_efficiency"/>
                                     <field name="attribute_value_ids" widget="many2many_tags" domain="[('product_ids.product_tmpl_id', '=', parent.product_tmpl_id)]" groups="product.group_product_variant"/>
-                                    <field name="property_ids" widget="many2many_tags" groups="product.group_mrp_properties"/>
                                     <field name="operation_id" groups="mrp.group_mrp_routings" domain="[('routing_id', '=', parent.routing_id)]"/>
+                                    <field name="procure_method" groups="stock.group_locations"/>
                                 </tree>
                             </field>
                         </page>
@@ -677,13 +565,6 @@
                                     <field name="ready_to_produce" string="Manufacturing Readiness"/>
                                     <field name="picking_type_id" string="Operation"/>
                                 </group>
-                            </group>
-                            <separator string="Properties" groups="product.group_mrp_properties"/>
-                            <group>
-                                <group>
-                                    <field name="property_ids" widget="many2many_tags" groups="product.group_mrp_properties"/>
-                                </group>
-                                <group/>
                             </group>
                         </page>
                     </notebook>
@@ -766,7 +647,6 @@
                     <field name="product_uom_id" options="{'no_open':True,'no_create':True}" groups="product.group_uom"/>
                     <field name="routing_id"/>
                     <field name="attribute_value_ids" widget="many2many_tags" groups="product.group_product_variant"/>
-                    <field name="property_ids" widget="many2many_tags" groups="product.group_mrp_properties"/>
                 </tree>
             </field>
         </record>
@@ -818,7 +698,7 @@
         <record model="ir.actions.act_window" id="action_mrp_workorder_production_specific">
             <field name="name">Work Orders</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">mrp.production.workcenter.line</field>
+            <field name="res_model">mrp.production.work.order</field>
             <field name="view_type">form</field>
             <field name="view_mode">tree,form,gantt,calendar,pivot,graph</field>
             <field name="domain">[('production_id', '=', active_id)]</field>
@@ -845,6 +725,27 @@
             <field name="domain">['|', ('raw_material_production_id', '=', active_id), ('production_id', '=', active_id)]</field>
         </record>
 
+        <record id="stock.view_stock_move_lots" model="ir.ui.view">
+            <field name="name">stock.move.lots.form</field>
+            <field name="model">stock.move</field>
+            <field name="arch" type="xml">
+                <form string="Lots">
+                    <group>
+                        <group>
+                            <field name="product_id"/>
+                            <field name="quantity_done"/>
+                        </group>
+                    </group>
+                    <field name="quantity_lots">
+                        <tree editable="bottom">
+                            <field name="lot_id"/>
+                            <field name="quantity"/>
+                        </tree>
+                    </field>
+                </form>
+            </field>
+        </record>
+
         <!-- Production Order -->
         <record id="mrp_production_form_view" model="ir.ui.view">
             <field name="name">mrp.production.form</field>
@@ -857,13 +758,13 @@
                     <button name="action_assign" attrs="{'invisible': [('availability', '=', 'assigned')]}" string="Check availability" type="object" class="oe_highlight"/>
                     <button name="button_plan" attrs="{'invisible': ['|', ('state', '!=', 'confirmed'), ('routing_id', '=', False)]}" type="object" string="Plan"/>
                     <button name="%(act_mrp_product_produce)d" attrs="{'invisible': ['|', ('state', '=', 'planned')]}" string="Produce" type="action"/>
-                    <button name="post_inventory" string="Post Inventory" type="object" attrs="{'invisible': [('post_visible', '=', False)]}" class="oe_highlight"/>
-                    <field name="post_visible" invisible="1"/>
+                    <button name="post_inventory" string="Post Inventory" type="object" class="oe_highlight"/>
                     <button name="button_scrap" type="object" string="Scrap" attrs="{'invisible': [('state', 'in', ('cancel'))]}"/>
-                    <field name="warning_message" nolabel="1" class="label label-danger" attrs="{'invisible': ['|', '|', ('availability', '=', 'assigned'), ('state', '!=', 'confirmed'), ('consume_operation_ids', '=', [])]}"/>
+                    <span class="label label-danger" attrs="{'invisible': ['|', '|', ('availability', '=', 'assigned'), ('state', '!=', 'confirmed'), ('consume_operation_ids', '=', [])]}">Raw materials not available!</span>
                     <field name="state" widget="statusbar" statusbar_visible="confirmed,progress,done" statusbar_colors='{"confirmed":"blue"}'/>
                 </header>
                 <sheet>
+                    <field name="post_visible" invisible="1"/>
                     <div class="oe_button_box">
                         <button name="%(action_mrp_workorder_production_specific)d" type="action" attrs="{'invisible': [('nb_orders', '=', 0)]}" class="oe_stat_button" icon="fa-play-circle-o">
                             <div class="o_form_field o_stat_info">
@@ -872,7 +773,7 @@
                             </div>
                         </button>
                         <button name="%(action_mrp_production_moves)d" type="action" string="Inventory Moves" class="oe_stat_button" icon="fa-arrows-v" attrs="{'invisible': [('state', 'not in', ('progress', 'done'))]}"/>
-                        <field name="workcenter_line_ids" invisible="1"/>
+                        <field name="work_order_ids" invisible="1"/>
                     </div>
                     <div class="oe_title">
                         <h1><field name="name" placeholder="Manufacturing Reference" nolabel="1"/></h1>
@@ -881,8 +782,8 @@
                         <group>
                             <field name="availability" invisible="1"/>
                             <field name="check_to_done" invisible="1"/>
-                            <field name="product_id" domain="[('bom_ids','!=',False),('bom_ids.bom_type','!=','phantom')]" context='{"default_type": "product"}'/>
-                            <field name="product_tmpl_id" invisible="1"/>
+                            <field name="product_tmpl_id" domain="[('bom_ids','!=',False),('bom_ids.bom_type','!=','phantom')]"/>
+                            <field name="product_id" domain="[('product_tmpl_id','=',product_id)]"/>
                             <label for="product_qty"/>
                             <div class="o_row">
                                 <field name="product_qty"/>
@@ -910,7 +811,6 @@
                             </div>
                             <field name="user_id"/>
                             <field name="origin"/>
-                            <field name="priority" invisible="1"/>
                             <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
                             <field name="move_prod_id" groups="base.group_no_one"/>
                         </group>
@@ -922,53 +822,42 @@
                     </group>
                     <notebook>
                         <page string="Consumed Materials">
-                            <field name="consume_operation_ids" options="{'reload_on_button': True}" context="{'default_location_id': location_src_id, 'default_location_dest_id': location_dest_id}">
-                                <tree editable="bottom" delete="0" default_order="production_state,id" decoration-danger="qty_done&gt;product_qty" decoration-success="qty_done==product_qty and production_state!='done'" decoration-muted="production_state=='done'">
-                                    <field name="package_id" groups="stock.group_tracking_lot" invisible="1"/>
-                                    <field name="product_id" on_change="product_id_change(product_id, product_uom_id, product_qty)" required="1" attrs="{'readonly': [('fresh_record', '=', False)]}"/>
-                                    <field name="fresh_record" invisible="1"/>
-                                    <field name="product_uom_id" attrs="{'readonly': [('fresh_record', '=', False)]}" groups="product.group_uom"/>
-                                    <field name="lots_visible" invisible="1"/>
-                                    <field name="owner_id" groups="stock.group_tracking_owner"/>
+                            <field name="move_raw_ids" options="{'reload_on_button': True}" context="{'default_location_id': location_src_id, 'default_location_dest_id': location_dest_id}">
+                                <tree editable="bottom" delete="0" decoration-danger="quantity_done&gt;product_uom_qty" decoration-success="quantity_done==product_uom_qty">
+                                    <field name="product_id" on_change="product_id_change(product_id, product_uom_id, product_uom_qty)" required="1"/>
+                                    <field name="product_uom" groups="product.group_uom"/>
+
+                                    <field name="has_tracking" invisible="1"/>
                                     <field name="location_id" domain="[('id', 'child_of', parent.location_id)]" invisible="1"/>
                                     <field name="location_dest_id" domain="[('id', 'child_of', parent.location_dest_id)]" invisible="1"/>
-                                    <field name="from_loc" groups="stock.group_locations,stock.group_tracking_lot"/>
-                                    <!-- <field name="to_loc" groups="stock.group_locations,stock.group_tracking_lot"/>
-                                    <field name="result_package_id" groups="stock.group_tracking_lot" context="{'location_id': location_dest_id}" invisible="1"/>-->
-                                    <field name="state" invisible="1"/>
-                                    <field name="production_state" invisible="1"/>
-                                    <field name="qty_reserved"/>
-                                    <field name="product_qty" readonly="1" attrs="{'required': [('product_id', '!=', False)]}"/>
-                                    <field name="qty_done" attrs="{'readonly': ['|', ('production_state', '=', 'done'), ('lots_visible', '=', True)]}" string="Consumed"/>
-                                    <button name="split_lot" string="Lot Split" type="object" icon="fa-list" groups="stock.group_production_lot"
-                                            attrs="{'invisible': ['|', ('lots_visible', '=', False), ('state', 'not in', ['confirmed', 'planned', 'progress'])]}"/>
-                                    <button name="show_details" string="Modify" type="object" icon="fa-pencil" groups="stock.group_locations"
-                                            attrs="{'invisible': ['|', ('production_state', '=', 'done'), ('state', 'not in', ['confirmed','planned','progress'])]}" />
+
+                                    <field name="state"/>
+
+                                    <field name="reserved_availability"/>
+                                    <field name="product_uom_qty" readonly="1" attrs="{'required': [('product_id', '!=', False)]}"/>
+                                    <field name="quantity_done" attrs="{'readonly': [('has_tracking', 'in', ['lot','serial'])]}" string="Consumed"/>
+
+                                    <button name="split_move_lot" string="Register lots" type="object" icon="fa-list"
+                                        attrs="{'invisible': [('has_tracking', 'not in', ['lot','serial'])]}"/>
+
                                 </tree>
                             </field>
                         </page>
                         <page string="Finished Products">
-                            <field name="produce_operation_ids" options="{'reload_on_button': True}" context="{'default_picking_id': id, 'default_location_id': location_src_id, 'default_location_dest_id': location_dest_id}">
-                                <tree editable="bottom" delete="0" default_order="production_state,id" decoration-danger="qty_done&gt;product_qty" decoration-success="qty_done==product_qty and production_state!='done'" decoration-muted="production_state=='done'">
-                                    <field name="package_id" groups="stock.group_tracking_lot" invisible="1"/>
-                                    <field name="product_id" on_change="product_id_change(product_id, product_uom_id, product_qty)" required="1" attrs="{'readonly': [('fresh_record', '=', False)]}"/>
-                                    <field name="fresh_record" invisible="1"/>
-                                    <field name="lots_visible" invisible="1"/>
-                                    <field name="owner_id" groups="stock.group_tracking_owner"/>
+                            <field name="move_finished_ids" options="{'reload_on_button': True}" context="{'default_location_id': location_src_id, 'default_location_dest_id': location_dest_id}">
+                                <tree editable="bottom" delete="0" decoration-danger="quantity_done&gt;product_uom_qty" decoration-success="quantity_done==product_uom_qty">
+                                    <field name="product_id" on_change="product_id_change(product_id, product_uom_id, product_uom_qty)" required="1"/>
+                                    <field name="product_uom" groups="product.group_uom"/>
+
+                                    <field name="has_tracking" invisible="1"/>
                                     <field name="location_id" domain="[('id', 'child_of', parent.location_id)]" invisible="1"/>
                                     <field name="location_dest_id" domain="[('id', 'child_of', parent.location_dest_id)]" invisible="1"/>
-                                    <field name="from_loc" groups="stock.group_locations,stock.group_tracking_lot" invisible="1"/>
-                                    <field name="to_loc" groups="stock.group_locations,stock.group_tracking_lot"/>
-                                    <field name="result_package_id" groups="stock.group_tracking_lot" context="{'location_id': location_dest_id}" invisible="1"/>
-                                    <field name="state" invisible="1"/>
-                                    <field name="production_state" invisible="1"/>
-                                    <field name="product_qty" readonly="1" attrs="{'required': [('product_id', '!=', False)]}" string="To Produce"/>
-                                    <field name="qty_done" attrs="{'readonly': ['|', ('production_state', '=', 'done'), ('lots_visible', '=', True)]}" string="Produced"/>
-                                    <field name="product_uom_id" attrs="{'readonly': [('fresh_record', '=', False)]}" groups="product.group_uom"/>
-                                    <button name="split_lot" string="Lot Split" type="object" icon="fa-list" groups="stock.group_production_lot"
-                                            attrs="{'invisible': ['|', ('lots_visible', '=', False), ('state', 'not in', ['confirmed', 'planned', 'progress'])]}"/>
-                                    <button name="show_details" string="Modify" type="object" icon="fa-pencil" groups="stock.group_locations"
-                                            attrs="{'invisible': ['|', ('production_state', '=', 'done'), ('state', 'not in', ['confirmed','planned','progress'])]}"/>
+
+                                    <field name="state"/>
+
+                                    <field name="reserved_availability"/>
+                                    <field name="product_uom_qty" readonly="1" attrs="{'required': [('product_id', '!=', False)]}"/>
+                                    <field name="quantity_done" attrs="{'readonly': [('has_tracking', 'in', ['lot','serial'])]}" string="Consumed"/>
                                 </tree>
                             </field>
                         </page>
@@ -988,14 +877,12 @@
             <field name="arch" type="xml">
                 <tree decoration-bf="message_needaction==True" decoration-info="state in ('draft','confirmed')" decoration-danger="date_planned&lt;current_date and state not in ('done','cancel')" decoration-muted="state in ('done','cancel')" string="Manufacturing Orders">
                     <field name="message_needaction" invisible="1"/>
-                    <field name="priority" invisible="1"/>
                     <field name="name"/>
                     <field name="date_planned"/>
                     <field name="product_id"/>
                     <field name="product_qty" sum="Total Qty" string="Quantity"/>
                     <field name="product_uom_id" string="Unit of Measure" options="{'no_open':True,'no_create':True}" groups="product.group_uom"/>
                     <field name="routing_id" groups="mrp.group_mrp_routings"/>
-                    <field name="hour_total" sum="Total Hours" invisible="1"/>
                     <field name="origin"/>
                     <field name="state"/>
                 </tree>
@@ -1064,7 +951,6 @@
             <field name="arch" type="xml">
                 <pivot string="Manufacturing Orders">
                     <field name="date_planned" type="row"/>
-                    <field name="hour_total" type="measure"/>
                 </pivot>
             </field>
         </record>
@@ -1074,7 +960,6 @@
             <field name="arch" type="xml">
                 <graph string="Manufacturing Orders">
                     <field name="date_planned"/>
-                    <field name="hour_total" type="measure"/>
                 </graph>
             </field>
         </record>
@@ -1195,9 +1080,6 @@
                     <field name="bom_id" domain="[('product_id','=',product_id)]"/>
                     <field name="production_id" attrs="{'invisible': [('production_id','=',False)]}"/>
                 </field>
-                <field name="origin" position="after">
-                    <field name="property_ids" widget="many2many_tags" groups="product.group_mrp_properties"/>
-                </field>
                </data>
             </field>
         </record>
@@ -1314,8 +1196,8 @@
         <!-- Coming from mrp_operations -->
 
     <record model="ir.ui.view" id="mrp_production_workcenter_tree_view_inherit">
-        <field name="name">mrp.production.workcenter.line.tree</field>
-        <field name="model">mrp.production.workcenter.line</field>
+        <field name="name">mrp.production.work.order.tree</field>
+        <field name="model">mrp.production.work.order</field>
         <field name="arch" type="xml">
             <tree string="Work Orders" delete="0" decoration-success="date_planned_start&gt;=current_date and state == 'ready'" decoration-muted="state in ('done','cancel')" decoration-danger="date_planned_start&lt;current_date and state in ('ready')">
                 <field name="sequence" widget="handle"/>
@@ -1332,124 +1214,119 @@
     </record>
 
     <record model="ir.ui.view" id="mrp_production_workcenter_form_view_inherit">
-        <field name="name">mrp.production.workcenter.line.form</field>
-        <field name="model">mrp.production.workcenter.line</field>
+        <field name="name">mrp.production.work.order.form</field>
+        <field name="model">mrp.production.work.order</field>
         <field name="arch" type="xml">
             <form string="Production Workcenter" delete="0">
             <header>
-                <button name="button_finish" type="object" string="Finish Order" attrs="{'invisible': ['|',('state', '!=', 'progress'), ('check_produce_qty','=', False)]}" class="btn-info"/>
+                <button name="button_finish" type="object" string="Finish Order" attrs="{'invisible': ['|',('state', '!=', 'progress')]}" class="btn-info"/>
                 <button name="button_start" type="object" string="Start Working" attrs="{'invisible': [('state', '!=', 'pending')]}"/>
                 <button name="button_start" type="object" string="Start Working" attrs="{'invisible': [('state', '!=', 'ready')]}" class="btn-success"/>
-                <button name="record_production" type="object" string="Record Production" class="btn-success" attrs="{'invisible': ['|', '|', ('state', '!=', 'progress'), ('show_state', '=', False), ('check_produce_qty','=', True)]}"/>
-                <button name="button_pending" type="object" string="Pause" class="btn-warning" attrs="{'invisible': ['|', ('state', 'in', ('done', 'pending', 'ready')), ('show_state', '=', False)]}"><span>(<field name="delay_stop" widget="float_time" style="width:auto;"/>)</span></button>
-                <button name="button_start" type="object" string="Continue Production" class="btn-warning" attrs="{'invisible': ['|', ('show_state', '=', True), ('state', 'in', ('done', 'pending', 'ready'))]}"><span>(<field name="delay" widget="float_time" style="width:auto;"/>)</span></button>
+                <button name="record_production" type="object" string="Record Production" class="btn-success" attrs="{'invisible': ['|', '|', ('state', '!=', 'progress'), ('show_state', '=', False)]}"/>
+                <button name="button_pending" type="object" string="Pause" class="btn-warning" attrs="{'invisible': ['|', ('state', 'in', ('done', 'pending', 'ready')), ('show_state', '=', False)]}"><span>(<field name="delay" widget="float_time" class="oe_inline"/>)</span></button>
+                <button name="button_start" type="object" string="Continue Production" class="btn-warning" attrs="{'invisible': ['|', ('show_state', '=', True), ('state', 'in', ('done', 'pending', 'ready'))]}"></button>
                 <button name="button_start" type="object" string="Continue Production" attrs="{'invisible': [('state', '!=', 'done')]}"/>
-                <button name="record_production" type="object" string="Record Production" class="btn-success" attrs="{'invisible': ['|', '|', ('state', '!=', 'progress'), ('show_state', '=', False), ('check_produce_qty','=', False)]}"/>
+                <button name="record_production" type="object" string="Record Production" class="btn-success" attrs="{'invisible': ['|', '|', ('state', '!=', 'progress'), ('show_state', '=', False)]}"/>
                 <button name="button_scrap" type="object" string="Scrap" attrs="{'invisible': [('state', 'in', ('confirmed', 'cancel'))]}"/>
                 <field name="state" widget="statusbar" statusbar_visible="pending,ready,progress,done"/>
                 <field name="show_state" invisible="1"/>
-                <field name="check_produce_qty" invisible="1"/>
             </header>
-            <group>
+            <sheet>
                 <group>
-                    <field name="product" string="To Produce"/>
-                    <label for="qty_produced" string="Quantity Produced"/>
-                    <div class="o_row">
-                        <field name="qty_produced"/> /
-                        <field name="qty"/>
-                        <field name="uom" widget="selection"/>
-                        <field name="availability" widget="bullet_state" options="{'classes': {'assigned': 'success', 'waiting': 'danger'}}"/>
+                    <group>
+                        <field name="product" string="To Produce"/>
+                        <label for="qty_produced" string="Quantity Produced"/>
+                        <div class="o_row">
+                            <field name="qty_produced"/> /
+                            <field name="qty"/>
+                            <field name="uom" widget="selection"/>
+                            <field name="availability" widget="bullet_state" options="{'classes': {'assigned': 'success', 'waiting': 'danger'}}"/>
+                        </div>
+                        <field name="sequence" invisible="1"/>
+                    </group>
+                    <div class="alert alert-warning alert-dismissible text-center" role="alert" attrs="{'invisible': [('inv_message', '=', False)]}">
+                        <a href="#" class="close" data-dismiss="alert" aria-label="close">x</a>
+                        <field name="inv_message" style="height: 50px;"/>
                     </div>
-                    <field name="sequence" invisible="1"/>
                 </group>
-                <div class="alert alert-warning alert-dismissible text-center" role="alert" attrs="{'invisible': [('inv_message_ids', '=', [])]}">
-                    <a href="#" class="close" data-dismiss="alert" aria-label="close">x</a>
-                    <field name="inv_message" style="height: 50px;"/>
-                </div>
-            </group>
-            <notebook>
-            <page string="Work Instruction Consumption" attrs="{'invisible': [('consume_line_ids', '=', [])]}">
-                <group>
-                    <field name="final_lot_id"/>
-                    <field name="qty_producing"/>
-                    <field name="consume_line_ids" invisible="1"/>
-                    <field name="active_consume_line_ids" domain="[('processed', '=', False)]">
+                <notebook>
+                <page string="Current Production">
+                    <group>
+                        <group>
+                            <field name="qty_producing" string="Current Qty"/>
+                            <field name="final_lot_id"/>
+                        </group>
+                    </group>
+                    <field name="move_traceability_ids">
                         <tree editable="bottom">
                             <field name="product_id"/>
-                            <field name="processed" invisible="1"/>
+                            <field name="quantity"/>
                             <field name="lot_id"/>
-                            <field name="product_qty"/>
                         </tree>
                     </field>
-                </group>
-            </page>
-            <page string="Work Instruction" attrs="{'invisible': [('worksheet', '=', False)]}">
-                <field name="worksheet" widget="image"/>
-            </page>
-            <page string="Time Tracking" groups="mrp.group_mrp_manager">
-                <group>
+                </page>
+                <page string="Work Instruction" attrs="{'invisible': [('worksheet', '=', False)]}">
+                    <field name="worksheet" widget="image"/>
+                </page>
+                <page string="Miscellaneous" groups="mrp.group_mrp_manager">
                     <group>
-                        <field name="inv_message_ids" invisible="True"/>
-                        <label for="date_planned_start" string="Planned Date"/>
-                        <div class="o_row">
-                            <field name="date_planned_start"/>
-                            <label string="to" attrs="{'invisible': [('date_planned_end', '=', False)]}"/>
-                            <field name="date_planned_end" attrs="{'invisible': [('date_planned_start', '=', False)]}"/>
-                        </div>
-                        <label for="hour" string="Expected Duration"/>
-                        <div>
-                            <field name="hour" widget="float_time" class="oe_inline"/>
-                            hours
-                        </div>
-                        <field name="capacity_planned"/>
+                        <group>
+                            <field name="name"/>
+                            <field name="workcenter_id"/>
+                            <field name="production_id"/>
+                        </group>
                     </group>
+                </page>
+                <page string="Time Tracking" groups="mrp.group_mrp_manager">
                     <group>
-                        <label for="date_start" string="Effective Date"/>
-                        <div class="o_row">
-                            <field name="date_start" readonly="1"/>
-                            <label string="to" attrs="{'invisible': [('date_finished', '=', False)]}"/>
-                            <field name="date_finished" readonly="1" attrs="{'invisible': [('date_start', '=', False)]}"/>
-                        </div>
-                        <field name="started_since" attrs="{'invisible': [('state', '!=', 'progress')]}"/>
+                        <group>
+                            <label for="date_planned_start" string="Planned Date"/>
+                            <div class="o_row">
+                                <field name="date_planned_start"/>
+                                <label string="to" attrs="{'invisible': [('date_planned_end', '=', False)]}"/>
+                                <field name="date_planned_end" attrs="{'invisible': [('date_planned_start', '=', False)]}"/>
+                            </div>
+                            <label for="hour" string="Expected Duration"/>
+                            <div>
+                                <field name="hour" widget="float_time" class="oe_inline"/>
+                                hours
+                            </div>
+                        </group>
+                        <group>
+                            <label for="date_start" string="Effective Date"/>
+                            <div class="o_row">
+                                <field name="date_start" readonly="1"/>
+                                <label string="to" attrs="{'invisible': [('date_finished', '=', False)]}"/>
+                                <field name="date_finished" readonly="1" attrs="{'invisible': [('date_start', '=', False)]}"/>
+                            </div>
+                        </group>
                     </group>
-                </group>
-                <field name="show_state" invisible="1"/>
-                <group>
-                    <field name="time_ids" readonly="1" nolabel="1">
-                        <tree>
-                            <field name="date_start"/>
-                            <field name="duration" widget="float_time"/>
-                            <field name="user_id"/>
-                            <field name="state"/>
-                        </tree>
-                        <form>
-                            <group>
+                    <field name="show_state" invisible="1"/>
+                    <group>
+                        <field name="time_ids" readonly="1" nolabel="1">
+                            <tree>
+                                <field name="date_start"/>
+                                <field name="duration" widget="float_time"/>
+                                <field name="user_id"/>
+                                <field name="state"/>
+                            </tree>
+                            <form>
                                 <group>
-                                    <field name="date_start"/>
-                                    <field name="duration" widget="float_time"/>
+                                    <group>
+                                        <field name="date_start"/>
+                                        <field name="duration" widget="float_time"/>
+                                    </group>
+                                    <group>
+                                        <field name="user_id"/>
+                                        <field name="state"/>
+                                    </group>
                                 </group>
-                                <group>
-                                    <field name="user_id"/>
-                                    <field name="state"/>
-                                </group>
-                            </group>
-                        </form>
-                    </field>
-                </group>
-            </page>
-            <page string="Miscellaneous" groups="mrp.group_mrp_manager">
-                <group>
-                    <group>
-                        
+                            </form>
+                        </field>
                     </group>
-                    <group>
-                        <field name="name"/>
-                        <field name="workcenter_id"/>
-                        <field name="production_id"/>
-                    </group>
-                </group>
-            </page>
-            </notebook>
+                </page>
+                </notebook>
+            </sheet>
             <div class="oe_chatter" groups="mrp.group_mrp_manager">
                 <field name="message_follower_ids" widget="mail_followers"/>
                 <field name="message_ids" widget="mail_thread"/>
@@ -1459,8 +1336,8 @@
     </record>
 
     <record id="view_mrp_production_workcenter_form_view_filter" model="ir.ui.view">
-        <field name="name">mrp.production.workcenter.line.select</field>
-        <field name="model">mrp.production.workcenter.line</field>
+        <field name="name">mrp.production.work.order.select</field>
+        <field name="model">mrp.production.work.order</field>
         <field name="arch" type="xml">
             <search string="Search Work Orders">
                 <field name="name" string="Work Orders"/>
@@ -1487,8 +1364,8 @@
     </record>
 
     <record id="workcenter_line_calendar" model="ir.ui.view">
-        <field name="name">mrp.production.workcenter.line.calendar</field>
-        <field name="model">mrp.production.workcenter.line</field>
+        <field name="name">mrp.production.work.order.calendar</field>
+        <field name="model">mrp.production.work.order</field>
         <field name="arch" type="xml">
             <calendar color="workcenter_id" date_stop="date_planned_end" date_start="date_planned_start" string="Operations">
                 <field name="workcenter_id"/>
@@ -1498,8 +1375,8 @@
     </record>
 
     <record id="workcenter_line_graph" model="ir.ui.view">
-        <field name="name">mrp.production.workcenter.line.graph</field>
-        <field name="model">mrp.production.workcenter.line</field>
+        <field name="name">mrp.production.work.order.graph</field>
+        <field name="model">mrp.production.work.order</field>
         <field name="arch" type="xml">
             <graph string="Operations">
                 <field name="workcenter_id"/>
@@ -1510,8 +1387,8 @@
     </record>
 
     <record id="workcenter_line_pivot" model="ir.ui.view">
-        <field name="name">mrp.production.workcenter.line.pivot</field>
-        <field name="model">mrp.production.workcenter.line</field>
+        <field name="name">mrp.production.work.order.pivot</field>
+        <field name="model">mrp.production.work.order</field>
         <field name="arch" type="xml">
             <pivot string="Operations">
                 <field name="workcenter_id"/>
@@ -1523,8 +1400,8 @@
 
 
     <record id="workcenter_line_gantt_production" model="ir.ui.view">
-        <field name="name">mrp.production.workcenter.line.gantt.production</field>
-        <field name="model">mrp.production.workcenter.line</field>
+        <field name="name">mrp.production.work.order.gantt.production</field>
+        <field name="model">mrp.production.work.order</field>
         <field name="arch" type="xml">
             <gantt date_stop="date_planned_end" date_start="date_planned_start" string="Operations" default_group_by="production_id">
             </gantt>
@@ -1532,8 +1409,8 @@
     </record>
 
     <record id="workcenter_line_gantt_workcenter" model="ir.ui.view">
-        <field name="name">mrp.production.workcenter.line.gantt.workcenter</field>
-        <field name="model">mrp.production.workcenter.line</field>
+        <field name="name">mrp.production.work.order.gantt.workcenter</field>
+        <field name="model">mrp.production.work.order</field>
         <field name="arch" type="xml">
             <gantt date_stop="date_planned_end" date_start="date_planned_start" string="Operations" default_group_by="workcenter_id">
             </gantt>
@@ -1541,8 +1418,8 @@
     </record>
 
     <record model="ir.ui.view" id="workcenter_line_kanban">
-        <field name="name">mrp.production.workcenter.line.kanban</field>
-        <field name="model">mrp.production.workcenter.line</field>
+        <field name="name">mrp.production.work.order.kanban</field>
+        <field name="model">mrp.production.work.order</field>
         <field name="arch" type="xml">
             <kanban class="o_kanban_small_column" create="0">
                 <field name="name"/>
@@ -1583,7 +1460,7 @@
     <record model="ir.actions.act_window" id="action_mrp_workorder_workcenter">
         <field name="name">Work Orders</field>
         <field name="type">ir.actions.act_window</field>
-        <field name="res_model">mrp.production.workcenter.line</field>
+        <field name="res_model">mrp.production.work.order</field>
         <field name="view_type">form</field>
         <field name="view_mode">gantt,tree,form,calendar,pivot,graph</field>
         <field name="search_view_id" ref="view_mrp_production_workcenter_form_view_filter"/>
@@ -1605,7 +1482,7 @@
     <record model="ir.actions.act_window" id="action_mrp_workorder_production">
         <field name="name">Work Orders Planning</field>
         <field name="type">ir.actions.act_window</field>
-        <field name="res_model">mrp.production.workcenter.line</field>
+        <field name="res_model">mrp.production.work.order</field>
         <field name="view_type">form</field>
         <!--<field name="domain">[('production_state','in',('ready','confirmed','in_production'))]</field>-->
         <field name="view_mode">gantt,tree,form,calendar,pivot,graph</field>
@@ -1626,7 +1503,7 @@
     <record model="ir.actions.act_window" id="mrp_workorder_todo">
         <field name="name">Work Orders</field>
         <field name="type">ir.actions.act_window</field>
-        <field name="res_model">mrp.production.workcenter.line</field>
+        <field name="res_model">mrp.production.work.order</field>
         <field name="view_type">form</field>
         <field name="view_mode">kanban,tree,form,calendar,pivot,graph</field>
         <field name="search_view_id" ref="view_mrp_production_workcenter_form_view_filter"/>
@@ -1648,7 +1525,7 @@
     <record model="ir.actions.act_window" id="mrp_workorder_report">
         <field name="name">Work Orders</field>
         <field name="type">ir.actions.act_window</field>
-        <field name="res_model">mrp.production.workcenter.line</field>
+        <field name="res_model">mrp.production.work.order</field>
         <field name="view_type">form</field>
         <field name="view_mode">pivot,graph</field>
     </record>
@@ -1750,7 +1627,7 @@
             <field name="res_model">stock.move</field>
             <field name="view_type">form</field>
             <field name="view_mode">tree,form</field>
-            <field name="domain">['|', ('unbuild_raw_material_id', '=', active_id), ('unbuild_id', '=', active_id)]</field>
+            <field name="domain">[('unbuild_id', '=', active_id)]</field>
         </record>
 
         <record id="mrp_unbuild_form_view" model="ir.ui.view">
@@ -1796,17 +1673,6 @@
             </field>
         </record>
 
-    <record id="stock_scrap_form_view2_inherit" model="ir.ui.view">
-        <field name="name">Scrap</field>
-        <field name="model">stock.scrap</field>
-        <field name="inherit_id" ref="stock.stock_scrap_form_view2"/>
-        <field name="arch" type="xml">
-            <field name="scrap_location_id" position="after">
-                <field name="workorder_id" readonly="1" attrs="{'invisible': [('workorder_id', '=', False)]}"/>
-            </field>
-        </field>
-    </record>
-
         <record id="mrp_unbuild_tree_view" model="ir.ui.view">
             <field name="name">mrp.unbuild.tree</field>
             <field name="model">mrp.unbuild</field>
@@ -1845,12 +1711,6 @@
           parent="menu_mrp_manufacturing"
           action="mrp_unbuild"
           sequence="20"/>
-
-    <!-- <record model="ir.actions.act_window" id="mrp_scrap">
-        <field name="name">Scrap</field>
-        <field name="type">ir.actions.act_window</field>
-        <field name="res_model">stock.scrap</field>
-    </record> -->
     <menuitem id="menu_mrp_scrap"
             name="Scrap"
             parent="menu_mrp_manufacturing"

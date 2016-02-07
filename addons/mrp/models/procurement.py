@@ -16,7 +16,6 @@ class ProcurementRule(models.Model):
 class ProcurementOrder(models.Model):
     _inherit = 'procurement.order'
     bom_id = fields.Many2one('mrp.bom', string='BoM', ondelete='cascade', index=True)
-    property_ids = fields.Many2many('mrp.property', 'procurement_property_rel', 'procurement_id', 'property_id', string='Properties')
     production_id = fields.Many2one('mrp.production', string='Manufacturing Order')
 
     @api.multi
@@ -46,7 +45,7 @@ class ProcurementOrder(models.Model):
         :return: True or False
         """
         for procurement in self:
-            bom = self.env['mrp.bom']._bom_find(product=procurement.product_id, properties=procurement.property_ids)
+            bom = self.env['mrp.bom']._bom_find(product=procurement.product_id)
             if not bom:
                 return False
         return True
@@ -66,7 +65,7 @@ class ProcurementOrder(models.Model):
             bom = self.bom_id
             routing_id = self.bom_id.routing_id.id
         else:
-            bom = self.env['mrp.bom'].with_context(dict(force_company=self.company_id.id))._bom_find(product=self.product_id, properties=self.property_ids)
+            bom = self.env['mrp.bom'].with_context(dict(force_company=self.company_id.id))._bom_find(product=self.product_id)
             routing_id = bom.routing_id.id
         return {
             'origin': self.origin,

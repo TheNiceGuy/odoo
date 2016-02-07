@@ -22,7 +22,7 @@ class MrpWorkcenter(models.Model):
     sequence = fields.Integer(required=True, default=1, help="Gives the sequence order when displaying a list of work centers.")
     time_stop = fields.Float(string='Time after prod.', help="Time in hours for the cleaning.")
     resource_id = fields.Many2one('resource.resource', string='Resource', ondelete='cascade', required=True)
-    order_ids = fields.One2many('mrp.production.workcenter.line', 'workcenter_id', string="Orders")
+    order_ids = fields.One2many('mrp.production.work.order', 'workcenter_id', string="Orders")
     routing_line_ids = fields.One2many('mrp.routing.workcenter', 'workcenter_id', "Routing Lines")
     nb_orders = fields.Integer('Computed Orders', compute='_compute_orders')
     color = fields.Integer('Color')
@@ -42,7 +42,7 @@ class MrpWorkcenter(models.Model):
 
     @api.depends('order_ids')
     def _compute_orders(self):
-        WorkcenterLine = self.env['mrp.production.workcenter.line']
+        WorkcenterLine = self.env['mrp.production.work.order']
         for workcenter in self:
             workcenter.nb_orders = WorkcenterLine.search_count([('workcenter_id', '=', workcenter.id), ('state', '!=', 'done')]) #('state', 'in', ['pending', 'startworking'])
             workcenter.count_ready_order = WorkcenterLine.search_count([('workcenter_id', '=', workcenter.id), ('state', '=', 'ready')])
@@ -61,7 +61,7 @@ class MrpWorkOrderConsume(models.Model):
     _name = 'mrp.production.consume'
     
     production_id = fields.Many2one('mrp.production', 'Production Order', help="When only related to production order")
-    workorder_id = fields.Many2one('mrp.production.workcenter.line', 'Work Order')
+    workorder_id = fields.Many2one('mrp.production.work.order', 'Work Order')
     product_id = fields.Many2one('product.product', 'Product')
     product_qty = fields.Float('Quantity')
     tracking = fields.Selection(related='product_id.tracking', selection=[('serial', 'By Unique Serial Number'), ('lot', 'By Lots'), ('none', 'No Tracking')])

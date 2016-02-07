@@ -18,7 +18,7 @@ class MrpProductProduceWo(models.TransientModel):
         :param context: A standard dictionary
         :return: Quantity
         """
-        workorder = self.env['mrp.production.workcenter.line'].browse(self._context.get('active_id'))
+        workorder = self.env['mrp.production.work.order'].browse(self._context.get('active_id'))
         
         return workorder.qty - workorder.qty_produced
 
@@ -27,7 +27,7 @@ class MrpProductProduceWo(models.TransientModel):
         """ To obtain product id
         :return: id
         """
-        workorder = self.env['mrp.production.workcenter.line'].browse(self._context.get('active_id'))
+        workorder = self.env['mrp.production.work.order'].browse(self._context.get('active_id'))
         return workorder.production_id.product_id.id
 
     @api.model
@@ -35,7 +35,7 @@ class MrpProductProduceWo(models.TransientModel):
         """ To obtain product id
         :return: id
         """
-        workorder = self.env['mrp.production.workcenter.line'].browse(self._context.get('active_id'))
+        workorder = self.env['mrp.production.work.order'].browse(self._context.get('active_id'))
         return workorder.production_id.product_uom_id.id
 
     product_id = fields.Many2one('product.product', readonly=True, string='Product', default=_get_product_id)
@@ -51,7 +51,7 @@ class MrpProductProduceWo(models.TransientModel):
     @api.multi
     def do_produce(self):
         self.ensure_one()
-        workorder = self.env['mrp.production.workcenter.line'].browse(self._context.get('active_id'))
+        workorder = self.env['mrp.production.work.order'].browse(self._context.get('active_id'))
         prod_qty = {}
         for move in workorder.move_line_ids:
             # Raise the qty that would have been consumed
