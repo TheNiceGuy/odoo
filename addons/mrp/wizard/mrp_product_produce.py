@@ -59,8 +59,6 @@ class MrpProductProduce(models.TransientModel):
 #    consume_lines = fields.One2many('mrp.product.produce.line', 'produce_id', string='Products Consumed')
     tracking = fields.Selection(related='product_id.tracking', selection=[('serial', 'By Unique Serial Number'), ('lot', 'By Lots'), ('none', 'No Tracking')], default=_get_track)
     serial = fields.Boolean('Serial Tracking')
-    #operation_ids = fields.Many2many('stock.pack.operation', 'mrp_product_produce_stock_operation_rel', string="Operations To Supply Lots", default=_get_operation_ids)
-    #consume_line_ids = fields.Many2many('mrp.production.consume', 'mrp_product_produce_production_consume_rel', default=_get_consume_ids)
     consume_line_ids = fields.One2many('mrp.product.produce.line', 'produce_id', 'Consume lines')
 
     @api.multi

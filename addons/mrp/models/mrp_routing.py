@@ -15,7 +15,7 @@ class MrpRouting(models.Model):
     active = fields.Boolean(default=True, help="If the active field is set to False, it will allow you to hide the routing without removing it.")
     code = fields.Char('Reference', copy=False, readonly=True, default='New')
     note = fields.Text(string='Description')
-    workcenter_line_ids = fields.One2many('mrp.routing.workcenter', 'routing_id', string='Work Centers', copy=True, oldname='workcenter_lines')
+    work_order_ids = fields.One2many('mrp.routing.workcenter', 'routing_id', string='Work Centers', copy=True, oldname='workcenter_lines')
     location_id = fields.Many2one('stock.location', string='Production Location',
                                   help="Keep empty if you produce at the location where the finished products are needed."
                                   "Set a location if you produce at a fixed location. This can be a partner location "

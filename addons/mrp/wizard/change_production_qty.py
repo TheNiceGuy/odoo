@@ -29,7 +29,7 @@ class ChangeProductionQty(models.TransientModel):
         return res
 
     def _update_product_to_produce(self, production, qty):
-        for move in production.move_created_ids:
+        for move in production.move_finished_ids:
             move.write({'product_uom_qty': qty})
 
     @api.multi
@@ -53,7 +53,7 @@ class ChangeProductionQty(models.TransientModel):
             production.write({'product_qty': wizard_qty.product_qty})
             #production.action_compute() #TODO: Do we still need to change the quantity of a production order?
 
-            for move in production.move_line_ids:
+            for move in production.move_raw_ids:
                 bom_point = production.bom_id
                 if not bom_point:
                     bom_point = MrpBom._bom_find(product=production.product_id)
