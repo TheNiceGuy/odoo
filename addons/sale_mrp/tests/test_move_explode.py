@@ -21,15 +21,13 @@ class TestMoveExplode(common.TransactionCase):
         #partner agrolait
         self.partner = self.env.ref('base.res_partner_1')
         #bom: PC Assemble (with property: DDR 512MB)
-        self.bom_prop = self.env.ref('mrp.mrp_bom_property_0')
+#         self.bom_prop = self.env.ref('mrp.mrp_bom_property_0')
 
         self.template = self.env.ref('product.product_product_3_product_template')
-        #property: DDR 512MB
-        self.mrp_property = self.env.ref('mrp.mrp_property_0')
         #product: RAM SR2
         self.product_bom_prop = self.env.ref('product.product_product_14')
         #phantom bom for RAM SR2 with three lines containing properties
-        self.bom_prop_line = self.env.ref('mrp.mrp_bom_property_line')
+#         self.bom_prop_line = self.env.ref('mrp.mrp_bom_property_line')
         #product: iPod included in the phantom bom
         self.product_A = self.env.ref('product.product_product_11')
         #product: Mouse, Wireless included in the phantom bom
@@ -65,16 +63,16 @@ class TestMoveExplode(common.TransactionCase):
         bom_component_length = self.bom.explode(self.product_bom, 1, [])
         self.assertEqual(len(move_ids), len(bom_component_length[0]))
 
-    def test_00_bom_find(self):
-        """Check that _bom_find searches the bom corresponding to the properties passed or takes the bom with the smallest
-            sequence."""
-        res = self.MrpBom._bom_find(product_tmpl=self.template, properties=self.mrp_property)
-        self.assertEqual(res.id, self.bom_prop.id)
+#     def test_00_bom_find(self):
+#         """Check that _bom_find searches the bom corresponding to the properties passed or takes the bom with the smallest
+#             sequence."""
+#         res = self.MrpBom._bom_find(product_tmpl=self.template)
+#         self.assertEqual(res.id, self.bom_prop.id)
 
-    def test_00_explode(self):
-        """Check that explode only takes the lines with the right properties."""
-        bom = self.bom_prop_line
-        product = self.product_bom_prop
-        res = bom.explode(product, 1, properties=self.mrp_property)
-        res = set([p['product_id'] for p in res[0]])
-        self.assertEqual(res, set([self.product_A.id, self.product_B.id]))
+#     def test_00_explode(self):
+#         """Check that explode only takes the lines with the right properties."""
+#         bom = self.bom_prop_line
+#         product = self.product_bom_prop
+#         res = bom.explode(product, 1, properties=self.mrp_property)
+#         res = set([p['product_id'] for p in res[0]])
+#         self.assertEqual(res, set([self.product_A.id, self.product_B.id]))
