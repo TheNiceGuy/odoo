@@ -69,7 +69,7 @@ class StockMove(models.Model):
                     quants = quant_obj.quants_get_preferred_domain(lot.quantity, move, lot_id=lot.lot_id.id)
                     quant_obj.quants_reserve(quants, move)
             if move.quantity_done < move.product_qty:
-                new_move = move.split(move.product_qty- move.quantity_done)
+                new_move = move.split(move, move.product_qty - move.quantity_done)
             move.action_done()
         return True
 

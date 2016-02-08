@@ -15,7 +15,7 @@ class StockScrap(models.Model):
     picking_id = fields.Many2one('stock.picking', 'Picking', states={'done': [('readonly', True)]})
     location_id = fields.Many2one('stock.location', 'Location', default=lambda self: self.env.ref('stock.warehouse0').lot_stock_id.id or False, states={'done': [('readonly', True)]}, required=True, domain="[('usage', '=', 'internal')]")
     scrap_location_id = fields.Many2one('stock.location', domain="[('scrap_location', '=', True)]", states={'done': [('readonly', True)]}, string="Scrap Location", default=(lambda x: x.env['stock.location'].search([('scrap_location', '=', True)], limit=1)))
-    scrap_qty = fields.Float('Quantity', states={'done': [('readonly', True)]}, required=True)
+    scrap_qty = fields.Float('Quantity', states={'done': [('readonly', True)]}, required=True, default=1.0)
     state = fields.Selection([('draft', 'Draft'), ('done', 'Done')], default="draft")
     move_id = fields.Many2one('stock.move', 'Stock Move', readonly=True)
 
