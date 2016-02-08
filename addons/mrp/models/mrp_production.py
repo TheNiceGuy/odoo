@@ -131,6 +131,8 @@ class MrpProduction(models.Model):
 
     check_to_done = fields.Boolean(compute="_get_produced_qty", string="Check Produced Qty")
     qty_produced = fields.Float(compute="_get_produced_qty", string="Quantity Produced")
+    
+    consume_line_ids = fields.One2many('mrp.production.consume')
 
     _sql_constraints = [
         ('name_uniq', 'unique(name, company_id)', 'Reference must be unique per Company!'),
@@ -197,6 +199,19 @@ class MrpProduction(models.Model):
             for operation in order.work_order_ids:
                 # TODO: better implementation for plannnig algorythm
                 operation.write({'date_planned_start': datetime.now(), 'date_planned_end': datetime.now()})
+
+    def _check_serial(self):
+        '''
+            Checks if the production should help with this
+        '''
+        self.ensure_one()
+        for move in self.move_raw_ids:
+            if move.product_id.tracking == 'serial':
+                return True
+        for move in self.move_finished_ids:
+            if move.product_id.tracking == 'serial':
+                return True
+        return False
 
     @api.multi
     def unlink(self):
