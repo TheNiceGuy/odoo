@@ -34,9 +34,26 @@ class StockMove(models.Model):
     consumed_for_id = fields.Many2one('stock.move', string='Consumed for', help='Technical field used to make the traceability of produced products', oldname='consumed_for')
 
     # Quantities to process, in normalized UoMs
-    quantity_done = fields.Float('Quantity', digits_compute=dp.get_precision('Product Unit of Measure'), states={'done': [('readonly', True)]})
+    quantity_done_store = fields.Float('Quantity', digits_compute=dp.get_precision('Product Unit of Measure'))
+    quantity_done = fields.Float('Quantity', digits_compute=dp.get_precision('Product Unit of Measure'),
+        compute='_qty_done_compute', inverse='_qty_done_set')
     quantity_lots = fields.One2many('stock.move.lots', 'move_id', string='Lots')
     bom_line_id = fields.Many2one('mrp.bom.line', string="BoM Line")
+
+    @api.multi
+    @api.depends('quantity_lots','quantity_lots.quantity')
+    def _qty_done_compute(self):
+        for move in self:
+            if move.has_tracking <> 'none':
+                move.quantity_done = sum(move.quantity_lots.mapped('quantity'))
+            else:
+                move.quantity_done = move.quantity_done_store
+
+    @api.multi
+    def _qty_done_set(self):
+        for move in self:
+            if move.has_tracking == 'none':
+                move.quantity_done_store = move.quantity_done
 
     @api.multi
     def move_validate(self):
@@ -80,6 +97,10 @@ class StockMove(models.Model):
              'context': ctx,
         }
         return result
+
+    @api.multi
+    def dummy(self):
+        return True
 
 
 class StockPickingType(models.Model):
