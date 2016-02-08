@@ -728,12 +728,18 @@
         <record id="stock.view_stock_move_lots" model="ir.ui.view">
             <field name="name">stock.move.lots.form</field>
             <field name="model">stock.move</field>
+            <field name="sequence">1000</field>
             <field name="arch" type="xml">
                 <form string="Lots">
+                    <field name="state" invisible="1"/>
                     <group>
                         <group>
-                            <field name="product_id"/>
-                            <field name="quantity_done"/>
+                            <field name="product_id" readonly="1"/>
+                            <label for="quantity_done"/>
+                            <div>
+                                <field name="quantity_done" readonly="1" class="oe_inline"/>
+                                <field name="product_uom" readonly="1" class="oe_inline"/>
+                            </div>
                         </group>
                     </group>
                     <field name="quantity_lots">
@@ -742,6 +748,10 @@
                             <field name="quantity"/>
                         </tree>
                     </field>
+                    <footer class="oe_edit_only">
+                        <button name="dummy" type="object" string="Save" class="oe_highlight"/>
+                        <button string="Discard" special="cancel"/>
+                    </footer>
                 </form>
             </field>
         </record>
@@ -858,6 +868,9 @@
                                     <field name="reserved_availability"/>
                                     <field name="product_uom_qty" readonly="1" attrs="{'required': [('product_id', '!=', False)]}"/>
                                     <field name="quantity_done" attrs="{'readonly': [('has_tracking', 'in', ['lot','serial'])]}" string="Consumed"/>
+
+                                    <button name="split_move_lot" string="Register lots" type="object" icon="fa-list"
+                                        attrs="{'invisible': [('has_tracking', 'not in', ['lot','serial'])]}"/>
                                 </tree>
                             </field>
                         </page>
