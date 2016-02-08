@@ -422,7 +422,7 @@ class MrpProductionWorkcenterLine(models.Model):
     operation_id = fields.Many2one('mrp.routing.workcenter', 'Operation') #Should be used differently as BoM can change in the meantime
 
     move_raw_ids = fields.One2many('stock.move', 'workorder_id', 'Moves')
-    move_traceability_ids = fields.Many2many('stock.move.lots', 'mrp_work_order_move_lot', string='Moves to Track',
+    move_traceability_ids = fields.One2many('stock.move.lots', 'workorder_id', string='Moves to Track',
         help="Inventory moves for which you must scan a lot number at this work order")
 
     # FP TODO: replace by a related through MO, otherwise too much computation without need
