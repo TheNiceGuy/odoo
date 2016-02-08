@@ -17,6 +17,7 @@ class StockMoveLots(models.Model):
     quantity = fields.Float('Quantity', default=1.0)
     product_id = fields.Many2one('product.product', related="move_id.product_id")
 
+
 class StockMove(models.Model):
     _inherit = 'stock.move'
 
