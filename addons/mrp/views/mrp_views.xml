@@ -768,7 +768,7 @@
                     <button name="action_assign" attrs="{'invisible': [('availability', '=', 'assigned')]}" string="Check availability" type="object" class="oe_highlight"/>
                     <button name="button_plan" attrs="{'invisible': ['|', ('state', '!=', 'confirmed'), ('routing_id', '=', False)]}" type="object" string="Plan"/>
                     <button name="%(act_mrp_product_produce)d" attrs="{'invisible': ['|', ('state', '=', 'planned')]}" string="Produce" type="action"/>
-                    <button name="post_inventory" string="Post Inventory" type="object" class="oe_highlight"/>
+                    <button name="post_inventory" string="Post Inventory" type="object" class="oe_highlight" attrs="{'invisible': [('post_visible', '=', False)]}"/>
                     <button name="button_scrap" type="object" string="Scrap" attrs="{'invisible': [('state', 'in', ('cancel'))]}"/>
                     <span class="label label-danger" attrs="{'invisible': ['|', '|', ('availability', '=', 'assigned'), ('state', '!=', 'confirmed'), ('consume_operation_ids', '=', [])]}">Raw materials not available!</span>
                     <field name="state" widget="statusbar" statusbar_visible="confirmed,progress,done" statusbar_colors='{"confirmed":"blue"}'/>
@@ -792,8 +792,7 @@
                         <group>
                             <field name="availability" invisible="1"/>
                             <field name="check_to_done" invisible="1"/>
-                            <field name="product_tmpl_id" domain="[('bom_ids','!=',False),('bom_ids.bom_type','!=','phantom')]" attrs="{'readonly': [('move_raw_ids', '!=', [])]}"/>
-                            <field name="product_id" domain="[('product_tmpl_id','=',product_id)]" attrs="{'readonly': [('move_raw_ids', '!=', [])]}"/>
+                            <field name="product_id" attrs="{'readonly': [('move_raw_ids', '!=', [])]}"/>
                             <label for="product_qty"/>
                             <div class="o_row">
                                 <field name="product_qty" attrs="{'readonly': [('move_raw_ids', '!=', [])]}"/>
@@ -1267,14 +1266,14 @@
                     <group>
                         <group>
                             <field name="qty_producing" string="Current Qty"/>
-                            <field name="final_lot_id"/>
+                            <field name="final_lot_id" context="{'default_product_id': product}"/>
                         </group>
                     </group>
-                    <field name="move_traceability_ids">
+                    <field name="move_traceability_ids" domain="[('done', '=', False)]" attrs="{'invisible': [('move_traceability_ids', '=', [])]}">
                         <tree editable="bottom">
                             <field name="product_id"/>
                             <field name="quantity"/>
-                            <field name="lot_id"/>
+                            <field name="lot_id" context="{'default_product_id': product_id}"/>
                         </tree>
                     </field>
                 </page>

@@ -16,7 +16,7 @@
                                 <field name="product_qty" attrs="{'readonly': [('serial', '=', True)]}"/>
                                 <field name="product_uom_id" readonly="1"/>
                             </div>
-                            <field name="lot_id"/>
+                            <field name="lot_id" domain="[('product_id','=',product_id)]" context="{'default_product_id': product_id}"/>
                         </group>
                         <field name="consume_line_ids" nolabel="1" widget="one2many">
                             <tree editable="bottom">
