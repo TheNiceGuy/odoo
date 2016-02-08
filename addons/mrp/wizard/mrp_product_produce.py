@@ -19,8 +19,7 @@ class MrpProductProduce(models.TransientModel):
             if serial_raw or serial_finished:
                 quantity = 1.0
             else:
-                quantity = production.product_qty - production.qty_produced
-
+                quantity = production.product_qty - sum(production.move_finished_ids.mapped('quantity_done'))
             lines = []
             for move in production.move_raw_ids.filtered(lambda x: x.product_id.tracking <> 'none'):
                 qty = quantity / move.bom_line_id.bom_id.product_qty * move.bom_line_id.product_qty
@@ -52,7 +51,6 @@ class MrpProductProduce(models.TransientModel):
     product_id = fields.Many2one('product.product', 'Product')
     product_qty = fields.Float(string='Quantity', digits=dp.get_precision('Product Unit of Measure'), required=True)
     product_uom_id = fields.Many2one('product.uom', 'Unit of Measure')
-
     lot_id = fields.Many2one('stock.production.lot', string='Lot')
     consume_line_ids = fields.Many2many('stock.move.lots', 'mrp_produce_stock_move_lots', string='Product to Track')
 
@@ -60,10 +58,9 @@ class MrpProductProduce(models.TransientModel):
     def do_produce(self):
         # Nothing to do for lots since values are created using default data (stock.move.lots)
         moves = self.production_id.move_raw_ids + self.production_id.move_finished_ids
-        for move in moves.filtered(lambda x: x.product_id.tracking == 'none'):
+        for move in moves.filtered(lambda x: x.product_id.tracking == 'none' and x.state not in ('done', 'cancel')):
             quantity = self.product_qty
             if move.bom_line_id:
                 quantity = quantity / move.bom_line_id.bom_id.product_qty * move.bom_line_id.product_qty
             move.quantity_done_store += quantity
         return {}
-

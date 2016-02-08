@@ -79,7 +79,6 @@ class MrpBom(models.Model):
     # Quantity must be in same UoM than the BoM: convert uom before explode()
     def explode(self, quantity, method=None, method_wo=None, done=None):
         self.ensure_one()
-
         if method_wo and self.routing_id: method_wo(self, quantity)
         done = done or []
         for bom_line in self.bom_line_ids:
@@ -89,14 +88,13 @@ class MrpBom(models.Model):
                 raise UserError(_('BoM "%s" contains a BoM line with a product recursion: "%s".') % (self.name, bom_line.product_id.display_name))
 
             quantity = self._factor(quantity, bom_line.product_efficiency, bom_line.product_rounding)
-
             # This is very slow, can we improve that?
             bom = self._bom_find(product=bom_line.product_id)
             if not bom or bom.bom_type != "phantom":
+                quantity = bom_line.product_uom_id._compute_qty(quantity / self.product_qty * bom_line.product_qty, bom.product_uom_id.id)
                 if method: method(bom_line, quantity)
             else:
                 done.append(self.product_tmpl_id.id)
-
                 # We need to convert to units/UoM of chosen BoM
                 qty2 = bom_line.product_uom_id._compute_qty(quantity / self.product_qty * bom_line.product_qty, bom.product_uom_id.id)
                 bom.explode(qty2, method=method, method_wo=method_wo, done=done)

@@ -86,7 +86,7 @@ class MrpProduction(models.Model):
             order.post_visible = any(order.move_raw_ids.filtered(lambda x: (x.quantity_done) > 0 and (x.state<>'done'))) or \
                 any(order.move_finished_ids.filtered(lambda x: (x.quantity_done) > 0 and (x.state<>'done')))
 
-    name = fields.Char(string='Reference', readonly=True, copy=False)
+    name = fields.Char(string='Reference', readonly=True, copy=False, default='New')
     origin = fields.Char(string='Source', help="Reference of the document that generated this manufacturing order.", copy=False)
     product_tmpl_id = fields.Many2one('product.template', related='product_id.product_tmpl_id', string='Product Template')
     product_id = fields.Many2one('product.product', string='Product', required=True, readonly=True, states={'confirmed': [('readonly', False)]}, domain=[('type', 'in', ['product', 'consu'])])
@@ -106,15 +106,12 @@ class MrpProduction(models.Model):
     date_finished = fields.Datetime(string='End Date', readonly=True, copy=False)
 
     bom_id = fields.Many2one('mrp.bom', string='Bill of Material', readonly=True, states={'confirmed': [('readonly', False)]})
-    routing_id = fields.Many2one('mrp.routing', string='Routing', related='bom_id.routing_id', store=True,
-                                 on_delete='set null', readonly=True)
+    routing_id = fields.Many2one('mrp.routing', string='Routing', related='bom_id.routing_id', store=True, on_delete='set null', readonly=True)
 
     # FP Note: what's the goal of this field?
     move_prod_id = fields.Many2one('stock.move', string='Product Move', readonly=True, copy=False)
-
     move_raw_ids = fields.One2many('stock.move', 'raw_material_production_id', string='Raw Materials', states={'done': [('readonly', True)]})
     move_finished_ids = fields.One2many('stock.move', 'production_id', string='Finished Products', states={'done': [('readonly', True)]})
-
     work_order_ids = fields.One2many('mrp.production.work.order', 'production_id', string='Work Orders', readonly=True, oldname='workcenter_lines')
 
     nb_orders = fields.Integer('# Work Orders', compute='_compute_nb_orders')
@@ -140,7 +137,7 @@ class MrpProduction(models.Model):
     @api.model
     def create(self, values):
         if not values.get('name', False):
-            values['name'] = self.env['ir.sequence'].next_by_code('mrp.production')
+            values['name'] = self.env['ir.sequence'].next_by_code('mrp.production') or 'New'
         production = super(MrpProduction, self).create(values)
         production._generate_moves()
         return production
@@ -311,32 +308,37 @@ class MrpProduction(models.Model):
     @api.multi
     def _generate_move(self, bom_line, quantity):
         self.ensure_one()
+        move = self.move_raw_ids.filtered(lambda x:x.bom_line_id.id == bom_line.id and x.state not in ('done', 'cancel'))
         if bom_line.product_id.type not in ['product', 'consu']:
             return False
         if self.bom_id.routing_id and self.bom_id.routing_id.location_id:
             source_location = self.bom_id.routing_id.location_id
         else:
             source_location = self.location_source()
-        data = {
-            'name': self.name,
-            'date': self.date_planned,
-            'bom_line_id': bom_line.id,
-            'product_id': bom_line.product_id.id,
-            'product_uom_qty': quantity,
-            'product_uom': bom_line.product_uom_id.id,
-            'location_id': source_location.id,
-            'location_dest_id': self.product_id.property_stock_production.id,
-            'raw_material_production_id': self.id,
-            'company_id': self.company_id.id,
-            'operation_id': bom_line.operation_id and bom_line.operation_id.id or False,
-            'procure_method': bom_line.procure_method,
-            'price_unit': bom_line.product_id.standard_price,
-            'picking_type_id': self.picking_type_id.id,
-            'origin': self.name,
-            'warehouse_id': source_location.get_warehouse(),
-            'group_id': self.move_prod_id and self.move_prod_id.group_id.id or False,
-        }
-        return self.env['stock.move'].create(data)
+        if move:
+            move.write({'product_uom_qty': quantity})
+            return move
+        else:
+            data = {
+                'name': self.name,
+                'date': self.date_planned,
+                'bom_line_id': bom_line.id,
+                'product_id': bom_line.product_id.id,
+                'product_uom_qty': quantity,
+                'product_uom': bom_line.product_uom_id.id,
+                'location_id': source_location.id,
+                'location_dest_id': self.product_id.property_stock_production.id,
+                'raw_material_production_id': self.id,
+                'company_id': self.company_id.id,
+                'operation_id': bom_line.operation_id and bom_line.operation_id.id or False,
+                'procure_method': bom_line.procure_method,
+                'price_unit': bom_line.product_id.standard_price,
+                'picking_type_id': self.picking_type_id.id,
+                'origin': self.name,
+                'warehouse_id': source_location.get_warehouse(),
+                'group_id': self.move_prod_id and self.move_prod_id.group_id.id or False,
+            }
+            return self.env['stock.move'].create(data)
 
     @api.multi
     def _generate_moves(self):
@@ -436,12 +438,9 @@ class MrpProductionWorkcenterLine(models.Model):
     time_ids = fields.One2many('mrp.production.work.order.time', 'workorder_id')
     worksheet = fields.Binary('Worksheet', related='operation_id.worksheet', readonly=True)
     show_state = fields.Boolean(compute='_get_current_state')
-
     inv_message = fields.Html(compute="_get_inventory_message")
-
     final_lot_id = fields.Many2one('stock.production.lot', 'Current Lot', domain="[('product_id', '=', product_id)]")
     qty_producing = fields.Float('Qty Producing', default=1.0)
-
     next_work_order_id = fields.Many2one('mrp.production.work.order', "Next Work Order")
 
     @api.multi

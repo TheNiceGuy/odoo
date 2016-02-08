@@ -184,6 +184,7 @@
                     <sheet>
                     <div class="oe_button_box" name="button_box">
                         <button name="action_traceability" icon="fa-arrow-up" class="oe_stat_button" string="Traceability" type="object" attrs="{'invisible': [('quant_ids','=',[])]}"/>
+                        <field name="quant_ids" invisible="True"/>
                     </div>
                     <div class="oe_title">
                         <label for="name" class="oe_edit_only"/>
@@ -194,21 +195,14 @@
                     <group name="main_group">
                         <group>
                             <field name="product_id"/>
+                            <label for="product_qty"/>
+                            <div class="o_row">
+                                <field name="product_qty"/>
+                                <field name="product_uom" groups="product.group_uom"/>
+                            </div>
                             <field name="ref"/>
                         </group>
                     </group>
-                    <notebook>
-                        <page string="Products">
-                            <field name="quant_ids">
-                                <tree string="Stock Moves">
-                                    <field name="name"/>
-                                    <field name="product_id"/>
-                                    <field name="qty"/>
-                                    <field name="location_id" groups="stock.group_locations"/>
-                                </tree>
-                             </field>
-                        </page>
-                    </notebook>
                     </sheet>
                 </form>
             </field>
