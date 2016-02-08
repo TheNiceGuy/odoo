@@ -86,7 +86,7 @@ class MrpProduction(models.Model):
             order.post_visible = any(order.move_raw_ids.filtered(lambda x: (x.quantity_done) > 0 and (x.state<>'done'))) or \
                 any(order.move_finished_ids.filtered(lambda x: (x.quantity_done) > 0 and (x.state<>'done')))
 
-    name = fields.Char(string='Reference', readonly=True, copy=False)
+    name = fields.Char(string='Reference', readonly=True, copy=False, default='New')
     origin = fields.Char(string='Source', help="Reference of the document that generated this manufacturing order.", copy=False)
     product_tmpl_id = fields.Many2one('product.template', related='product_id.product_tmpl_id', string='Product Template')
     product_id = fields.Many2one('product.product', string='Product', required=True, readonly=True, states={'confirmed': [('readonly', False)]}, domain=[('type', 'in', ['product', 'consu'])])
@@ -140,7 +140,7 @@ class MrpProduction(models.Model):
     @api.model
     def create(self, values):
         if not values.get('name', False):
-            values['name'] = self.env['ir.sequence'].next_by_code('mrp.production')
+            values['name'] = self.env['ir.sequence'].next_by_code('mrp.production') or 'New'
         production = super(MrpProduction, self).create(values)
         production._generate_moves()
         return production
