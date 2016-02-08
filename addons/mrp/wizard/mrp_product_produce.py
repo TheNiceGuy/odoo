@@ -21,21 +21,23 @@ class MrpProductProduce(models.TransientModel):
             else:
                 quantity = production.product_qty - sum(production.move_finished_ids.mapped('quantity_done'))
             lines = []
-            for move in production.move_raw_ids.filtered(lambda x: x.product_id.tracking <> 'none'):
+            for move in production.move_raw_ids.filtered(lambda x: (x.product_id.tracking <> 'none') and x.state not in ('done', 'cancel')):
                 qty = quantity / move.bom_line_id.bom_id.product_qty * move.bom_line_id.product_qty
-                if move.product_id.tracking=='serial':
+                if production._check_serial():
                     while qty > 0.000001:
                         lines.append({
                             'move_id': move.id,
                             'quantity': min(1,qty),
-                            'product_id': production.product_id.id
+                            'product_id': move.product_id.id,
+                            'production_id': production.id,
                         })
                         qty -= 1
                 else:
                     lines.append({
                         'move_id': move.id,
                         'quantity': qty,
-                        'product_id': production.product_id.id
+                        'product_id': move.product_id.id,
+                        'production_id': production.id,
                     })
 
             res['serial'] = serial

@@ -44,6 +44,7 @@ class TestBomWithServiceTypeProduct(common.TransactionCase):
         self.mrp_production_service_mo1 = self.MrpProduction.create({
             'product_id': self.product_3.id,
             'product_qty': 1.0,
+            'product_uom_id': self.product_uom_unit.id,
             'bom_id': self.bill_of_material_product.id,
             'date_planned': fields.Datetime.now()})
 

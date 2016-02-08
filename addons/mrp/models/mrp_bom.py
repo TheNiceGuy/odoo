@@ -77,12 +77,13 @@ class MrpBom(models.Model):
         return factor
 
     # Quantity must be in same UoM than the BoM: convert uom before explode()
-    def explode(self, quantity, method=None, method_wo=None, done=None):
+    def explode(self, product, quantity, method=None, method_wo=None, done=None):
         self.ensure_one()
         if method_wo and self.routing_id: method_wo(self, quantity)
         done = done or []
+        
         for bom_line in self.bom_line_ids:
-            if bom_line._skip_bom_line(bom_line.product_id):
+            if bom_line._skip_bom_line(product):
                 continue
             if bom_line.product_id.product_tmpl_id.id in done:
                 raise UserError(_('BoM "%s" contains a BoM line with a product recursion: "%s".') % (self.name, bom_line.product_id.display_name))
@@ -97,7 +98,7 @@ class MrpBom(models.Model):
                 done.append(self.product_tmpl_id.id)
                 # We need to convert to units/UoM of chosen BoM
                 qty2 = bom_line.product_uom_id._compute_qty(quantity / self.product_qty * bom_line.product_qty, bom.product_uom_id.id)
-                bom.explode(qty2, method=method, method_wo=method_wo, done=done)
+                bom.explode(bom_line.product_id, qty2, method=method, method_wo=method_wo, done=done)
         return True
 
     @api.multi
