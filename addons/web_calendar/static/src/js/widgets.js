@@ -39,7 +39,7 @@ var QuickCreate = Dialog.extend({
                         self.focus();
                     }
                 }},
-                {text: _t("Edit"), click: function () {
+                {text: _t("Details"), click: function () {
                     self.slow_add();
                 }},
                 {text: _t("Cancel"), close: true},
