@@ -68,8 +68,5 @@ TODO:
     'demo': [
         "report/webkit_report_demo.xml",
     ],
-    'test': [
-        "test/print.yml",
-    ],
     'auto_install': False,
 }
