@@ -58,9 +58,8 @@ class MrpProductProduce(models.TransientModel):
     @api.multi
     def do_produce(self):
         # Nothing to do for lots since values are created using default data (stock.move.lots)
-        import pdb; pdb.set_trace()
         moves = self.production_id.move_raw_ids + self.production_id.move_finished_ids
-        for move in moves.filtered(lambda x: x.product_id.tracking == 'none'):
+        for move in moves.filtered(lambda x: x.product_id.tracking == 'none' and x.state not in ('done', 'cancel')):
             quantity = self.product_qty
             if move.bom_line_id:
                 quantity = quantity / move.bom_line_id.bom_id.product_qty * move.bom_line_id.product_qty
