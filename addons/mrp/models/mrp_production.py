@@ -131,8 +131,6 @@ class MrpProduction(models.Model):
 
     check_to_done = fields.Boolean(compute="_get_produced_qty", string="Check Produced Qty")
     qty_produced = fields.Float(compute="_get_produced_qty", string="Quantity Produced")
-    
-    consume_line_ids = fields.One2many('mrp.production.consume')
 
     _sql_constraints = [
         ('name_uniq', 'unique(name, company_id)', 'Reference must be unique per Company!'),
@@ -167,7 +165,7 @@ class MrpProduction(models.Model):
             })
             if old: old.next_work_order_id = workorder_id.id
             old = workorder_id
-            tocheck = [workorder_id.id]
+            tocheck = [workorder_id.operation_id.id]
             # Latest workorder receive all move not assigned to an operation
             if operation == bom.routing_id.work_order_ids[-1]:
                 tocheck.append(False)
@@ -191,7 +189,7 @@ class MrpProduction(models.Model):
         # Create all work orders if not already created
         for order in orders_new:
             quantity = order.product_uom_id._compute_qty(order.product_qty, order.bom_id.product_uom_id.id)
-            order.bom_id.explode(quantity, method_wo=order._workorders_create)
+            order.bom_id.explode(self.product_id, quantity, method_wo=order._workorders_create)
 
         orders_new.write({'state': 'planned'})
         # Schedule all work orders (new ones and those already created)
@@ -343,10 +341,9 @@ class MrpProduction(models.Model):
             'location_dest_id': self.product_id.property_stock_production.id,
             'raw_material_production_id': self.id,
             'company_id': self.company_id.id,
-            'operation_id': bom_line.operation_id and bom_line.operation_id.id or False,
+            'operation_id': bom_line.operation_id.id,
             'procure_method': bom_line.procure_method,
             'price_unit': bom_line.product_id.standard_price,
-            'picking_type_id': self.picking_type_id.id,
             'origin': self.name,
             'warehouse_id': source_location.get_warehouse(),
             'group_id': self.move_prod_id and self.move_prod_id.group_id.id or False,
@@ -358,7 +355,7 @@ class MrpProduction(models.Model):
         for production in self:
             production._make_production_produce_line()
             factor = self.product_uom_id._compute_qty(self.product_qty, production.bom_id.product_uom_id.id)
-            production.bom_id.explode(factor / production.bom_id.product_qty, self._generate_move)
+            production.bom_id.explode(production.product_id, factor / production.bom_id.product_qty, self._generate_move)
             production.move_raw_ids.action_confirm()
         return True
 
@@ -459,6 +456,17 @@ class MrpProductionWorkcenterLine(models.Model):
 
     next_work_order_id = fields.Many2one('mrp.production.work.order', "Next Work Order")
 
+    def _generate_lot_ids(self):
+        """
+            Generate stock move lots
+        """
+        self.ensure_one()
+        if self.move_raw_ids:
+            moves = self.move_raw_ids.filtered(lambda x: (x.state not in ('done', 'cancel')) and (x.product_id.tracking != 'none'))
+            for move in moves:
+                pass
+                #self.env['stock.move.lots'].create({'':''})
+
     @api.multi
     def record_production(self):
         self.ensure_one()
@@ -468,7 +476,7 @@ class MrpProductionWorkcenterLine(models.Model):
         # Update quantities done on each raw material line
         for move in self.move_raw_ids:
             factor = 1.0
-            #if it's a finnished product, we use factor 1 as no bom_line
+            #if it's a finished product, we use factor 1 as no bom_line
             if move.bom_line_id:
                 factor = move.bom_line_id.bom_id.product_qty * move.bom_line_id.product_qty
             move.quantity_done += self.qty_producing / factor
@@ -480,6 +488,7 @@ class MrpProductionWorkcenterLine(models.Model):
         # Update workorder quantity produced
         self.qty_produced += self.qty_producing
         self.qty_producing = 1.0
+        
         if self.qty_produced >= self.qty:
             self.button_finish()
 
