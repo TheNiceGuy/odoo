@@ -22,21 +22,21 @@ class MrpProductProduce(models.TransientModel):
                 quantity = production.product_qty - production.qty_produced
 
             lines = []
-            for move in production.move_raw_ids.filtered(lambda x: x.product_id.tracking <> 'none'):
+            for move in production.move_raw_ids.filtered(lambda x: (x.product_id.tracking <> 'none') and x.state not in ('done', 'cancel')):
                 qty = quantity / move.bom_line_id.bom_id.product_qty * move.bom_line_id.product_qty
                 if move.product_id.tracking=='serial':
                     while qty > 0.000001:
                         lines.append({
                             'move_id': move.id,
                             'quantity': min(1,qty),
-                            'product_id': production.product_id.id
+                            'product_id': move.product_id.id
                         })
                         qty -= 1
                 else:
                     lines.append({
                         'move_id': move.id,
                         'quantity': qty,
-                        'product_id': production.product_id.id
+                        'product_id': move.product_id.id
                     })
 
             res['serial'] = serial
@@ -58,6 +58,7 @@ class MrpProductProduce(models.TransientModel):
     @api.multi
     def do_produce(self):
         # Nothing to do for lots since values are created using default data (stock.move.lots)
+        import pdb; pdb.set_trace()
         moves = self.production_id.move_raw_ids + self.production_id.move_finished_ids
         for move in moves.filtered(lambda x: x.product_id.tracking == 'none'):
             quantity = self.product_qty

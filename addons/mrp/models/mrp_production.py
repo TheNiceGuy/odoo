@@ -112,10 +112,10 @@ class MrpProduction(models.Model):
     # FP Note: what's the goal of this field?
     move_prod_id = fields.Many2one('stock.move', string='Product Move', readonly=True, copy=False)
 
-    move_raw_ids = fields.One2many('stock.move', 'raw_material_production_id', string='Raw Materials', states={'done': [('readonly', True)]})
-    move_finished_ids = fields.One2many('stock.move', 'production_id', string='Finished Products', states={'done': [('readonly', True)]})
+    move_raw_ids = fields.One2many('stock.move', 'raw_material_production_id', string='Raw Materials', states={'done': [('readonly', True)]}, copy=False)
+    move_finished_ids = fields.One2many('stock.move', 'production_id', string='Finished Products', states={'done': [('readonly', True)]}, copy=False)
 
-    work_order_ids = fields.One2many('mrp.production.work.order', 'production_id', string='Work Orders', readonly=True, oldname='workcenter_lines')
+    work_order_ids = fields.One2many('mrp.production.work.order', 'production_id', string='Work Orders', readonly=True, oldname='workcenter_lines', copy=False)
 
     nb_orders = fields.Integer('# Work Orders', compute='_compute_nb_orders')
     nb_done = fields.Integer('# Done Work Orders', compute='_compute_nb_orders')
@@ -153,7 +153,7 @@ class MrpProduction(models.Model):
         for operation in bom.routing_id.work_order_ids:
             workcenter = operation.workcenter_id
             hour =  workcenter.time_start + workcenter.time_stop
-            cycle_number = math.ceil(qty / bom.product_qty / workcenter.capacity)
+            cycle_number = math.ceil(qty / bom.product_qty / workcenter.capacity) #TODO: float_round UP
             hour += cycle_number * operation.hour_nbr
             workorder_id = self.work_order_ids.create({
                 'name': operation.name,
@@ -172,10 +172,6 @@ class MrpProduction(models.Model):
 
             # Add raw materials for this operation
             self.move_raw_ids.filtered(lambda x: x.operation_id.id in tocheck).write({
-                'workorder_id': workorder_id.id
-            })
-            # Add finished products for this operation
-            self.move_finished_ids.filtered(lambda x: x.operation_id.id in tocheck).write({
                 'workorder_id': workorder_id.id
             })
             state = 'pending'
@@ -292,9 +288,9 @@ class MrpProduction(models.Model):
     @api.multi
     def _get_produced_qty(self):
         for production in self:
-            done_moves = self.move_finished_ids.filtered(lambda x: x.state=='done' and x.product_id.id == self.product_id.id)
+            done_moves = self.move_finished_ids.filtered(lambda x: x.state=='done' and x.product_id.id == production.product_id.id)
             qty_produced = sum(done_moves.mapped('product_qty'))
-            production.check_to_done = qty_produced >= production.product_qty
+            production.check_to_done = (qty_produced >= production.product_qty) and (production.state not in ('done', 'cancel'))
             production.qty_produced = qty_produced
         return True
 
@@ -307,7 +303,6 @@ class MrpProduction(models.Model):
             'product_id': self.product_id.id,
             'product_uom': self.product_uom_id.id,
             'product_uom_qty': self.product_qty,
-            'picking_type_id': self.picking_type_id.id,
             'location_id': self.product_id.property_stock_production.id,
             'location_dest_id': self.location_destination().id,
             'move_dest_id': self.move_prod_id.id,
