@@ -174,7 +174,12 @@ class MrpProduction(models.Model):
             self.move_raw_ids.filtered(lambda x: x.operation_id.id in tocheck).write({
                 'workorder_id': workorder_id.id
             })
+            # Add finished products for this operation
+            self.move_finished_ids.filtered(lambda x: x.operation_id.id in tocheck).write({
+                'workorder_id': workorder_id.id
+            })
             state = 'pending'
+
         return True
 
     @api.multi
