@@ -29,14 +29,16 @@ class MrpProductProduce(models.TransientModel):
                         lines.append({
                             'move_id': move.id,
                             'quantity': min(1,qty),
-                            'product_id': move.product_id.id
+                            'product_id': move.product_id.id,
+                            'production_id': production.id,
                         })
                         qty -= 1
                 else:
                     lines.append({
                         'move_id': move.id,
                         'quantity': qty,
-                        'product_id': move.product_id.id
+                        'product_id': move.product_id.id,
+                        'production_id': production.id,
                     })
 
             res['serial'] = serial
@@ -59,6 +61,14 @@ class MrpProductProduce(models.TransientModel):
     def do_produce(self):
         # Nothing to do for lots since values are created using default data (stock.move.lots)
         moves = self.production_id.move_raw_ids + self.production_id.move_finished_ids
+        #Check Lot for finished product
+        finished_move = self.production_id.move_finished_ids.filtered(lambda x: (x.state not in ('done', 'cancel')) and (x.product_id.tracking != 'none'))
+        if finished_move:
+            self.env['stock.move.lots'].create({'product_id': self.production_id.product_id.id, 
+                                                'lot_id': self.lot_id.id,
+                                                'move_id': finished_move[0].id,
+                                                'quantity': self.product_qty,
+                                                })
         for move in moves.filtered(lambda x: x.product_id.tracking == 'none' and x.state not in ('done', 'cancel')):
             quantity = self.product_qty
             if move.bom_line_id:
