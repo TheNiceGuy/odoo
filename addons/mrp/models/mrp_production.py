@@ -178,8 +178,10 @@ class MrpProduction(models.Model):
             self.move_finished_ids.filtered(lambda x: x.operation_id.id in tocheck).write({
                 'workorder_id': workorder_id.id
             })
+            
+            workorder_id._generate_lot_ids()
+            
             state = 'pending'
-
         return True
 
     @api.multi
@@ -198,6 +200,7 @@ class MrpProduction(models.Model):
             for operation in order.work_order_ids:
                 # TODO: better implementation for plannnig algorythm
                 operation.write({'date_planned_start': datetime.now(), 'date_planned_end': datetime.now()})
+        
 
     def _check_serial(self):
         '''
@@ -278,8 +281,39 @@ class MrpProduction(models.Model):
     @api.multi
     def post_inventory(self):
         for order in self:
-            order.move_raw_ids.filtered(lambda x: x.state not in ('done','cancel')).move_validate()
-            order.move_finished_ids.filtered(lambda x: x.state not in ('done','cancel')).move_validate()
+            moves_to_do = order.move_raw_ids.filtered(lambda x: x.state not in ('done','cancel'))
+            moves_to_do.move_validate()
+            #order.move_finished_ids.filtered(lambda x: x.state not in ('done','cancel')).move_validate()
+            moves_to_finish = order.move_finished_ids
+            for move in order.move_finished_ids:
+                if move.product_id.tracking == 'none':
+                    move.move_validate()
+                else:
+                    # Split processing of move according to lot
+                    moves_lots = moves_to_do.filtered(lambda x: x.product_id.tracking != 'none')
+                    if moves_lots:
+                        movlots = moves_lots.mapped('quantity_lots')
+                        lot_qty = {}
+                        for movlot in movlots:
+                            if not lot_qty.get(movlot.lot_produced_id):
+                                lot_qty[movlot.lot_produced_id.id] = movlot.lot_produced_qty
+                        product_qty = 0
+                        for lot in lot_qty:
+                            self.env['stock.quant'].quants_move([(None, lot_qty[lot])], move, move.location_dest_id, lot_id = lot)
+                            product_qty += lot_qty[lot]
+                        if product_qty <= move.product_qty:
+                            new_move = self.env['stock.move'].split(move, move.product_qty - lot_qty[lot])
+                        #TODO: in case of extra moves
+                        move.state = 'done'
+                    else:
+                        move.move_validate()
+                for quant in move.quant_ids:
+                    if quant.lot_id:
+                        quants = self.env['stock.quant']
+                        for move in moves_to_do:
+                            lots = move.quantity_lots.filtered(lambda x: x.lot_produced_id.id == quant.lot_id.id).mapped('lot_id')
+                            quants |= move.quant_ids.filtered(lambda x: x.lot_id in lots)
+                        quant.consumed_quant_ids = [x.id for x in quants]
         return True
 
     @api.multi
@@ -441,7 +475,7 @@ class MrpProductionWorkcenterLine(models.Model):
     availability = fields.Selection([('waiting', 'Waiting'), ('assigned', 'Available')], 'Stock Availability', store=True, compute='_compute_availability')
 
     production_state = fields.Selection(related='production_id.state', readonly=True)
-    product = fields.Many2one('product.product', related='production_id.product_id', string="Product", readonly=True)
+    product = fields.Many2one('product.product', related='production_id.product_id', string="Product", readonly=True) #should be product_id
     qty = fields.Float(related='production_id.product_qty', string='Qty', readonly=True)
     uom = fields.Many2one('product.uom', related='production_id.product_uom_id', string='Unit of Measure')
 
@@ -451,7 +485,7 @@ class MrpProductionWorkcenterLine(models.Model):
 
     inv_message = fields.Html(compute="_get_inventory_message")
 
-    final_lot_id = fields.Many2one('stock.production.lot', 'Current Lot', domain="[('product_id', '=', product_id)]")
+    final_lot_id = fields.Many2one('stock.production.lot', 'Current Lot', domain="[('product_id', '=', product)]")
     qty_producing = fields.Float('Qty Producing', default=1.0)
 
     next_work_order_id = fields.Many2one('mrp.production.work.order', "Next Work Order")
@@ -461,10 +495,29 @@ class MrpProductionWorkcenterLine(models.Model):
             Generate stock move lots
         """
         self.ensure_one()
+        move_lot_obj = self.env['stock.move.lots']
         if self.move_raw_ids:
-            moves = self.move_raw_ids.filtered(lambda x: (x.state not in ('done', 'cancel')) and (x.product_id.tracking != 'none'))
+            moves = self.move_raw_ids.filtered(lambda x: (x.state not in ('done', 'cancel')) and (x.product_id.tracking != 'none') and (x.product_id.id != self.product.id))
             for move in moves:
-                pass
+                qty = self.qty_producing / move.bom_line_id.bom_id.product_qty * move.bom_line_id.product_qty
+                if move.product_id.tracking=='serial':
+                    while qty > 0.000001:
+                        move_lot_obj.create({
+                            'move_id': move.id,
+                            'quantity': min(1,qty),
+                            'product_id': move.product_id.id,
+                            'production_id': self.production_id.id,
+                            'workorder_id': self.id,
+                        })
+                        qty -= 1
+                else:
+                    move_lot_obj.create({
+                        'move_id': move.id,
+                        'quantity': qty,
+                        'product_id': move.product_id.id,
+                        'production_id': self.production_id.id,
+                        'workorder_id': self.id,
+                        })
                 #self.env['stock.move.lots'].create({'':''})
 
     @api.multi
@@ -484,6 +537,10 @@ class MrpProductionWorkcenterLine(models.Model):
         # One a piece is produced, you can launch the next work order
         if self.next_work_order_id.state=='pending':
             self.next_work_order_id.state='ready'
+
+        #TODO: add filter for those that have not been done yet
+        self.move_traceability_ids.write({'lot_produced_id': self.final_lot_id.id,
+                                          'lot_produced_qty': self.qty_producing,})
 
         # Update workorder quantity produced
         self.qty_produced += self.qty_producing

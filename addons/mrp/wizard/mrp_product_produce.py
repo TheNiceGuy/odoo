@@ -24,7 +24,7 @@ class MrpProductProduce(models.TransientModel):
             lines = []
             for move in production.move_raw_ids.filtered(lambda x: (x.product_id.tracking <> 'none') and x.state not in ('done', 'cancel')):
                 qty = quantity / move.bom_line_id.bom_id.product_qty * move.bom_line_id.product_qty
-                if move.product_id.tracking=='serial':
+                if production._check_serial():
                     while qty > 0.000001:
                         lines.append({
                             'move_id': move.id,

@@ -1267,14 +1267,14 @@
                     <group>
                         <group>
                             <field name="qty_producing" string="Current Qty"/>
-                            <field name="final_lot_id"/>
+                            <field name="final_lot_id" context="{'default_product_id': product}"/>
                         </group>
                     </group>
-                    <field name="move_traceability_ids">
+                    <field name="move_traceability_ids" attrs="{'invisible': [('move_traceability_ids', '=', [])]}">
                         <tree editable="bottom">
                             <field name="product_id"/>
                             <field name="quantity"/>
-                            <field name="lot_id"/>
+                            <field name="lot_id" context="{'default_product_id': product_id}"/>
                         </tree>
                     </field>
                 </page>

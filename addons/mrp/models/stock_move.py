@@ -13,7 +13,7 @@ class StockMoveLots(models.Model):
 
     move_id = fields.Many2one('stock.move', string='Inventory Move', required=True)
     workorder_id = fields.Many2one('mrp.production.work.order', string='Work Order')
-    lot_id = fields.Many2one('stock.production.lot', string='Lot')
+    lot_id = fields.Many2one('stock.production.lot', string='Lot', domain="[('product_id', '=', product_id)]")
     lot_produced_id = fields.Many2one('stock.production.lot', string='Finished Lot')
     lot_produced_qty = fields.Float('Quantity Finished Product')
     quantity = fields.Float('Quantity', default=1.0)
@@ -63,6 +63,8 @@ class StockMove(models.Model):
         self.do_unreserve()
         quant_obj = self.env['stock.quant']
         for move in self:
+            if move.quantity_done < move.product_qty:
+                new_move = self.env['stock.move'].split(move, move.product_qty - move.quantity_done)
             if move.has_tracking == 'none':
                 quants = quant_obj.quants_get_preferred_domain(move.product_qty, move)
                 quant_obj.quants_reserve(quants, move)
@@ -70,10 +72,9 @@ class StockMove(models.Model):
                 for lot in move.quantity_lots:
                     quants = quant_obj.quants_get_preferred_domain(lot.quantity, move, lot_id=lot.lot_id.id)
                     quant_obj.quants_reserve(quants, move)
-            if move.quantity_done < move.product_qty:
-                new_move = self.env['stock.move'].split(move, move.product_qty- move.quantity_done)
             move.action_done()
         return True
+
 
     @api.multi
     def split_move_lot(self):
@@ -104,6 +105,15 @@ class StockMove(models.Model):
     @api.multi
     def dummy(self):
         return True
+
+
+class StockQuant(models.Model):
+    _inherit = 'stock.quant'
+    
+    consumed_quant_ids = fields.Many2many('stock.quant', 'stock_quant_consume_rel', 'produce_quant_id', 'consume_quant_id')
+    produced_quant_ids = fields.Many2many('stock.quant', 'stock_quant_consume_rel', 'consume_quant_id', 'produce_quant_id')
+    
+    
 
 
 class StockPickingType(models.Model):
