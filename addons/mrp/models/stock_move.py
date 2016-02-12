@@ -33,9 +33,6 @@ class StockMove(models.Model):
 
     has_tracking = fields.Selection(related='product_id.tracking', string='Product with Tracking')
 
-    # Not sure we need this?
-    consumed_for_id = fields.Many2one('stock.move', string='Consumed for', help='Technical field used to make the traceability of produced products', oldname='consumed_for')
-
     # Quantities to process, in normalized UoMs
     quantity_done_store = fields.Float('Quantity', digits_compute=dp.get_precision('Product Unit of Measure'))
     quantity_done = fields.Float('Quantity', digits_compute=dp.get_precision('Product Unit of Measure'),
@@ -112,8 +109,6 @@ class StockQuant(models.Model):
     
     consumed_quant_ids = fields.Many2many('stock.quant', 'stock_quant_consume_rel', 'produce_quant_id', 'consume_quant_id')
     produced_quant_ids = fields.Many2many('stock.quant', 'stock_quant_consume_rel', 'consume_quant_id', 'produce_quant_id')
-    
-    
 
 
 class StockPickingType(models.Model):
