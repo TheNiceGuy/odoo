@@ -1749,7 +1749,7 @@ class stock_production_lot(osv.osv):
         'product_id': fields.many2one('product.product', 'Product', required=True, domain=[('type', 'in', ['product', 'consu'])]),
         'quant_ids': fields.one2many('stock.quant', 'lot_id', 'Quants', readonly=True),
         'create_date': fields.datetime('Creation Date'),
-        'product_uom_id': fields.function(_product_uom, type='many2one', relation='product.uom', string='Unit of Measure'),
+        'product_uom': fields.function(_product_uom, type='many2one', relation='product.uom', string='Unit of Measure'),
         'product_qty': fields.function(_product_qty, type='float', string='Quantity'),
     }
     _defaults = {
