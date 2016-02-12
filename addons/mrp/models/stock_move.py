@@ -18,6 +18,7 @@ class StockMoveLots(models.Model):
     lot_produced_qty = fields.Float('Quantity Finished Product')
     quantity = fields.Float('Quantity', default=1.0)
     product_id = fields.Many2one('product.product', related="move_id.product_id")
+    done = fields.Boolean('Done', default=False)
 
 
 class StockMove(models.Model):

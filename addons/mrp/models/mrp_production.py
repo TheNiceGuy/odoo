@@ -284,8 +284,8 @@ class MrpProduction(models.Model):
             moves_to_do = order.move_raw_ids.filtered(lambda x: x.state not in ('done','cancel'))
             moves_to_do.move_validate()
             #order.move_finished_ids.filtered(lambda x: x.state not in ('done','cancel')).move_validate()
-            moves_to_finish = order.move_finished_ids
-            for move in order.move_finished_ids:
+            moves_to_finish = order.move_finished_ids.filtered(lambda x: x.state not in ('done', 'cancel'))
+            for move in moves_to_finish:
                 if move.product_id.tracking == 'none':
                     move.move_validate()
                 else:
@@ -540,11 +540,14 @@ class MrpProductionWorkcenterLine(models.Model):
 
         #TODO: add filter for those that have not been done yet
         self.move_traceability_ids.write({'lot_produced_id': self.final_lot_id.id,
-                                          'lot_produced_qty': self.qty_producing,})
+                                          'lot_produced_qty': self.qty_producing,
+                                          'done': True})
 
         # Update workorder quantity produced
         self.qty_produced += self.qty_producing
         self.qty_producing = 1.0
+        
+        self._generate_lot_ids()
         
         if self.qty_produced >= self.qty:
             self.button_finish()
