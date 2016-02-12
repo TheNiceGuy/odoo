@@ -306,39 +306,44 @@ class MrpProduction(models.Model):
         return True
 
     @api.multi
-    def _generate_move(self, bom_line, quantity):
+    def _update_move(self, bom_line, quantity):
         self.ensure_one()
         move = self.move_raw_ids.filtered(lambda x:x.bom_line_id.id == bom_line.id and x.state not in ('done', 'cancel'))
+        if move:
+            move.write({'product_uom_qty': quantity})
+            return move
+        else:
+            self._generatre_move(bom_line, quantity)
+
+    @api.multi
+    def _generate_move(self, bom_line, quantity):
+        self.ensure_one()
         if bom_line.product_id.type not in ['product', 'consu']:
             return False
         if self.bom_id.routing_id and self.bom_id.routing_id.location_id:
             source_location = self.bom_id.routing_id.location_id
         else:
             source_location = self.location_source()
-        if move:
-            move.write({'product_uom_qty': quantity})
-            return move
-        else:
-            data = {
-                'name': self.name,
-                'date': self.date_planned,
-                'bom_line_id': bom_line.id,
-                'product_id': bom_line.product_id.id,
-                'product_uom_qty': quantity,
-                'product_uom': bom_line.product_uom_id.id,
-                'location_id': source_location.id,
-                'location_dest_id': self.product_id.property_stock_production.id,
-                'raw_material_production_id': self.id,
-                'company_id': self.company_id.id,
-                'operation_id': bom_line.operation_id and bom_line.operation_id.id or False,
-                'procure_method': bom_line.procure_method,
-                'price_unit': bom_line.product_id.standard_price,
-                'picking_type_id': self.picking_type_id.id,
-                'origin': self.name,
-                'warehouse_id': source_location.get_warehouse(),
-                'group_id': self.move_prod_id and self.move_prod_id.group_id.id or False,
-            }
-            return self.env['stock.move'].create(data)
+        data = {
+            'name': self.name,
+            'date': self.date_planned,
+            'bom_line_id': bom_line.id,
+            'product_id': bom_line.product_id.id,
+            'product_uom_qty': quantity,
+            'product_uom': bom_line.product_uom_id.id,
+            'location_id': source_location.id,
+            'location_dest_id': self.product_id.property_stock_production.id,
+            'raw_material_production_id': self.id,
+            'company_id': self.company_id.id,
+            'operation_id': bom_line.operation_id and bom_line.operation_id.id or False,
+            'procure_method': bom_line.procure_method,
+            'price_unit': bom_line.product_id.standard_price,
+            'picking_type_id': self.picking_type_id.id,
+            'origin': self.name,
+            'warehouse_id': source_location.get_warehouse(),
+            'group_id': self.move_prod_id and self.move_prod_id.group_id.id or False,
+        }
+        return self.env['stock.move'].create(data)
 
     @api.multi
     def _generate_moves(self):
