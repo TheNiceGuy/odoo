@@ -56,21 +56,3 @@ class SaleOrderLine(models.Model):
         elif bom_delivered:
             return 0.0
         return super(SaleOrderLine, self)._get_delivered_qty()
-
-
-class StockMove(models.Model):
-    _inherit = 'stock.move'
-
-    @api.model
-    def _prepare_procurement_from_move(self, move):
-        res = super(StockMove, self)._prepare_procurement_from_move(move)
-        if res and move.procurement_id and move.procurement_id.property_ids:
-            res['property_ids'] = [(6, 0, move.procurement_id.property_ids.ids)]
-        return res
-
-    def _action_explode(self):
-        """ Explodes pickings.
-        @return: True
-        """
-        properties = self.procurement_id.sale_line_id.property_ids
-        return super(StockMove, self.with_context(properties=properties))._action_explode()
