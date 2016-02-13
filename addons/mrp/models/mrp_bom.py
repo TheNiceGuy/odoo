@@ -37,9 +37,7 @@ class MrpBom(models.Model):
     routing_id = fields.Many2one('mrp.routing', string='Routing', help="The list of operations (list of work centers) to produce the finished product. "
                                  "The routing is mainly used to compute work center costs during operations and to plan future loads on work centers based on production planning.")
     ready_to_produce = fields.Selection([('all_available', 'All components available'), ('asap', 'The components of 1st operation')], string='Ready when are available', required=True, default='asap',)
-    product_rounding = fields.Float(string='Product Rounding', help="Rounding applied on the product quantity.")
     picking_type_id = fields.Many2one('stock.picking.type', string='Picking Type', domain=[('code', '=', 'manufacturing')], help="When a procurement has a ‘produce’ route with a picking type set, it will try to create a Manufacturing Order for that product using a BOM of the same picking type. That allows to define pull rules for products with different routing (different BOMs)")
-    product_efficiency = fields.Float(string='Manufacturing Efficiency', default=100.0, required=True, help="A factor of 0.9 means a loss of 10% during the production process.")
     company_id = fields.Many2one('res.company', string='Company', required=True, default=lambda self: self.env['res.company']._company_default_get('mrp.bom'))
     operation_id = fields.Many2one('mrp.routing.workcenter', string='Produced at Operation')
 
@@ -66,16 +64,6 @@ class MrpBom(models.Model):
         # order to prioritize bom with product_id over the one without
         return self.search(domain, order='sequence, product_id', limit=1)
 
-    def _factor(self, factor, product_efficiency, product_rounding):
-        factor = factor * 100 / (product_efficiency or 100)
-        if product_rounding:
-            factor = float_round(factor,
-                                 precision_rounding=product_rounding,
-                                 rounding_method='UP')
-        if factor < product_rounding:
-            factor = product_rounding
-        return factor
-
     # Quantity must be in same UoM than the BoM: convert uom before explode()
     def explode(self, product, quantity, method=None, method_wo=None, done=None):
         self.ensure_one()
@@ -88,8 +76,6 @@ class MrpBom(models.Model):
                 continue
             if bom_line.product_id.product_tmpl_id.id in done:
                 raise UserError(_('BoM "%s" contains a BoM line with a product recursion: "%s".') % (self.display_name, bom_line.product_id.display_name))
-
-            quantity = self._factor(quantity, bom_line.product_efficiency, bom_line.product_rounding)
 
             # This is very slow, can we improve that?
             bom = self._bom_find(product=bom_line.product_id)
@@ -169,7 +155,6 @@ class MrpBomLine(models.Model):
     routing_id = fields.Many2one('mrp.routing', string='Routing',
                                  related="bom_id.routing_id", store=True, 
                                  help="The list of operations (list of work centers) to produce the finished product. The routing is mainly used to compute work center costs during operations and to plan future loads on work centers based on production planning.")
-    product_rounding = fields.Float(string='Product Rounding', help="Rounding applied on the product quantity.")
     bom_id = fields.Many2one('mrp.bom', string='Parent BoM', ondelete='cascade', index=True, required=True)
     attribute_value_ids = fields.Many2many('product.attribute.value', string='Variants', help="BOM Product Variants needed form apply this line.")
     operation_id = fields.Many2one('mrp.routing.workcenter', string='Consumed in Operation', help="The operation where the components are consumed, or the finished products created.")
