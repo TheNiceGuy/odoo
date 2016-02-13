@@ -15,12 +15,12 @@ class MrpBom(models.Model):
     _name = 'mrp.bom'
     _description = 'Bill of Material'
     _inherit = ['mail.thread']
+    _name_rec = 'product_tmpl_id'
     _order = "sequence"
 
     def _get_uom_id(self):
         return self.env['product.uom'].search([], limit=1, order='id')
 
-    name = fields.Char()
     code = fields.Char(string='Reference')
     active = fields.Boolean(string='Active', default=True, help="If the active field is set to False, it will allow you to hide the bills of material without removing it.")
     bom_type = fields.Selection([('normal', 'Manufacture this product'), ('phantom', 'Ship this product as a set of components (kit)')], string='BoM Type', required=True, default='normal',
@@ -39,7 +39,7 @@ class MrpBom(models.Model):
     ready_to_produce = fields.Selection([('all_available', 'All components available'), ('asap', 'The components of 1st operation')], string='Ready when are available', required=True, default='asap',)
     product_rounding = fields.Float(string='Product Rounding', help="Rounding applied on the product quantity.")
     picking_type_id = fields.Many2one('stock.picking.type', string='Picking Type', domain=[('code', '=', 'manufacturing')], help="When a procurement has a ‘produce’ route with a picking type set, it will try to create a Manufacturing Order for that product using a BOM of the same picking type. That allows to define pull rules for products with different routing (different BOMs)")
-    product_efficiency = fields.Float(string='Manufacturing Efficiency', default=1.0, required=True, help="A factor of 0.9 means a loss of 10% during the production process.")
+    product_efficiency = fields.Float(string='Manufacturing Efficiency', default=100.0, required=True, help="A factor of 0.9 means a loss of 10% during the production process.")
     company_id = fields.Many2one('res.company', string='Company', required=True, default=lambda self: self.env['res.company']._company_default_get('mrp.bom'))
     operation_id = fields.Many2one('mrp.routing.workcenter', string='Produced at Operation')
 
@@ -67,7 +67,7 @@ class MrpBom(models.Model):
         return self.search(domain, order='sequence, product_id', limit=1)
 
     def _factor(self, factor, product_efficiency, product_rounding):
-        factor = factor / (product_efficiency or 1.0)
+        factor = factor * 100 / (product_efficiency or 100)
         if product_rounding:
             factor = float_round(factor,
                                  precision_rounding=product_rounding,
@@ -87,7 +87,7 @@ class MrpBom(models.Model):
             if bom_line._skip_bom_line(product):
                 continue
             if bom_line.product_id.product_tmpl_id.id in done:
-                raise UserError(_('BoM "%s" contains a BoM line with a product recursion: "%s".') % (self.name, bom_line.product_id.display_name))
+                raise UserError(_('BoM "%s" contains a BoM line with a product recursion: "%s".') % (self.display_name, bom_line.product_id.display_name))
 
             quantity = self._factor(quantity, bom_line.product_efficiency, bom_line.product_rounding)
 
@@ -107,8 +107,6 @@ class MrpBom(models.Model):
     def copy_data(self, default=None):
         if default is None:
             default = {}
-        if not default.get('name', False):
-            default['name'] = self.display_name + _(' (copy)')
         return super(MrpBom, self).copy_data(default)[0]
 
     @api.onchange('product_uom_id')
@@ -135,9 +133,9 @@ class MrpBom(models.Model):
     def name_get(self, cr, uid, ids, context=None):
         res = []
         for record in self.browse(cr, uid, ids, context=context):
-            name = record.product_tmpl_id.name
+            name = record.product_tmpl_id.display_name
             if record.code:
-                name = '[%s] %s' % (record.code, name)
+                name = '%s: %s' % (name, record.code)
             res.append((record.id, name))
         return res
 
@@ -172,7 +170,6 @@ class MrpBomLine(models.Model):
                                  related="bom_id.routing_id", store=True, 
                                  help="The list of operations (list of work centers) to produce the finished product. The routing is mainly used to compute work center costs during operations and to plan future loads on work centers based on production planning.")
     product_rounding = fields.Float(string='Product Rounding', help="Rounding applied on the product quantity.")
-    product_efficiency = fields.Float(string='Manufacturing Efficiency', required=True, default=1.0, help="A factor of 0.9 means a loss of 10% within the production process.")
     bom_id = fields.Many2one('mrp.bom', string='Parent BoM', ondelete='cascade', index=True, required=True)
     attribute_value_ids = fields.Many2many('product.attribute.value', string='Variants', help="BOM Product Variants needed form apply this line.")
     operation_id = fields.Many2one('mrp.routing.workcenter', string='Consumed in Operation', help="The operation where the components are consumed, or the finished products created.")

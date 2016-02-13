@@ -54,7 +54,6 @@ class TestSaleMrpFlow(common.TransactionCase):
                 'product_tmpl_id': product_tmpl_id,
                 'product_qty': qty,
                 'bom_type': bom_type,
-                'product_efficiency': 1.0,
                 'product_uom_id': uom_id})
 
         self.uom_kg = self.ProductUom.create({
