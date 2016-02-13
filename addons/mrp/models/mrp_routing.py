@@ -41,10 +41,40 @@ class MrpRoutingWorkcenter(models.Model):
     workcenter_id = fields.Many2one('mrp.workcenter', string='Work Center', required=True)
     name = fields.Char(required=True, string="Operation")
     sequence = fields.Integer(default=100, help="Gives the sequence order when displaying a list of routing Work Centers.")
-    hour_nbr = fields.Float(string='Number of Hours', required=True, help="Time in hours for this Work Center to achieve the operation of the specified routing.")
     routing_id = fields.Many2one('mrp.routing', string='Parent Routing', index=True, ondelete='cascade', required=True,
                                  help="Routings indicates all the Work Centers used and for how long."
                                  "If Routings is indicated then,the third tab of a production order (Work Centers) will be automatically pre-completed.")
     note = fields.Text(string='Description')
     company_id = fields.Many2one('res.company', related='routing_id.company_id', string='Company', store=True, readonly=True)
     worksheet = fields.Binary('worksheet')
+
+    time_mode = fields.Selection([
+        ('auto','Compute based on real time'), ('manual','Set duration manually')],
+        'Duration Computation', default='auto')
+    time_mode_batch = fields.Integer('Based on', default=10)
+    time_hour_manual = fields.Float(string='Manual Duration', default=1.0)
+
+    time_hour = fields.Float(string='Duration', compute="_get_time_hour")
+    wo_count = fields.Integer(string="# of Work Orders", compute="_wo_count")
+
+    @api.multi
+    def _wo_count(self):
+        result = self.env['mrp.production.work.order'].read_group([('operation_id', 'in', self.mapped('id')),('state','=','done')], ['operation_id'], ['operation_id'])
+        mapped_data = dict([(op['operation_id'][0], op['operation_id_count']) for op in result])
+        for operation in self:
+            operation.wo_count = mapped_data.get(operation.id, 0)
+
+    @api.multi
+    def _get_time_hour(self):
+        for operation in self:
+            if operation.time_mode=='manual':
+                operation.time_hour = operation.time_hour_manual
+                continue
+            delay = qty = 0.0
+            for wo in operation.env['mrp.production.work.order'].search([('state','=','done'),('operation_id','=',operation.id)], order="id desc", limit=operation.time_mode_batch):
+                delay += wo.delay
+                qty += wo.qty_produced
+            if qty > 0.0:
+                operation.time_hour = delay / qty
+            else:
+                operation.time_hour = operation.time_hour_manual

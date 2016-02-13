@@ -18,7 +18,7 @@ class MrpProduction(models.Model):
     _description = 'Manufacturing Order'
     _date_name = 'date_planned'
     _inherit = ['mail.thread', 'ir.needaction_mixin']
-    _order = 'date_planned asc'
+    _order = 'date_planned asc,id'
 
     # Returns the destination location or default value from the picking type if none provided
     @api.multi
@@ -154,7 +154,7 @@ class MrpProduction(models.Model):
             workcenter = operation.workcenter_id
             hour =  workcenter.time_start + workcenter.time_stop
             cycle_number = math.ceil(qty / bom.product_qty / workcenter.capacity) #TODO: float_round UP
-            hour += cycle_number * operation.hour_nbr
+            hour += cycle_number * operation.time_hour
             workorder_id = self.work_order_ids.create({
                 'name': operation.name,
                 'production_id': self.id,
@@ -421,10 +421,12 @@ class MrpProductionWorkcenterLine(models.Model):
     _inherit = ['mail.thread']
 
     @api.multi
+    @api.depends('time_ids.state')
     def _compute_delay(self):
         for workorder in self:
             duration = sum(workorder.time_ids.filtered(lambda x: x.state == 'done').mapped('duration'))
             workorder.delay = duration
+            workorder.delay_unit = round(duration / max(workorder.qty_produced, 1), 2)
 
     @api.multi
     @api.depends('move_raw_ids.state')
@@ -462,7 +464,8 @@ class MrpProductionWorkcenterLine(models.Model):
 
     date_start = fields.Datetime('Effective Start Date')
     date_finished = fields.Datetime('Effective End Date')
-    delay = fields.Float('Real Duration', compute='_compute_delay', readonly=True)
+    delay = fields.Float('Real Duration', compute='_compute_delay', readonly=True, store=True, group_operator="avg")
+    delay_unit = fields.Float('Duration Per Unit', compute='_compute_delay', readonly=True, store=True, group_operator="avg")
 
     qty_produced = fields.Float('Quantity', readonly=True, help="The number of products already handled by this work order", default=0.0) #TODO: decimal precision
     operation_id = fields.Many2one('mrp.routing.workcenter', 'Operation') #Should be used differently as BoM can change in the meantime

@@ -29,7 +29,6 @@
               parent="base.menu_mrp_root"
               sequence="25"/>
 
-
         <menuitem id="menu_mrp_configuration"
             name="Configuration"
             parent="base.menu_mrp_root"
@@ -132,7 +131,7 @@
                     <field name="sequence" widget="handle"/>
                     <field name="name"/>
                     <field name="workcenter_id"/>
-                    <field name="hour_nbr"/>
+                    <field name="time_hour"/>
                     <field name="company_id" options="{'no_create': True}" groups="base.group_multi_company"/>
                 </tree>
             </field>
@@ -147,17 +146,31 @@
                             <group>
                                 <field name="name"/>
                                 <field name="workcenter_id"/>
+                                <field name="company_id" options="{'no_create': True}" groups="base.group_multi_company"/>
                                 <field name="sequence" groups="base.group_no_one"/>
                             </group><group>
-                                <field name="hour_nbr" widget="float_time"/>
-                                <field name="company_id" options="{'no_create': True}" groups="base.group_multi_company"/>
-                            </group>
-                            <group>
-                                <field name="worksheet" widget="image"/>
+                                <field name="wo_count" invisible="1"/>
+                                <field name="time_mode" widget="radio"/>
+                                <label for="time_mode_batch" attrs="{'invisible': [('time_mode','=','manual')]}"/>
+                                <div attrs="{'invisible': [('time_mode','=','manual')]}">
+                                    last
+                                    <field name="time_mode_batch" class="oe_inline"/>
+                                    work orders
+                                </div>
+                                <label for="time_hour_manual" attrs="{'invisible': [('time_mode','=','auto'), ('wo_count','&gt;',0)]}" string="Default Duration"/>
+                                <div attrs="{'invisible': [('time_mode','=','auto'), ('wo_count','&gt;',0)]}">
+                                    <field name="time_hour_manual" widget="float_time" class="oe_inline"/> hour(s)
+                                </div>
                             </group>
                         </group>
-                        <label for="note"/>
-                        <field name="note"/>
+                        <notebook>
+                            <page string="Description">
+                                <field name="note"/>
+                            </page>
+                            <page string="Work Sheet">
+                                <field name="worksheet" widget="image"/>
+                            </page>
+                        </notebook>
                     </sheet>
                 </form>
             </field>
@@ -409,6 +422,24 @@
             parent="base.menu_mrp_root"
             sequence="5"/>
 
+        <record id="action_mrp_routing_time" model="ir.actions.act_window">
+            <field name="name">Work Orders</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">mrp.production.work.order</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">graph,pivot,tree,form,gantt,calendar</field>
+            <field name="context">{'search_default_done': True}</field>
+            <field name="search_view_id" ref="view_mrp_production_work_order_search"/>
+            <field name="domain">[('production_id.routing_id', '=', active_id), ('state', '=', 'done')]</field>
+            <field name="help" type="html">
+                <p>
+                  No data to display. You will get here statistics about the
+                  work orders duration related to this routing.
+                </p>
+            </field>
+        </record>
+
+
         <!-- Routings -->
         <record id="mrp_routing_form_view" model="ir.ui.view">
             <field name="name">mrp.routing.form</field>
@@ -417,6 +448,11 @@
                 <form string="Routing">
                     <sheet>
                         <div class="oe_button_box" name="button_box">
+                            <button name="%(action_mrp_routing_time)d" type="action" class="oe_stat_button" icon="fa-clock-o">
+                                <div class="o_form_field o_stat_info">
+                                    <span class="o_stat_text">Time<br/> Analysis</span>
+                                </div>
+                            </button>
                             <button class="oe_stat_button" name="toggle_active" type="object" icon="fa-archive">
                                 <field name="active" widget="boolean_button"
                                     options='{"terminology": "archive"}'/>
@@ -1383,8 +1419,8 @@
         <field name="arch" type="xml">
             <graph string="Operations">
                 <field name="workcenter_id"/>
-                <field name="production_id"/>
-                <field name="qty" type="measure"/>
+                <field name="date_start"/>
+                <field name="delay_unit" type="measure"/>
             </graph>
         </field>
     </record>
@@ -1394,9 +1430,10 @@
         <field name="model">mrp.production.work.order</field>
         <field name="arch" type="xml">
             <pivot string="Operations">
+                <field name="date_start"/>
                 <field name="workcenter_id"/>
-                <field name="production_id"/>
                 <field name="qty" type="measure"/>
+                <field name="delay_unit" type="measure"/>
             </pivot>
         </field>
     </record>
