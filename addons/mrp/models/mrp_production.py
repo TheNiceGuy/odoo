@@ -199,7 +199,7 @@ class MrpProduction(models.Model):
         nbr = 0
         for order in orders_new+orders_plan:
             for operation in order.work_order_ids:
-                # To do: improve this algorythm: use calendar & find holes in calendar instead of always adding at the end
+                # Todo: improve this algorythm: use calendar & find holes in calendar instead of always adding at the end
                 wo = WorkOrder.search([('workcenter_id', '=', operation.workcenter_id.id), ('date_planned_end','<>', False), ('state','in',('ready','pending','progress'))], limit=1, order="date_planned_end desc")
                 start = fields.Datetime.from_string(wo.date_planned_end) or datetime.now()
                 stop = start + relativedelta(minutes=operation.duration)
