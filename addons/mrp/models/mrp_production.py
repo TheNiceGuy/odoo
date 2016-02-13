@@ -546,9 +546,8 @@ class MrpProductionWorkcenterLine(models.Model):
         # Update workorder quantity produced
         self.qty_produced += self.qty_producing
         self.qty_producing = 1.0
-        
         self._generate_lot_ids()
-        
+
         if self.qty_produced >= self.qty:
             self.button_finish()
 
@@ -578,7 +577,7 @@ class MrpProductionWorkcenterLine(models.Model):
         self.ensure_one()
         self.end_all()
         self.write({'state': 'done'})
-        if not self.next_work_order_id:
+        if not self.production_id.work_order_ids.filtered(lambda x: x.state not in ('done','cancel')):
             self.production_id.button_mark_done()
 
     @api.multi
