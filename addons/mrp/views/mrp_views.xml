@@ -763,14 +763,18 @@
             <field name="arch" type="xml">
                 <form string="Manufacturing Orders">
                 <header>
-                    <button name="button_mark_done" attrs="{'invisible': [('check_to_done', '=', False)]}" string="Mark as Done" type="object"/>
-                    <button name="%(act_mrp_product_produce)d" attrs="{'invisible': ['|', ('state', '!=', 'planned')]}" string="Produce" type="action" class="oe_highlight"/>
+                    <button name="button_mark_done" attrs="{'invisible': [('check_to_done', '=', False)]}" string="Mark as Done" type="object" class="oe_highlight"/>
+
                     <button name="action_assign" attrs="{'invisible': [('availability', '=', 'assigned')]}" string="Check availability" type="object" class="oe_highlight"/>
-                    <button name="button_plan" attrs="{'invisible': ['|', ('state', '!=', 'confirmed'), ('routing_id', '=', False)]}" type="object" string="Plan"/>
-                    <button name="%(act_mrp_product_produce)d" attrs="{'invisible': ['|', ('state', '=', 'planned')]}" string="Produce" type="action"/>
+                    <button name="button_plan" attrs="{'invisible': ['|', ('state', '!=', 'confirmed'), ('routing_id', '=', False)]}" type="object" string="Plan" class="oe_highlight"/>
+                    <button name="%(act_mrp_product_produce)d" attrs="{'invisible': ['|', ('state', 'not in', ('confirmed','progress')), ('routing_id', '!=', False)]}" string="Produce" type="action" class="oe_highlight"/>
+
+                    <button name="%(action_mrp_workorder_production_specific)d" type="action" attrs="{'invisible': ['|', ('nb_orders', '=', 0), ('state', '=', 'done')]}" string="Work Orders" class="oe_highlight"/>
+                    <button name="%(act_mrp_product_produce)d" attrs="{'invisible': ['|', ('nb_orders', '=', 0), ('state', '=', 'done')]}" string="Produce" type="action"/>
+
                     <button name="post_inventory" string="Post Inventory" type="object" class="oe_highlight" attrs="{'invisible': [('post_visible', '=', False)]}"/>
                     <button name="button_scrap" type="object" string="Scrap" attrs="{'invisible': [('state', 'in', ('cancel'))]}"/>
-                    <span class="label label-danger" attrs="{'invisible': ['|', '|', ('availability', '=', 'assigned'), ('state', '!=', 'confirmed')]}">Raw materials not available!</span>
+                    <span class="label label-danger" attrs="{'invisible': ['|', ('availability', '=', 'assigned'), ('state', 'not in', ('confirmed','progress'))]}">Raw materials not available!</span>
                     <field name="state" widget="statusbar" statusbar_visible="confirmed,progress,done" statusbar_colors='{"confirmed":"blue"}'/>
                 </header>
                 <sheet>
@@ -792,7 +796,7 @@
                         <group>
                             <field name="availability" invisible="1"/>
                             <field name="check_to_done" invisible="1"/>
-                            <field name="product_tmpl_id" domain="[('bom_ids','!=',False),('bom_ids.bom_type','!=','phantom')]"/>
+                            <field name="product_tmpl_id" domain="[('bom_ids','!=',False),('bom_ids.bom_type','!=','phantom')]" groups="base.group_no_one"/>
                             <field name="product_id"/>
                             <label for="product_qty"/>
                             <div class="o_row">
@@ -840,11 +844,9 @@
                                     <field name="has_tracking" invisible="1"/>
                                     <field name="location_id" domain="[('id', 'child_of', parent.location_id)]" invisible="1"/>
                                     <field name="location_dest_id" domain="[('id', 'child_of', parent.location_dest_id)]" invisible="1"/>
-
-                                    <field name="state"/>
-
-                                    <field name="reserved_availability"/>
-                                    <field name="product_uom_qty" readonly="1" attrs="{'required': [('product_id', '!=', False)]}"/>
+                                    <field name="state" invisible="1"/>
+                                    <field name="quantity_available"/>
+                                    <field name="product_uom_qty" readonly="1" attrs="{'required': [('product_id', '!=', False)]}" string="To Consume"/>
                                     <field name="quantity_done" attrs="{'readonly': [('has_tracking', 'in', ['lot','serial'])]}" string="Consumed"/>
 
                                     <button name="split_move_lot" string="Register lots" type="object" icon="fa-list"
@@ -862,12 +864,10 @@
                                     <field name="has_tracking" invisible="1"/>
                                     <field name="location_id" domain="[('id', 'child_of', parent.location_id)]" invisible="1"/>
                                     <field name="location_dest_id" domain="[('id', 'child_of', parent.location_dest_id)]" invisible="1"/>
+                                    <field name="state" invisible="1"/>
 
-                                    <field name="state"/>
-
-                                    <field name="reserved_availability"/>
-                                    <field name="product_uom_qty" readonly="1" attrs="{'required': [('product_id', '!=', False)]}"/>
-                                    <field name="quantity_done" attrs="{'readonly': [('has_tracking', 'in', ['lot','serial'])]}" string="Consumed"/>
+                                    <field name="product_uom_qty" readonly="1" attrs="{'required': [('product_id', '!=', False)]}" string="To Produce"/>
+                                    <field name="quantity_done" attrs="{'readonly': [('has_tracking', 'in', ['lot','serial'])]}" string="Produced"/>
 
                                     <button name="split_move_lot" string="Register lots" type="object" icon="fa-list"
                                         attrs="{'invisible': [('has_tracking', 'not in', ['lot','serial'])]}"/>

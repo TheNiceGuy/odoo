@@ -327,9 +327,9 @@ class MrpProduction(models.Model):
     @api.multi
     def _get_produced_qty(self):
         for production in self:
-            done_moves = self.move_finished_ids.filtered(lambda x: x.state=='done' and x.product_id.id == production.product_id.id)
-            qty_produced = sum(done_moves.mapped('product_qty'))
-            production.check_to_done = (qty_produced >= production.product_qty) and (production.state not in ('done', 'cancel'))
+            done_moves = self.move_finished_ids.filtered(lambda x: x.state!='cancel' and x.product_id.id == production.product_id.id)
+            qty_produced = sum(done_moves.mapped('quantity_done'))
+            production.check_to_done = done_moves and (qty_produced >= production.product_qty) and (production.state not in ('done', 'cancel'))
             production.qty_produced = qty_produced
         return True
 

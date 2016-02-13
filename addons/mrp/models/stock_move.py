@@ -35,6 +35,7 @@ class StockMove(models.Model):
     has_tracking = fields.Selection(related='product_id.tracking', string='Product with Tracking')
 
     # Quantities to process, in normalized UoMs
+    quantity_available = fields.Float('Quantity Available', compute="_qty_available", digits_compute=dp.get_precision('Product Unit of Measure'))
     quantity_done_store = fields.Float('Quantity', digits_compute=dp.get_precision('Product Unit of Measure'))
     quantity_done = fields.Float('Quantity', digits_compute=dp.get_precision('Product Unit of Measure'),
         compute='_qty_done_compute', inverse='_qty_done_set')
@@ -49,6 +50,15 @@ class StockMove(models.Model):
                 move.quantity_done = sum(move.quantity_lots.mapped('quantity'))
             else:
                 move.quantity_done = move.quantity_done_store
+
+    @api.multi
+    def _qty_available(self):
+        for move in self:
+            # For consumables, state is available so availability = qty to do
+            if move.state == 'assigned':
+                move.quantity_available = move.product_uom_qty
+            else:
+                move.quantity_available = move.reserved_availability
 
     @api.multi
     def _qty_done_set(self):
