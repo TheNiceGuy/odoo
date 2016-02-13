@@ -42,9 +42,3 @@ class MrpConfigSettings(models.TransientModel):
         help='Work Order Operations allow you to create and manage the manufacturing operations that should be followed '
              'within your work centers in order to produce a product. They are attached to bills of materials '
              'that will define the required raw materials.')
-    group_rounding_efficiency = fields.Selection([
-        (0, "No rounding and efficiency on bills of materials"),
-        (1, "Manage rounding and efficiency of bills of materials components")
-        ], "Rounding efficiency",
-        implied_group='mrp.group_rounding_efficiency',
-        help="""Allow to manage product rounding on quantity and product efficiency during production process""")
