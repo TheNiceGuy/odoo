@@ -153,13 +153,13 @@ class MrpProduction(models.Model):
         for operation in bom.routing_id.work_order_ids:
             workcenter = operation.workcenter_id
             cycle_number = math.ceil(qty / bom.product_qty / workcenter.capacity) #TODO: float_round UP
-            hour =  workcenter.time_start + workcenter.time_stop + cycle_number * operation.time_hour * 100.0 / workcenter.time_efficiency
+            duration =  workcenter.time_start + workcenter.time_stop + cycle_number * operation.time_cycle * 100.0 / workcenter.time_efficiency
             workorder_id = self.work_order_ids.create({
                 'name': operation.name,
                 'production_id': self.id,
                 'workcenter_id': operation.workcenter_id.id,
                 'operation_id': operation.id,
-                'hour': hour,
+                'duration': duration,
                 'state': state
             })
             if old: old.next_work_order_id = workorder_id.id
@@ -177,9 +177,7 @@ class MrpProduction(models.Model):
             self.move_finished_ids.filtered(lambda x: x.operation_id.id in tocheck).write({
                 'workorder_id': workorder_id.id
             })
-            
             workorder_id._generate_lot_ids()
-            
             state = 'pending'
         return True
 
@@ -454,7 +452,7 @@ class MrpProductionWorkcenterLine(models.Model):
 
     name = fields.Char(string='Work Order', required=True)
     workcenter_id = fields.Many2one('mrp.workcenter', string='Work Center', required=True)
-    hour = fields.Float(string='Expected Duration', digits=(16, 2))
+    duration = fields.Float(string='Expected Duration', digits=(16, 2), help="Expected duration in minutes")
     sequence = fields.Integer(required=True, default=1, help="Gives the sequence order when displaying a list of work orders.")
     production_id = fields.Many2one('mrp.production', string='Manufacturing Order', track_visibility='onchange', index=True, ondelete='cascade', required=True)
     state = fields.Selection([('pending', 'Pending'), ('ready', 'Ready'), ('progress', 'In Progress'), ('done', 'Finished'), ('cancel', 'Cancelled')], default='pending')
@@ -588,9 +586,9 @@ class MrpProductionWorkcenterLine(models.Model):
         for workorder in self:
             timeline = timeline_obj.search([('workorder_id', '=', workorder.id), ('state', '=', 'running'), ('user_id', '=', self.env.user.id)], limit=1)
             timed = datetime.now() - fields.Datetime.from_string(timeline.date_start)
-            hours = timed.total_seconds() / 3600.0
+            duration = timed.total_seconds() / 60.0
             timeline.write({'state': 'done',
-                            'duration': hours})
+                            'duration': duration})
 
     @api.multi
     def end_all(self):
@@ -599,9 +597,9 @@ class MrpProductionWorkcenterLine(models.Model):
             timelines = timeline_obj.search([('workorder_id', '=', workorder.id), ('state', '=', 'running')])
             for timeline in timelines:
                 timed = datetime.now() - fields.Datetime.from_string(timeline.date_start)
-                hours = timed.total_seconds() / 3600.0
+                duration = timed.total_seconds() / 60.0
                 timeline.write({'state': 'done',
-                                'duration': hours})
+                                'duration': duration})
 
     @api.multi
     def button_pending(self):

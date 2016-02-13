@@ -105,24 +105,3 @@ class TestOrderProcess(TestOrderDemo):
                 return f
             return math.ceil(f / r) * r
 
-#         for workcenter_line in self.mrp_production_test1.work_order_ids:
-#             workcenter = workcenter_line.workcenter_id
-#             accounts = [workcenter.costs_hour_account_id, workcenter.costs_cycle_account_id]
-#             cost_per_cyle = workcenter_line.cycle * workcenter.costs_cycle
-#             cost_per_hours = workcenter_line.hour * workcenter.costs_hour
-#             if accounts and workcenter.costs_general_account_id and (cost_per_cyle or cost_per_hours):
-#                 line_ids = account_analytic_line.search([('name', 'ilike', workcenter_line.name)])
-#                 self.assertTrue(line_ids, 'Costs lines are not generated.')
-#                 for line in account_analytic_line.browse(line_ids):
-#                     if workcenter.costs_hour_account_id and line.account_id.id == workcenter.costs_hour_account_id.id:
-#                         self.assertEqual(rounding(line.unit_amount, 3), rounding(workcenter_line.hour, 3), "Cost Unit Amount is not correspond.")
-#                         self.assertEqual(rounding(line.amount, 3), rounding(cost_per_hours, 3), "Cost amount is not correspond.")
-#                     elif workcenter.costs_cycle_account_id and line.account_id.id == workcenter.costs_cycle_account_id.id:
-#                         self.assertEqual(rounding(line.unit_amount, 3), rounding(workcenter_line.cycle, 3), "Cost Unit Amount is not correspond.")
-#                         self.assertEqual(rounding(line.amount, 3), rounding(cost_per_cyle, 3), "Cost Amount is not correspond.")
-#                     else:
-#                         raise AssertionError('unknown cost line: %s' % line)
-#                     self.assertEqual(line.general_account_id.id, workcenter.costs_general_account_id.id, "General Account is not correspond.")
-#                     self.assertEqual(line.journal_id.id, workcenter.costs_journal_id.id, "Account Journal is not correspond.")
-#                     self.assertEqual(line.product_id.id, workcenter.product_id.id, "Product does not correspond.")
-#                     self.assertEqual(line.product_uom_id.id, workcenter.product_id.uom_id.id, "UOM does not correspond.")

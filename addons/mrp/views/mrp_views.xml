@@ -90,18 +90,26 @@
                         <notebook>
                             <page string="General Information">
                                 <group>
-                                    <group string="Capacity Information" name="capacity">
+                                    <group name="capacity">
                                         <label for="time_efficiency"/>
                                         <div class="o_row">
                                             <field name="time_efficiency"/> %
                                         </div>
                                         <field name="capacity"/>
-                                        <field name="time_start" widget="float_time"/>
-                                        <field name="time_stop" widget="float_time"/>
+                                    </group>
+                                    <group>
+                                        <label for="time_start"/>
+                                        <div>
+                                            <field name="time_start" widget="float_time" class="oe_inline"/> minutes
+                                        </div>
+                                        <label for="time_stop"/>
+                                        <div>
+                                            <field name="time_stop" widget="float_time" class="oe_inline"/> minutes
+                                        </div>
                                     </group>
                                 </group>
                                 <separator string="Description"/>
-                                <field name="note" nolabel="1" placeholder="Description of workcenter and how time/efficiency is compound..."/>
+                                <field name="note" nolabel="1" placeholder="Description of the work center..."/>
                             </page>
                         </notebook>
                     </sheet>
@@ -131,7 +139,7 @@
                     <field name="sequence" widget="handle"/>
                     <field name="name"/>
                     <field name="workcenter_id"/>
-                    <field name="time_hour"/>
+                    <field name="time_cycle"/>
                     <field name="company_id" options="{'no_create': True}" groups="base.group_multi_company"/>
                 </tree>
             </field>
@@ -157,9 +165,9 @@
                                     <field name="time_mode_batch" class="oe_inline"/>
                                     work orders
                                 </div>
-                                <label for="time_hour_manual" attrs="{'invisible': [('time_mode','=','auto'), ('wo_count','&gt;',0)]}" string="Default Duration"/>
+                                <label for="time_cycle_manual" attrs="{'invisible': [('time_mode','=','auto'), ('wo_count','&gt;',0)]}" string="Default Duration"/>
                                 <div attrs="{'invisible': [('time_mode','=','auto'), ('wo_count','&gt;',0)]}">
-                                    <field name="time_hour_manual" widget="float_time" class="oe_inline"/> hour(s)
+                                    <field name="time_cycle_manual" widget="float_time" class="oe_inline"/> minutes
                                 </div>
                             </group>
                         </group>
@@ -754,7 +762,7 @@
         <record id="stock.view_stock_move_lots" model="ir.ui.view">
             <field name="name">stock.move.lots.form</field>
             <field name="model">stock.move</field>
-            <field name="sequence">1000</field>
+            <field name="priority">1000</field>
             <field name="arch" type="xml">
                 <form string="Lots">
                     <field name="state" invisible="1"/>
@@ -1325,10 +1333,10 @@
                                 <label string="to" attrs="{'invisible': [('date_planned_end', '=', False)]}"/>
                                 <field name="date_planned_end" attrs="{'invisible': [('date_planned_start', '=', False)]}"/>
                             </div>
-                            <label for="hour" string="Expected Duration"/>
+                            <label for="duration" string="Expected Duration"/>
                             <div>
-                                <field name="hour" widget="float_time" class="oe_inline"/>
-                                hours
+                                <field name="duration" widget="float_time" class="oe_inline"/>
+                                minutes
                             </div>
                         </group>
                         <group>

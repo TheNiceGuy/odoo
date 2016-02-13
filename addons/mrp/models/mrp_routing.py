@@ -31,9 +31,6 @@ class MrpRouting(models.Model):
 
 
 class MrpRoutingWorkcenter(models.Model):
-    """
-    Defines working hours of a Work Center using routings.
-    """
     _name = 'mrp.routing.workcenter'
     _description = 'Work Center Usage'
     _order = 'sequence, id'
@@ -52,8 +49,8 @@ class MrpRoutingWorkcenter(models.Model):
         ('auto','Compute based on real time'), ('manual','Set duration manually')],
         'Duration Computation', default='auto')
     time_mode_batch = fields.Integer('Based on', default=10)
-    time_hour_manual = fields.Float(string='Manual Duration', default=1.0)
-    time_hour = fields.Float(string='Duration', compute="_get_time_hour")
+    time_cycle_manual = fields.Float(string='Manual Duration', default=60, help="Time in minutes")
+    time_cycle = fields.Float(string='Duration', compute="_get_time_cycle")
 
     wo_count = fields.Integer(string="# of Work Orders", compute="_wo_count")
 
@@ -65,12 +62,12 @@ class MrpRoutingWorkcenter(models.Model):
             operation.wo_count = mapped_data.get(operation.id, 0)
 
     @api.multi
-    def _get_time_hour(self):
+    def _get_time_cycle(self):
         results = self.env['mrp.production.work.order'].read_group([('state','=','done'),('operation_id','in',self.mapped('id'))], ['operation_id', 'delay','qty_produced'], ['operation_id'])
         totals = dict(map(lambda x: (x['operation_id'][0], (x['delay'], x['qty_produced'])), results))
         for operation in self:
             if operation.time_mode=='manual':
-                operation.time_hour = operation.time_hour_manual
+                operation.time_cycle = operation.time_cycle_manual
                 continue
-            (delay, qty) = totals.get(operation.id, (operation.time_hour_manual, 1))
-            operation.time_hour = delay / qty
+            (delay, qty) = totals.get(operation.id, (operation.time_cycle_manual, 1))
+            operation.time_cycle = delay / qty
