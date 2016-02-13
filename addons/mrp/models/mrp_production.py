@@ -152,9 +152,8 @@ class MrpProduction(models.Model):
         tocheck = []
         for operation in bom.routing_id.work_order_ids:
             workcenter = operation.workcenter_id
-            hour =  workcenter.time_start + workcenter.time_stop
             cycle_number = math.ceil(qty / bom.product_qty / workcenter.capacity) #TODO: float_round UP
-            hour += cycle_number * operation.time_hour
+            hour =  workcenter.time_start + workcenter.time_stop + cycle_number * operation.time_hour * 100.0 / workcenter.time_efficiency
             workorder_id = self.work_order_ids.create({
                 'name': operation.name,
                 'production_id': self.id,

@@ -53,8 +53,8 @@ class MrpRoutingWorkcenter(models.Model):
         'Duration Computation', default='auto')
     time_mode_batch = fields.Integer('Based on', default=10)
     time_hour_manual = fields.Float(string='Manual Duration', default=1.0)
-
     time_hour = fields.Float(string='Duration', compute="_get_time_hour")
+
     wo_count = fields.Integer(string="# of Work Orders", compute="_wo_count")
 
     @api.multi
@@ -66,15 +66,11 @@ class MrpRoutingWorkcenter(models.Model):
 
     @api.multi
     def _get_time_hour(self):
+        results = self.env['mrp.production.work.order'].read_group([('state','=','done'),('operation_id','in',self.mapped('id'))], ['operation_id', 'delay','qty_produced'], ['operation_id'])
+        totals = dict(map(lambda x: (x['operation_id'][0], (x['delay'], x['qty_produced'])), results))
         for operation in self:
             if operation.time_mode=='manual':
                 operation.time_hour = operation.time_hour_manual
                 continue
-            delay = qty = 0.0
-            for wo in operation.env['mrp.production.work.order'].search([('state','=','done'),('operation_id','=',operation.id)], order="id desc", limit=operation.time_mode_batch):
-                delay += wo.delay
-                qty += wo.qty_produced
-            if qty > 0.0:
-                operation.time_hour = delay / qty
-            else:
-                operation.time_hour = operation.time_hour_manual
+            (delay, qty) = totals.get(operation.id, (operation.time_hour_manual, 1))
+            operation.time_hour = delay / qty
