@@ -28,8 +28,8 @@
             <field name="name">Assembly Station 1</field>
             <field name="calendar_id" ref="resource.timesheet_group1"/>
             <field name="capacity">5</field>
-            <field name="time_start">0.1</field>
-            <field name="time_stop">0.1</field>
+            <field name="time_start">10</field>
+            <field name="time_stop">8</field>
             <field name="time_efficiency">87</field>
             <field name="calendar_id" ref="resource.timesheet_group1"/>
         </record>
@@ -65,7 +65,7 @@
             <field name="routing_id" ref="mrp_routing_0"/>
             <field name="workcenter_id" ref="mrp_workcenter_0"/>
             <field name="name">Manual Assembly</field>
-            <field name="time_cycle">2</field>
+            <field name="time_cycle">60</field>
             <field name="sequence">5</field>
         </record>
 
@@ -73,7 +73,7 @@
             <field name="routing_id" ref="mrp_routing_1"/>
             <field name="workcenter_id" ref="mrp_workcenter_0"/>
             <field name="name">Long time assembly</field>
-            <field name="time_cycle">5</field>
+            <field name="time_cycle">180</field>
             <field name="sequence">15</field>
         </record>
 
@@ -81,7 +81,7 @@
             <field name="routing_id" ref="mrp_routing_1"/>
             <field name="workcenter_id" ref="mrp_workcenter_0"/>
             <field name="name">Testing</field>
-            <field name="time_cycle">1</field>
+            <field name="time_cycle">60</field>
             <field name="sequence">10</field>
         </record>
 
@@ -89,14 +89,14 @@
             <field name="routing_id" ref="mrp_routing_1"/>
             <field name="workcenter_id" ref="mrp_workcenter_1"/>
             <field name="name">Packing</field>
-            <field name="time_cycle">0.5</field>
+            <field name="time_cycle">30</field>
             <field name="sequence">5</field>
         </record>
 
         <record id="mrp_routing_workcenter_2" model="mrp.routing.workcenter">
             <field name="routing_id" ref="mrp_routing_2"/>
             <field name="workcenter_id" ref="mrp_workcenter_2"/>
-            <field name="time_cycle">2</field>
+            <field name="time_cycle">120</field>
             <field name="sequence">5</field>
             <field name="name">Manual Assembly</field>
         </record>

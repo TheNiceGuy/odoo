@@ -192,12 +192,19 @@ class MrpProduction(models.Model):
             order.bom_id.explode(self.product_id, quantity, method_wo=order._workorders_create)
 
         orders_new.write({'state': 'planned'})
+        for order in orders_plan:
+            order.work_order_ids.write({'date_planned_start': False, 'date_planned_end': False})
+
         # Schedule all work orders (new ones and those already created)
+        nbr = 0
         for order in orders_new+orders_plan:
             for operation in order.work_order_ids:
-                # TODO: better implementation for plannnig algorythm
-                operation.write({'date_planned_start': datetime.now(), 'date_planned_end': datetime.now()})
-        
+                # To do: improve this algorythm: use calendar & find holes in calendar instead of always adding at the end
+                wo = WorkOrder.search([('workcenter_id', '=', operation.workcenter_id.id), ('date_planned_end','<>', False), ('state','in',('ready','pending','progress'))], limit=1, order="date_planned_end desc")
+                start = fields.Datetime.from_string(wo.date_planned_end) or datetime.now()
+                stop = start + relativedelta(minutes=operation.duration)
+                operation.write({'date_planned_start': start, 'date_planned_end': stop})
+
 
     def _check_serial(self):
         '''
