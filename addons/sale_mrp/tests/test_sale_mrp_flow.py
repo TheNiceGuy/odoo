@@ -53,9 +53,14 @@ class TestSaleMrpFlow(common.TransactionCase):
             return self.MrpBom.create({
                 'product_tmpl_id': product_tmpl_id,
                 'product_qty': qty,
+<<<<<<< HEAD
                 'type': bom_type,
                 'product_efficiency': 1.0,
                 'product_uom': uom_id})
+=======
+                'bom_type': bom_type,
+                'product_uom_id': uom_id})
+>>>>>>> 5303ba5... [FIX] consume_operation_ids does not exist anymore
 
         self.uom_kg = self.ProductUom.create({
             'name': 'Test-KG',
@@ -267,8 +272,6 @@ class TestSaleMrpFlow(common.TransactionCase):
         # --------------------------------------------------
 
         mnf_product_d.action_assign()
-        #for consume in mnf_product_d.consume_operation_ids:
-        #    consume.qty_done=consume.product_qty
         self.assertEqual(mnf_product_d.availability, 'assigned', 'Availability should be assigned')
         self.assertEqual(move.state, 'assigned', "Wrong state in 'To consume line' of manufacturing order.")
 

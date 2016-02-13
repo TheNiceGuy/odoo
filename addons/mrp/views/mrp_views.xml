@@ -29,7 +29,6 @@
               parent="base.menu_mrp_root"
               sequence="25"/>
 
-
         <menuitem id="menu_mrp_configuration"
             name="Configuration"
             parent="base.menu_mrp_root"
@@ -91,18 +90,26 @@
                         <notebook>
                             <page string="General Information">
                                 <group>
-                                    <group string="Capacity Information" name="capacity">
+                                    <group name="capacity">
                                         <label for="time_efficiency"/>
                                         <div class="o_row">
                                             <field name="time_efficiency"/> %
                                         </div>
                                         <field name="capacity"/>
-                                        <field name="time_start" widget="float_time"/>
-                                        <field name="time_stop" widget="float_time"/>
+                                    </group>
+                                    <group>
+                                        <label for="time_start"/>
+                                        <div>
+                                            <field name="time_start" widget="float_time" class="oe_inline"/> minutes
+                                        </div>
+                                        <label for="time_stop"/>
+                                        <div>
+                                            <field name="time_stop" widget="float_time" class="oe_inline"/> minutes
+                                        </div>
                                     </group>
                                 </group>
                                 <separator string="Description"/>
-                                <field name="note" nolabel="1" placeholder="Description of workcenter and how time/efficiency is compound..."/>
+                                <field name="note" nolabel="1" placeholder="Description of the work center..."/>
                             </page>
                         </notebook>
                     </sheet>
@@ -132,7 +139,7 @@
                     <field name="sequence" widget="handle"/>
                     <field name="name"/>
                     <field name="workcenter_id"/>
-                    <field name="hour_nbr"/>
+                    <field name="time_cycle"/>
                     <field name="company_id" options="{'no_create': True}" groups="base.group_multi_company"/>
                 </tree>
             </field>
@@ -147,17 +154,31 @@
                             <group>
                                 <field name="name"/>
                                 <field name="workcenter_id"/>
+                                <field name="company_id" options="{'no_create': True}" groups="base.group_multi_company"/>
                                 <field name="sequence" groups="base.group_no_one"/>
                             </group><group>
-                                <field name="hour_nbr" widget="float_time"/>
-                                <field name="company_id" options="{'no_create': True}" groups="base.group_multi_company"/>
-                            </group>
-                            <group>
-                                <field name="worksheet" widget="image"/>
+                                <field name="wo_count" invisible="1"/>
+                                <field name="time_mode" widget="radio"/>
+                                <label for="time_mode_batch" attrs="{'invisible': [('time_mode','=','manual')]}"/>
+                                <div attrs="{'invisible': [('time_mode','=','manual')]}">
+                                    last
+                                    <field name="time_mode_batch" class="oe_inline"/>
+                                    work orders
+                                </div>
+                                <label for="time_cycle_manual" attrs="{'invisible': [('time_mode','=','auto'), ('wo_count','&gt;',0)]}" string="Default Duration"/>
+                                <div attrs="{'invisible': [('time_mode','=','auto'), ('wo_count','&gt;',0)]}">
+                                    <field name="time_cycle_manual" widget="float_time" class="oe_inline"/> minutes
+                                </div>
                             </group>
                         </group>
-                        <label for="note"/>
-                        <field name="note"/>
+                        <notebook>
+                            <page string="Description">
+                                <field name="note"/>
+                            </page>
+                            <page string="Work Sheet">
+                                <field name="worksheet" widget="image"/>
+                            </page>
+                        </notebook>
                     </sheet>
                 </form>
             </field>
@@ -409,6 +430,24 @@
             parent="base.menu_mrp_root"
             sequence="5"/>
 
+        <record id="action_mrp_routing_time" model="ir.actions.act_window">
+            <field name="name">Work Orders</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">mrp.production.work.order</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">graph,pivot,tree,form,gantt,calendar</field>
+            <field name="context">{'search_default_done': True}</field>
+            <field name="search_view_id" ref="view_mrp_production_work_order_search"/>
+            <field name="domain">[('production_id.routing_id', '=', active_id), ('state', '=', 'done')]</field>
+            <field name="help" type="html">
+                <p>
+                  No data to display. You will get here statistics about the
+                  work orders duration related to this routing.
+                </p>
+            </field>
+        </record>
+
+
         <!-- Routings -->
         <record id="mrp_routing_form_view" model="ir.ui.view">
             <field name="name">mrp.routing.form</field>
@@ -417,6 +456,11 @@
                 <form string="Routing">
                     <sheet>
                         <div class="oe_button_box" name="button_box">
+                            <button name="%(action_mrp_routing_time)d" type="action" class="oe_stat_button" icon="fa-clock-o">
+                                <div class="o_form_field o_stat_info">
+                                    <span class="o_stat_text">Time<br/> Analysis</span>
+                                </div>
+                            </button>
                             <button class="oe_stat_button" name="toggle_active" type="object" icon="fa-archive">
                                 <field name="active" widget="boolean_button"
                                     options='{"terminology": "archive"}'/>
@@ -525,8 +569,7 @@
                             <field name="routing_id" groups="mrp.group_mrp_routings"/>
                         </group>
                         <group>
-                            <field name="name"/>
-                            <field name="code" string="Reference"/>
+                            <field name="code"/>
                             <field name="bom_type" widget="radio"/>
                             <p colspan="2" class="oe_grey" attrs="{'invisible': [('bom_type','=','normal')]}">
                                 When processing a sales order for this product, the delivery order
@@ -543,8 +586,6 @@
                                     <field name="product_id"/>
                                     <field name="product_qty"/>
                                     <field name="product_uom_id" options="{'no_open':True,'no_create':True}" groups="product.group_uom"/>
-                                    <field name="product_rounding" groups="mrp.group_rounding_efficiency"/>
-                                    <field name="product_efficiency" groups="mrp.group_rounding_efficiency"/>
                                     <field name="attribute_value_ids" widget="many2many_tags" domain="[('product_ids.product_tmpl_id', '=', parent.product_tmpl_id)]" groups="product.group_product_variant"/>
                                     <field name="operation_id" groups="mrp.group_mrp_routings" domain="[('routing_id', '=', parent.routing_id)]"/>
                                     <field name="procure_method" groups="stock.group_locations"/>
@@ -554,11 +595,6 @@
                         <page string="Miscellaneous">
                             <group>
                                 <group>
-                                    <field name="product_rounding"/>
-                                    <label for="product_efficiency"/>
-                                    <div class="o_row">
-                                        <field name="product_efficiency"/> %
-                                    </div>
                                     <field name="operation_id" domain="[('routing_id', '=', routing_id)]" groups="mrp.group_mrp_routings"/>
                                 </group>
                                 <group>
@@ -594,7 +630,7 @@
             <field name="model">mrp.bom</field>
             <field name="arch" type="xml">
                 <search string="Search Bill Of Material">
-                    <field name="code"/>
+                    <field name="code" filter_domain="['|',('code','ilike',self),('product_tmpl_id','ilike',self)]"/>
                     <field name="bom_line_ids" string="Components"/>
                     <field name="product_tmpl_id" string="Product"/>
                     <field name="company_id" groups="base.group_multi_company"/>
@@ -642,8 +678,6 @@
                     <field name="bom_id"/>
                     <field name="product_id"/>
                     <field name="product_qty"/>
-                    <field name="product_rounding"/>
-                    <field name="product_efficiency"/>
                     <field name="product_uom_id" options="{'no_open':True,'no_create':True}" groups="product.group_uom"/>
                     <field name="routing_id"/>
                     <field name="attribute_value_ids" widget="many2many_tags" groups="product.group_product_variant"/>
@@ -728,7 +762,7 @@
         <record id="stock.view_stock_move_lots" model="ir.ui.view">
             <field name="name">stock.move.lots.form</field>
             <field name="model">stock.move</field>
-            <field name="sequence">1000</field>
+            <field name="priority">1000</field>
             <field name="arch" type="xml">
                 <form string="Lots">
                     <field name="state" invisible="1"/>
@@ -763,14 +797,18 @@
             <field name="arch" type="xml">
                 <form string="Manufacturing Orders">
                 <header>
-                    <button name="button_mark_done" attrs="{'invisible': [('check_to_done', '=', False)]}" string="Mark as Done" type="object"/>
-                    <button name="%(act_mrp_product_produce)d" attrs="{'invisible': ['|', ('state', '!=', 'planned')]}" string="Produce" type="action" class="oe_highlight"/>
+                    <button name="button_mark_done" attrs="{'invisible': [('check_to_done', '=', False)]}" string="Mark as Done" type="object" class="oe_highlight"/>
+
                     <button name="action_assign" attrs="{'invisible': [('availability', '=', 'assigned')]}" string="Check availability" type="object" class="oe_highlight"/>
-                    <button name="button_plan" attrs="{'invisible': ['|', ('state', '!=', 'confirmed'), ('routing_id', '=', False)]}" type="object" string="Plan"/>
-                    <button name="%(act_mrp_product_produce)d" attrs="{'invisible': ['|', ('state', '=', 'planned')]}" string="Produce" type="action"/>
+                    <button name="button_plan" attrs="{'invisible': ['|', ('state', '!=', 'confirmed'), ('routing_id', '=', False)]}" type="object" string="Plan" class="oe_highlight"/>
+                    <button name="%(act_mrp_product_produce)d" attrs="{'invisible': ['|', ('state', 'not in', ('confirmed','progress')), ('routing_id', '!=', False)]}" string="Produce" type="action" class="oe_highlight"/>
+
+                    <button name="%(action_mrp_workorder_production_specific)d" type="action" attrs="{'invisible': ['|', ('nb_orders', '=', 0), ('state', '=', 'done')]}" string="Work Orders" class="oe_highlight"/>
+                    <button name="%(act_mrp_product_produce)d" attrs="{'invisible': ['|', ('nb_orders', '=', 0), ('state', '=', 'done')]}" string="Produce" type="action"/>
+
                     <button name="post_inventory" string="Post Inventory" type="object" class="oe_highlight" attrs="{'invisible': [('post_visible', '=', False)]}"/>
                     <button name="button_scrap" type="object" string="Scrap" attrs="{'invisible': [('state', 'in', ('cancel'))]}"/>
-                    <span class="label label-danger" attrs="{'invisible': ['|', ('availability', '=', 'assigned'), ('state', '!=', 'confirmed')]}">Raw materials not available!</span>
+                    <span class="label label-danger" attrs="{'invisible': ['|', ('availability', '=', 'assigned'), ('state', 'not in', ('confirmed','progress'))]}">Raw materials not available!</span>
                     <field name="state" widget="statusbar" statusbar_visible="confirmed,progress,done" statusbar_colors='{"confirmed":"blue"}'/>
                 </header>
                 <sheet>
@@ -839,10 +877,8 @@
                                     <field name="has_tracking" invisible="1"/>
                                     <field name="location_id" domain="[('id', 'child_of', parent.location_id)]" invisible="1"/>
                                     <field name="location_dest_id" domain="[('id', 'child_of', parent.location_dest_id)]" invisible="1"/>
-
-                                    <field name="state"/>
-
-                                    <field name="reserved_availability"/>
+                                    <field name="state" invisible="1"/>
+                                    <field name="quantity_available"/>
                                     <field name="product_uom_qty" readonly="1" attrs="{'required': [('product_id', '!=', False)]}" string="To Consume"/>
                                     <field name="quantity_done" attrs="{'readonly': [('has_tracking', 'in', ['lot','serial'])]}" string="Consumed"/>
 
@@ -861,10 +897,7 @@
                                     <field name="has_tracking" invisible="1"/>
                                     <field name="location_id" domain="[('id', 'child_of', parent.location_id)]" invisible="1"/>
                                     <field name="location_dest_id" domain="[('id', 'child_of', parent.location_dest_id)]" invisible="1"/>
-
-                                    <field name="state"/>
-
-                                    <field name="reserved_availability"/>
+                                    <field name="state" invisible="1"/>
                                     <field name="product_uom_qty" readonly="1" attrs="{'required': [('product_id', '!=', False)]}" string="To Produce"/>
                                     <field name="quantity_done" attrs="{'readonly': [('has_tracking', 'in', ['lot','serial'])]}" string="Produced"/>
 
@@ -981,21 +1014,21 @@
             <field name="arch" type="xml">
                 <search string="Search Production">
                     <field name="name" string="Production" filter_domain="['|',('name','ilike',self),('origin','ilike',self)]"/>
-                    <filter string="Production Orders" name="orders" domain="[('state', 'in',('confirmed', 'progress', 'planned'))]"
-                        help="Manufacturing orders which are in confirmed, planned, inprogress state."/>
-                    <filter string="To Do" name="todo" domain="[('state','=','confirmed')]"
+                    <filter string="To Do" name="todo" domain="[('state','in',('confirmed', 'planned','progress'))]"
                         help="Manufacturing Orders which are in confirmed state."/>
-                    <filter string="Ready" name="ready" domain="[('state','=','ready')]"
-                        help="Manufacturing Orders which are ready to start production."/>
+                    <separator/>
+                    <filter string="Confirmed" name="confirmed" domain="[('state','=','confirmed')]"/>
+                    <filter string="Planned" name="planned" domain="[('state','=','planned')]"/>
                     <filter string="In Progress" name="inprogress" domain="[('state','=','progress')]"
                         help="Manufacturing Orders which are currently in production."/>
-                    <filter string="Planned" name="planned" domain="[('state','=','planned')]"/>
-                    <filter string="Waiting" name="waiting" domain="[('availability','=','waiting')]"/>
                     <separator/>
                     <filter string="Late" domain="['&amp;', ('date_planned','&lt;', current_date), ('state', 'in', ('draft', 'confirmed', 'ready'))]"
                         name="late" help="Production started late"/>
-                    <field name="product_tmpl_id"/>
+                    <separator/>
+                    <filter string="No Routing" domain="[('routing_id','=', False)]" name="norouting" groups="mrp.group_mrp_routings"/>
                     <field name="product_id"/>
+                    <field name="product_id" string="Raw Material" filter_domain="[('move_raw_ids.product_id','ilike',self)]"/>
+                    <field name="name" string="Work Center" filter_domain="[('routing_id.work_order_ids.workcenter_id','ilike',self)]"/>
                     <field name="routing_id" groups="mrp.group_mrp_routings"/>
                     <group expand="0" string="Group By...">
                         <filter string="Product" domain="[]" context="{'group_by':'product_id'}"/>
@@ -1014,7 +1047,7 @@
             <field name="view_mode">tree,kanban,form,calendar,pivot,graph,gantt</field>
             <field name="view_id" eval="False"/>
             <field name="search_view_id" ref="view_mrp_production_filter"/>
-            <field name="context">{'search_default_orders': True}</field>
+            <field name="context">{'search_default_todo': True}</field>
             <field name="help" type="html">
               <p class="oe_view_nocontent_create">
                 Click to create a manufacturing order.
@@ -1298,10 +1331,10 @@
                                 <label string="to" attrs="{'invisible': [('date_planned_end', '=', False)]}"/>
                                 <field name="date_planned_end" attrs="{'invisible': [('date_planned_start', '=', False)]}"/>
                             </div>
-                            <label for="hour" string="Expected Duration"/>
+                            <label for="duration" string="Expected Duration"/>
                             <div>
-                                <field name="hour" widget="float_time" class="oe_inline"/>
-                                hours
+                                <field name="duration" widget="float_time" class="oe_inline"/>
+                                minutes
                             </div>
                         </group>
                         <group>
@@ -1392,8 +1425,8 @@
         <field name="arch" type="xml">
             <graph string="Operations">
                 <field name="workcenter_id"/>
-                <field name="production_id"/>
-                <field name="qty" type="measure"/>
+                <field name="date_start"/>
+                <field name="delay_unit" type="measure"/>
             </graph>
         </field>
     </record>
@@ -1403,9 +1436,10 @@
         <field name="model">mrp.production.work.order</field>
         <field name="arch" type="xml">
             <pivot string="Operations">
+                <field name="date_start"/>
                 <field name="workcenter_id"/>
-                <field name="production_id"/>
                 <field name="qty" type="measure"/>
+                <field name="delay_unit" type="measure"/>
             </pivot>
         </field>
     </record>
