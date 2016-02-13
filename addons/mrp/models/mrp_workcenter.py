@@ -6,8 +6,6 @@ from openerp import api, fields, models, _
 # ----------------------------------------------------------
 # Work Centers
 # ----------------------------------------------------------
-# capacity_hour : capacity per hour. default: 1.0.
-#          Eg: If 5 concurrent operations at one time: capacity = 5 (because 5 employees)
 
 
 class MrpWorkcenter(models.Model):
@@ -17,10 +15,10 @@ class MrpWorkcenter(models.Model):
 
 
     note = fields.Text(string='Description', help="Description of the Work Center. ")
-    capacity = fields.Float(string='Capacity', default=1.0, help="Number of work orders this Work Center can do in parallel. If this Work Center represents a team of 5 workers, the capacity is 5.")
-    time_start = fields.Float(string='Time before prod.', help="Time in hours for the setup.")
+    capacity = fields.Float(string='Capacity', default=1.0, help="Number of pieces work center can produce in parallel.")
+    time_start = fields.Float(string='Time before prod.', help="Time in minutes for the setup.")
     sequence = fields.Integer(required=True, default=1, help="Gives the sequence order when displaying a list of work centers.")
-    time_stop = fields.Float(string='Time after prod.', help="Time in hours for the cleaning.")
+    time_stop = fields.Float(string='Time after prod.', help="Time in minutes for the cleaning.")
     resource_id = fields.Many2one('resource.resource', string='Resource', ondelete='cascade', required=True)
     order_ids = fields.One2many('mrp.production.work.order', 'workcenter_id', string="Orders")
     routing_line_ids = fields.One2many('mrp.routing.workcenter', 'workcenter_id', "Routing Lines")

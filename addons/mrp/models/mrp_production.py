@@ -18,7 +18,7 @@ class MrpProduction(models.Model):
     _description = 'Manufacturing Order'
     _date_name = 'date_planned'
     _inherit = ['mail.thread', 'ir.needaction_mixin']
-    _order = 'date_planned asc'
+    _order = 'date_planned asc,id'
 
     # Returns the destination location or default value from the picking type if none provided
     @api.multi
@@ -149,15 +149,14 @@ class MrpProduction(models.Model):
         tocheck = []
         for operation in bom.routing_id.work_order_ids:
             workcenter = operation.workcenter_id
-            hour =  workcenter.time_start + workcenter.time_stop
             cycle_number = math.ceil(qty / bom.product_qty / workcenter.capacity) #TODO: float_round UP
-            hour += cycle_number * operation.hour_nbr
+            duration =  workcenter.time_start + workcenter.time_stop + cycle_number * operation.time_cycle * 100.0 / workcenter.time_efficiency
             workorder_id = self.work_order_ids.create({
                 'name': operation.name,
                 'production_id': self.id,
                 'workcenter_id': operation.workcenter_id.id,
                 'operation_id': operation.id,
-                'hour': hour,
+                'duration': duration,
                 'state': state
             })
             if old: old.next_work_order_id = workorder_id.id
@@ -175,9 +174,7 @@ class MrpProduction(models.Model):
             self.move_finished_ids.filtered(lambda x: x.operation_id.id in tocheck).write({
                 'workorder_id': workorder_id.id
             })
-            
             workorder_id._generate_lot_ids()
-            
             state = 'pending'
         return True
 
@@ -192,12 +189,19 @@ class MrpProduction(models.Model):
             order.bom_id.explode(self.product_id, quantity, method_wo=order._workorders_create)
 
         orders_new.write({'state': 'planned'})
+        for order in orders_plan:
+            order.work_order_ids.write({'date_planned_start': False, 'date_planned_end': False})
+
         # Schedule all work orders (new ones and those already created)
+        nbr = 0
         for order in orders_new+orders_plan:
             for operation in order.work_order_ids:
-                # TODO: better implementation for plannnig algorythm
-                operation.write({'date_planned_start': datetime.now(), 'date_planned_end': datetime.now()})
-        
+                # Todo: improve this algorythm: use calendar & find holes in calendar instead of always adding at the end
+                wo = WorkOrder.search([('workcenter_id', '=', operation.workcenter_id.id), ('date_planned_end','<>', False), ('state','in',('ready','pending','progress'))], limit=1, order="date_planned_end desc")
+                start = fields.Datetime.from_string(wo.date_planned_end) or datetime.now()
+                stop = start + relativedelta(minutes=operation.duration)
+                operation.write({'date_planned_start': start, 'date_planned_end': stop})
+
 
     def _check_serial(self):
         '''
@@ -324,9 +328,9 @@ class MrpProduction(models.Model):
     @api.multi
     def _get_produced_qty(self):
         for production in self:
-            done_moves = self.move_finished_ids.filtered(lambda x: x.state=='done' and x.product_id.id == production.product_id.id)
-            qty_produced = sum(done_moves.mapped('product_qty'))
-            production.check_to_done = (qty_produced >= production.product_qty) and (production.state not in ('done', 'cancel'))
+            done_moves = self.move_finished_ids.filtered(lambda x: x.state!='cancel' and x.product_id.id == production.product_id.id)
+            qty_produced = sum(done_moves.mapped('quantity_done'))
+            production.check_to_done = done_moves and (qty_produced >= production.product_qty) and (production.state not in ('done', 'cancel'))
             production.qty_produced = qty_produced
         return True
 
@@ -428,10 +432,12 @@ class MrpProductionWorkcenterLine(models.Model):
     _inherit = ['mail.thread']
 
     @api.multi
+    @api.depends('time_ids.state')
     def _compute_delay(self):
         for workorder in self:
             duration = sum(workorder.time_ids.filtered(lambda x: x.state == 'done').mapped('duration'))
             workorder.delay = duration
+            workorder.delay_unit = round(duration / max(workorder.qty_produced, 1), 2)
 
     @api.multi
     @api.depends('move_raw_ids.state')
@@ -460,7 +466,7 @@ class MrpProductionWorkcenterLine(models.Model):
 
     name = fields.Char(string='Work Order', required=True)
     workcenter_id = fields.Many2one('mrp.workcenter', string='Work Center', required=True)
-    hour = fields.Float(string='Expected Duration', digits=(16, 2))
+    duration = fields.Float(string='Expected Duration', digits=(16, 2), help="Expected duration in minutes")
     sequence = fields.Integer(required=True, default=1, help="Gives the sequence order when displaying a list of work orders.")
     production_id = fields.Many2one('mrp.production', string='Manufacturing Order', track_visibility='onchange', index=True, ondelete='cascade', required=True)
     state = fields.Selection([('pending', 'Pending'), ('ready', 'Ready'), ('progress', 'In Progress'), ('done', 'Finished'), ('cancel', 'Cancelled')], default='pending')
@@ -469,7 +475,8 @@ class MrpProductionWorkcenterLine(models.Model):
 
     date_start = fields.Datetime('Effective Start Date')
     date_finished = fields.Datetime('Effective End Date')
-    delay = fields.Float('Real Duration', compute='_compute_delay', readonly=True)
+    delay = fields.Float('Real Duration', compute='_compute_delay', readonly=True, store=True, group_operator="avg")
+    delay_unit = fields.Float('Duration Per Unit', compute='_compute_delay', readonly=True, store=True, group_operator="avg")
 
     qty_produced = fields.Float('Quantity', readonly=True, help="The number of products already handled by this work order", default=0.0) #TODO: decimal precision
     operation_id = fields.Many2one('mrp.routing.workcenter', 'Operation') #Should be used differently as BoM can change in the meantime
@@ -550,9 +557,8 @@ class MrpProductionWorkcenterLine(models.Model):
         # Update workorder quantity produced
         self.qty_produced += self.qty_producing
         self.qty_producing = 1.0
-        
         self._generate_lot_ids()
-        
+
         if self.qty_produced >= self.qty:
             self.button_finish()
 
@@ -582,7 +588,7 @@ class MrpProductionWorkcenterLine(models.Model):
         self.ensure_one()
         self.end_all()
         self.write({'state': 'done'})
-        if not self.next_work_order_id:
+        if not self.production_id.work_order_ids.filtered(lambda x: x.state not in ('done','cancel')):
             self.production_id.button_mark_done()
 
     @api.multi
@@ -591,9 +597,9 @@ class MrpProductionWorkcenterLine(models.Model):
         for workorder in self:
             timeline = timeline_obj.search([('workorder_id', '=', workorder.id), ('state', '=', 'running'), ('user_id', '=', self.env.user.id)], limit=1)
             timed = datetime.now() - fields.Datetime.from_string(timeline.date_start)
-            hours = timed.total_seconds() / 3600.0
+            duration = timed.total_seconds() / 60.0
             timeline.write({'state': 'done',
-                            'duration': hours})
+                            'duration': duration})
 
     @api.multi
     def end_all(self):
@@ -602,9 +608,9 @@ class MrpProductionWorkcenterLine(models.Model):
             timelines = timeline_obj.search([('workorder_id', '=', workorder.id), ('state', '=', 'running')])
             for timeline in timelines:
                 timed = datetime.now() - fields.Datetime.from_string(timeline.date_start)
-                hours = timed.total_seconds() / 3600.0
+                duration = timed.total_seconds() / 60.0
                 timeline.write({'state': 'done',
-                                'duration': hours})
+                                'duration': duration})
 
     @api.multi
     def button_pending(self):

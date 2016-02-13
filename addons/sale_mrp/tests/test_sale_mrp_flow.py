@@ -54,7 +54,6 @@ class TestSaleMrpFlow(common.TransactionCase):
                 'product_tmpl_id': product_tmpl_id,
                 'product_qty': qty,
                 'bom_type': bom_type,
-                'product_efficiency': 1.0,
                 'product_uom_id': uom_id})
 
         self.uom_kg = self.ProductUom.create({
@@ -267,8 +266,6 @@ class TestSaleMrpFlow(common.TransactionCase):
         # --------------------------------------------------
 
         mnf_product_d.action_assign()
-        #for consume in mnf_product_d.consume_operation_ids:
-        #    consume.qty_done=consume.product_qty
         self.assertEqual(mnf_product_d.availability, 'assigned', 'Availability should be assigned')
         self.assertEqual(move.state, 'assigned', "Wrong state in 'To consume line' of manufacturing order.")
 

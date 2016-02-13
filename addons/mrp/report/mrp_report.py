@@ -12,7 +12,7 @@ class report_workcenter_load(models.Model):
 
     name = fields.Char('Week', required=True)
     workcenter_id = fields.Many2one('mrp.workcenter', 'Work Center', required=True)
-    hour = fields.Float('Number of Hours')
+    duration = fields.Float('Duration')
 
     def init(self, cr):
         cr.execute("""
@@ -20,7 +20,7 @@ class report_workcenter_load(models.Model):
                 SELECT
                     min(wl.id) as id,
                     to_char(p.date_planned,'YYYY:mm:dd') as name,
-                    SUM(wl.hour) AS hour,
+                    SUM(wl.duration) AS duration,
                     wl.workcenter_id as workcenter_id
                 FROM
                     mrp_production_work_order wl
