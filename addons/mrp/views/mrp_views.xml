@@ -873,7 +873,6 @@
                                 <tree editable="bottom" delete="0" decoration-danger="quantity_done&gt;product_uom_qty" decoration-success="quantity_done==product_uom_qty">
                                     <field name="product_id" on_change="product_id_change(product_id, product_uom_id, product_uom_qty)" required="1"/>
                                     <field name="product_uom" groups="product.group_uom"/>
-
                                     <field name="has_tracking" invisible="1"/>
                                     <field name="location_id" domain="[('id', 'child_of', parent.location_id)]" invisible="1"/>
                                     <field name="location_dest_id" domain="[('id', 'child_of', parent.location_dest_id)]" invisible="1"/>
@@ -1302,10 +1301,11 @@
                             <field name="final_lot_id" context="{'default_product_id': product}"/>
                         </group>
                     </group>
-                    <field name="move_traceability_ids" domain="[('done', '=', False)]" attrs="{'invisible': [('move_traceability_ids', '=', [])]}">
+                    <field name="active_move_traceability_ids" attrs="{'invisible': [('active_move_traceability_ids', '=', [])]}">
                         <tree editable="bottom">
                             <field name="product_id"/>
                             <field name="quantity"/>
+                            <field name="done" invisible="1"/>
                             <field name="lot_id" context="{'default_product_id': product_id}"/>
                         </tree>
                     </field>
