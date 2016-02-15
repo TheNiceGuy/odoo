@@ -195,13 +195,23 @@ class MrpProduction(models.Model):
         # Schedule all work orders (new ones and those already created)
         nbr = 0
         for order in orders_new+orders_plan:
-            for operation in order.work_order_ids:
-                # Todo: improve this algorythm: use calendar & find holes in calendar instead of always adding at the end
-                wo = WorkOrder.search([('workcenter_id', '=', operation.workcenter_id.id), ('date_planned_end','<>', False), ('state','in',('ready','pending','progress'))], limit=1, order="date_planned_end desc")
-                start = fields.Datetime.from_string(wo.date_planned_end) or datetime.now()
-                stop = start + relativedelta(minutes=operation.duration)
-                operation.write({'date_planned_start': start, 'date_planned_end': stop})
-
+            start_date = datetime.now()
+            for workorder in order.work_order_ids:
+                workcenter = workorder.workcenter_id
+                wos = WorkOrder.search([('workcenter_id', '=', workcenter.id), ('date_planned_end', '<>', False),
+                                        ('state','in',('ready','pending','progress')),
+                                        ('date_planned_end', '>', start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT))], order='date_planned_start')
+                from_date = start_date
+                intervals = workcenter.calendar_id.interval_get(from_date, workorder.duration / 60.0 / workcenter.capacity)
+                to_date = intervals[0][-1][1]
+                #Check interval
+                for wo in wos:
+                    if from_date < fields.Datetime.from_string(wo.date_planned_end) and (to_date > fields.Datetime.from_string(wo.date_planned_start)):
+                        from_date = fields.Datetime.from_string(wo.date_planned_end)
+                        intervals = workcenter.calendar_id.interval_get(from_date, workorder.duration / 60.0 / workcenter.capacity)
+                        to_date = intervals[0][-1][1]
+                workorder.write({'date_planned_start': from_date, 'date_planned_end': to_date})
+                start_date = to_date
 
     def _check_serial(self):
         '''
@@ -286,35 +296,30 @@ class MrpProduction(models.Model):
             moves_to_do.move_validate()
             #order.move_finished_ids.filtered(lambda x: x.state not in ('done','cancel')).move_validate()
             moves_to_finish = order.move_finished_ids.filtered(lambda x: x.state not in ('done', 'cancel'))
+            moves_to_finish.move_validate()
             for move in moves_to_finish:
-                if move.product_id.tracking == 'none':
-                    move.move_validate()
-                else:
-                    # Split processing of move according to lot
-                    moves_lots = moves_to_do.filtered(lambda x: x.product_id.tracking != 'none')
-                    if moves_lots:
-                        movlots = moves_lots.mapped('quantity_lots')
-                        lot_qty = {}
-                        for movlot in movlots:
-                            if not lot_qty.get(movlot.lot_produced_id):
-                                lot_qty[movlot.lot_produced_id.id] = movlot.lot_produced_qty
-                        product_qty = 0
-                        for lot in lot_qty:
-                            self.env['stock.quant'].quants_move([(None, lot_qty[lot])], move, move.location_dest_id, lot_id = lot)
-                            product_qty += lot_qty[lot]
-                        if product_qty <= move.product_qty:
-                            new_move = self.env['stock.move'].split(move, move.product_qty - lot_qty[lot])
-                        #TODO: in case of extra moves
-                        move.state = 'done'
+                quants = self.env['stock.quant']
+                #Group quants by lots
+                lot_quants = {}
+                raw_lot_quants = {}
+                if move.has_tracking != 'none':
+                    for quant in move.quant_ids:
+                        lot_quants.setdefault(quant.lot_id.id, self.env['stock.quant'])
+                        raw_lot_quants.setdefault(quant.lot_id.id, self.env['stock.quant'])
+                        lot_quants[quant.lot_id.id] |= quant
+                
+                for move_raw in moves_to_do:
+                    if (move.has_tracking != 'none') and (move_raw.product_id.tracking != 'none'):
+                        for lot in lot_quants:
+                            lots = move_raw.quantity_lots.filtered(lambda x: x.lot_produced_id.id == lot).mapped('lot_id')
+                            raw_lot_quants[lot] |= move_raw.quant_ids.filtered(lambda x: (x.lot_id in lots) and (x.qty > 0.0))
                     else:
-                        move.move_validate()
-                for quant in move.quant_ids:
-                    if quant.lot_id:
-                        quants = self.env['stock.quant']
-                        for move in moves_to_do:
-                            lots = move.quantity_lots.filtered(lambda x: x.lot_produced_id.id == quant.lot_id.id).mapped('lot_id')
-                            quants |= move.quant_ids.filtered(lambda x: x.lot_id in lots)
-                        quant.consumed_quant_ids = [x.id for x in quants]
+                        quants |= move_raw.quant_ids.filtered(lambda x: x.qty > 0.0)
+                if move.has_tracking != 'none':
+                    for lot in lot_quants:
+                        lot_quants[lot].write({'consumed_quant_ids': [(6, 0, [x.id for x in raw_lot_quants[lot] | quants])]})
+                else:
+                    move.quant_ids.write({'consumed_quant_ids': [(6, 0, [x.id for x in quants])]})
         return True
 
     @api.multi
@@ -484,6 +489,8 @@ class MrpProductionWorkcenterLine(models.Model):
     move_raw_ids = fields.One2many('stock.move', 'workorder_id', 'Moves')
     move_traceability_ids = fields.One2many('stock.move.lots', 'workorder_id', string='Moves to Track',
         help="Inventory moves for which you must scan a lot number at this work order")
+    active_move_traceability_ids = fields.One2many('stock.move.lots', 'workorder_id', string='Active Moves to Track',
+        help="Active Inventory moves for which you must scan a lot number at this work order")
 
     # FP TODO: replace by a related through MO, otherwise too much computation without need
     availability = fields.Selection([('waiting', 'Waiting'), ('assigned', 'Available')], 'Stock Availability', store=True, compute='_compute_availability')
@@ -538,7 +545,8 @@ class MrpProductionWorkcenterLine(models.Model):
             raise UserError(_('Please set the quantity you produced in the Current Qty field. It can not be 0!'))
 
         # Update quantities done on each raw material line
-        for move in self.move_raw_ids:
+        raw_moves = self.move_raw_ids.filtered(lambda x: (x.has_tracking == 'none') and (x.state not in ('done', 'cancel')))
+        for move in raw_moves:
             factor = 1.0
             #if it's a finished product, we use factor 1 as no bom_line
             if move.bom_line_id:
@@ -554,6 +562,20 @@ class MrpProductionWorkcenterLine(models.Model):
                                           'lot_produced_qty': self.qty_producing,
                                           'done': True})
 
+        # If last work order, then post lots used
+        #TODO: should be same as checking if for every workorder something has been done?
+        if not self.next_work_order_id:
+            production_move = self.production_id.move_finished_ids.filtered(lambda x: (x.product_id.id == self.production_id.product_id.id) and (x.state not in ('done', 'cancel')))[0]
+            if production_move.product_id.tracking != 'none':
+                move_lot = production_move.quantity_lots.filtered(lambda x: x.lot_id.id == self.final_lot_id.id)
+                if move_lot:
+                    move_lot.quantity += self.qty_producing
+                else:
+                    move_lot.create({'move_id': production_move.id,
+                                     'lot_id': self.final_lot_id.id, 
+                                     'quantity': self.qty_producing, })
+            else:
+                production_move.product_uom_qty += self.qty_producing #TODO: UoM conversion?
         # Update workorder quantity produced
         self.qty_produced += self.qty_producing
         self.qty_producing = 1.0
