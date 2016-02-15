@@ -195,13 +195,33 @@ class MrpProduction(models.Model):
         # Schedule all work orders (new ones and those already created)
         nbr = 0
         for order in orders_new+orders_plan:
-            for operation in order.work_order_ids:
-                # Todo: improve this algorythm: use calendar & find holes in calendar instead of always adding at the end
-                wo = WorkOrder.search([('workcenter_id', '=', operation.workcenter_id.id), ('date_planned_end','<>', False), ('state','in',('ready','pending','progress'))], limit=1, order="date_planned_end desc")
-                start = fields.Datetime.from_string(wo.date_planned_end) or datetime.now()
-                stop = start + relativedelta(minutes=operation.duration)
-                operation.write({'date_planned_start': start, 'date_planned_end': stop})
-
+            for workorder in order.work_order_ids:
+                workcenter = workorder.workcenter_id
+                wos = WorkOrder.search([('workcenter_id', '=', workcenter.id), ('date_planned_end', '<>', False),
+                                        ('state','in',('ready','pending','progress'))], order='date_planned_start') #TODO: Maybe add now filter
+                from_date = False
+                to_date = False
+                if not wos:
+                    test_date_start = datetime.now()
+                    intervals = workcenter.calendar_id.interval_get(from_date, workorder.duration / 60.0 / workcenter.capacity)
+                    to_date = intervals[0][-1][1]
+                    #Check interval
+                else:
+                    for wo in wos:
+                        if from_date and from_date < fields.Datetime.from_string(wo.date_planned_end):
+                            continue
+                        if (not to_date) or (to_date > fields.Datetime.from_string(wo.date_planned_start)):
+                            from_date = fields.Datetime.from_string(wo.date_planned_end)
+                            intervals = workcenter.calendar_id.interval_get(from_date, workorder.duration / 60.0 / workcenter.capacity)
+                            to_date = intervals[0][-1][1]
+                        else:
+                            break
+                workorder.write({'date_planned_start': from_date, 'date_planned_end': to_date})
+#                 # Todo: improve this algorythm: use calendar & find holes in calendar instead of always adding at the end
+#                 wo = WorkOrder.search([('workcenter_id', '=', operation.workcenter_id.id), ('date_planned_end','<>', False), ('state','in',('ready','pending','progress'))], limit=1, order="date_planned_end desc")
+#                 start = fields.Datetime.from_string(wo.date_planned_end) or datetime.now()
+#                 stop = start + relativedelta(minutes=operation.duration)
+#                 operation.write({'date_planned_start': start, 'date_planned_end': stop})
 
     def _check_serial(self):
         '''
@@ -304,6 +324,7 @@ class MrpProduction(models.Model):
                             product_qty += lot_qty[lot]
                         if product_qty <= move.product_qty:
                             new_move = self.env['stock.move'].split(move, move.product_qty - lot_qty[lot])
+                            new_move.quantity_done = 0
                         #TODO: in case of extra moves
                         move.state = 'done'
                     else:
@@ -484,6 +505,8 @@ class MrpProductionWorkcenterLine(models.Model):
     move_raw_ids = fields.One2many('stock.move', 'workorder_id', 'Moves')
     move_traceability_ids = fields.One2many('stock.move.lots', 'workorder_id', string='Moves to Track',
         help="Inventory moves for which you must scan a lot number at this work order")
+    active_move_traceability_ids = fields.One2many('stock.move.lots', 'workorder_id', string='Moves to Track',
+        help="Inventory moves for which you must scan a lot number at this work order", domain="[('done', '=', False)]")
 
     # FP TODO: replace by a related through MO, otherwise too much computation without need
     availability = fields.Selection([('waiting', 'Waiting'), ('assigned', 'Available')], 'Stock Availability', store=True, compute='_compute_availability')
