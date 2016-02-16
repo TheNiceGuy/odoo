@@ -627,6 +627,10 @@ class Field(object):
 
     def setup_triggers(self, env):
         """ Add the necessary triggers to invalidate/recompute ``self``. """
+        model = env[self.model_name]
+        if not isinstance(model, (Model, TransientModel)):
+            return
+
         for path_str in self.depends:
             path = path_str.split('.')
 
@@ -2014,5 +2018,5 @@ class Id(Field):
 # imported here to avoid dependency cycle issues
 from openerp import SUPERUSER_ID
 from .exceptions import Warning, AccessError, MissingError
-from .models import check_pg_name, BaseModel, MAGIC_COLUMNS
+from .models import check_pg_name, BaseModel, Model, TransientModel, MAGIC_COLUMNS
 from .osv import fields
