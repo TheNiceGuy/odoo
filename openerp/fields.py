@@ -627,9 +627,9 @@ class Field(object):
 
     def setup_triggers(self, env):
         """ Add the necessary triggers to invalidate/recompute ``self``. """
-        model = env[self.model_name]
-        if not isinstance(model, (Model, TransientModel)):
-            return
+        # model = env[self.model_name]
+        # if not isinstance(model, (Model, TransientModel)):
+        #     return
 
         for path_str in self.depends:
             path = path_str.split('.')
