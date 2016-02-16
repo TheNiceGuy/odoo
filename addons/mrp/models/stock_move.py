@@ -6,6 +6,8 @@ from openerp.exceptions import UserError
 from openerp.tools import float_compare
 from datetime import datetime
 import openerp.addons.decimal_precision as dp
+import time
+from openerp.tools import DEFAULT_SERVER_DATETIME_FORMAT
 
 class StockMoveLots(models.Model):
     _name = 'stock.move.lots'
@@ -68,19 +70,27 @@ class StockMove(models.Model):
 
     @api.multi
     def move_validate(self):
-        self.do_unreserve()
+        '''
+            Functions as an action_done (better to put this logic from action_done itself)
+        '''
         quant_obj = self.env['stock.quant']
         for move in self:
             if move.quantity_done < move.product_qty:
                 new_move = self.env['stock.move'].split(move, move.product_qty - move.quantity_done)
+                new_move.quantity_done = 0.0
+            #TODO: code for when quantity > move.product_qty (extra move or change qty?)
             if move.has_tracking == 'none':
                 quants = quant_obj.quants_get_preferred_domain(move.product_qty, move)
-                quant_obj.quants_reserve(quants, move)
+                self.env['stock.quant'].quants_move(quants, move, move.location_dest_id)
             else:
-                for lot in move.quantity_lots:
-                    quants = quant_obj.quants_get_preferred_domain(lot.quantity, move, lot_id=lot.lot_id.id)
-                    quant_obj.quants_reserve(quants, move)
-            move.action_done()
+                for movelot in move.quantity_lots:
+                    quants = quant_obj.quants_get_preferred_domain(movelot.quantity, move, lot_id=movelot.lot_id.id)
+                    self.env['stock.quant'].quants_move(quants, move, move.location_dest_id, lot_id = movelot.lot_id.id)
+            quant_obj.quants_unreserve(move)
+            move.write({'state': 'done', 'date': time.strftime(DEFAULT_SERVER_DATETIME_FORMAT)})
+            #Next move in production order
+            if move.move_dest_id: 
+                move.move_dest_id.action_assign()
         return True
 
 

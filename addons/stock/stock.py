@@ -467,7 +467,7 @@ class stock_quant(osv.osv):
                 domain += [('package_id', '=', False)]
             domain += [('location_id', '=', ops.location_id.id)]
         else:
-            restrict_lot_id = move.restrict_lot_id.id
+            restrict_lot_id = move.restrict_lot_id.id or lot_id
             location = move.location_id
             domain += [('owner_id', '=', move.restrict_partner_id.id)]
             domain += [('location_id', 'child_of', move.location_id.id)]
