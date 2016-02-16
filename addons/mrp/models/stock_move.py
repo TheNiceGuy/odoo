@@ -77,7 +77,7 @@ class StockMove(models.Model):
         for move in self:
             if move.quantity_done < move.product_qty:
                 new_move = self.env['stock.move'].split(move, move.product_qty - move.quantity_done)
-                new_move.quantity_done = 0.0
+                self.browse(new_move).quantity_done = 0.0
             #TODO: code for when quantity > move.product_qty (extra move or change qty?)
             if move.has_tracking == 'none':
                 quants = quant_obj.quants_get_preferred_domain(move.product_qty, move)
