@@ -312,14 +312,14 @@ class MrpProduction(models.Model):
                     if (move.has_tracking != 'none') and (move_raw.product_id.tracking != 'none'):
                         for lot in lot_quants:
                             lots = move_raw.quantity_lots.filtered(lambda x: x.lot_produced_id.id == lot).mapped('lot_id')
-                            raw_lot_quants[lot] |= move_raw.quant_ids.filtered(lambda x: x.lot_id in lots)
+                            raw_lot_quants[lot] |= move_raw.quant_ids.filtered(lambda x: (x.lot_id in lots) and (x.qty > 0.0))
                     else:
-                        quants |= move_raw.quant_ids
+                        quants |= move_raw.quant_ids.filtered(lambda x: x.qty > 0.0)
                 if move.has_tracking != 'none':
                     for lot in lot_quants:
-                        lot_quants[lot].write({'consumed_quant_ids': [x.id for x in raw_lot_quants[lot] | quants]})
+                        lot_quants[lot].write({'consumed_quant_ids': [(6, 0, [x.id for x in raw_lot_quants[lot] | quants])]})
                 else:
-                    move.quant_ids.write({'consumed_quant_ids': [x.id for x in quants]})
+                    move.quant_ids.write({'consumed_quant_ids': [(6, 0, [x.id for x in quants])]})
         return True
 
     @api.multi
@@ -545,7 +545,8 @@ class MrpProductionWorkcenterLine(models.Model):
             raise UserError(_('Please set the quantity you produced in the Current Qty field. It can not be 0!'))
 
         # Update quantities done on each raw material line
-        for move in self.move_raw_ids:
+        raw_moves = self.move_raw_ids.filtered(lambda x: (x.has_tracking == 'none') and (x.state not in ('done', 'cancel')))
+        for move in raw_moves:
             factor = 1.0
             #if it's a finished product, we use factor 1 as no bom_line
             if move.bom_line_id:
