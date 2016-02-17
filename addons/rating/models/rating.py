@@ -55,7 +55,7 @@ class RatingMixin(models.AbstractModel):
         read_group_res = self.env['rating.rating'].read_group([('res_model', '=', self._name), ('res_id', 'in', self.ids)], ['res_id'], groupby=['res_id'])
         result = dict.fromkeys(self.ids, 0)
         for data in read_group_res:
-            result[data['res_id'][0]] += data['__count']
+            result[data['res_id']] += data['res_id_count']
         for record in self:
             record.rating_count = result[record.id]
 
@@ -90,8 +90,8 @@ class RatingMixin(models.AbstractModel):
         return self.env['res.partner']
 
     def _rating_get_rated_partner_id(self):
-        if hasattr(self, 'user_id') and self.user_idpartner_id:
-            return self.user_idpartner_id
+        if hasattr(self, 'user_id') and self.user_id.partner_id:
+            return self.user_id.partner_id
         return self.env['res.partner']
 
     @api.multi
