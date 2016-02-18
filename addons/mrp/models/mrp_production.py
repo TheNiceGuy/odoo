@@ -88,7 +88,6 @@ class MrpProduction(models.Model):
 
     name = fields.Char(string='Reference', readonly=True, copy=False, default='New')
     origin = fields.Char(string='Source', help="Reference of the document that generated this manufacturing order.", copy=False)
-    product_tmpl_id = fields.Many2one('product.template', related='product_id.product_tmpl_id', string='Product Template')
     product_id = fields.Many2one('product.product', string='Product', required=True, readonly=True, states={'confirmed': [('readonly', False)]}, domain=[('type', 'in', ['product', 'consu'])])
     product_qty = fields.Float(string='Quantity to Produce', digits=dp.get_precision('Product Unit of Measure'), required=True, readonly=True, states={'confirmed': [('readonly', False)]}, default=1.0)
     product_uom_id = fields.Many2one('product.uom', string='Product Unit of Measure', required=True, readonly=True, states={'confirmed': [('readonly', False)]}, oldname='product_uom')
@@ -234,23 +233,12 @@ class MrpProduction(models.Model):
         return super(MrpProduction, self).unlink()
 
     @api.multi
-    @api.onchange('product_tmpl_id')
-    def onchange_product_tmpl_id(self):
-        if not self.product_tmpl_id:
-            if self.product_id:
-                self.product_id = False
-        else:
-            if len(self.product_tmpl_id.product_variant_ids)==1:
-                self.product_id = self.product_tmpl_id.product_variant_ids[0]
-
-    @api.multi
     @api.onchange('product_id', 'company_id')
     def onchange_product_id(self):
         if not self.product_id:
             self.product_uom_id = False
             self.bom_id = False
             self.routing_id = False
-            self.product_tmpl_id = False
         else:
             bom_point = self.env['mrp.bom']._bom_find(product=self.product_id)
             routing_id = False
@@ -259,7 +247,6 @@ class MrpProduction(models.Model):
             self.product_uom_id = self.product_id.uom_id.id
             self.bom_id = bom_point.id
             self.routing_id = routing_id and routing_id.id or False
-            self.product_tmpl_id = self.product_id.product_tmpl_id.id
             return {'domain': {'product_uom_id': [('category_id', '=', self.product_id.uom_id.category_id.id)]}}
 
     @api.onchange('bom_id')
@@ -290,12 +277,17 @@ class MrpProduction(models.Model):
         return True
 
     @api.multi
+    def _cal_price(self, consumed_moves):
+        return True
+
+    @api.multi
     def post_inventory(self):
         for order in self:
             moves_to_do = order.move_raw_ids.filtered(lambda x: x.state not in ('done','cancel'))
             moves_to_do.move_validate()
             #order.move_finished_ids.filtered(lambda x: x.state not in ('done','cancel')).move_validate()
             moves_to_finish = order.move_finished_ids.filtered(lambda x: x.state not in ('done', 'cancel'))
+            order._cal_price(moves_to_do)
             moves_to_finish.move_validate()
             for move in moves_to_finish:
                 quants = self.env['stock.quant']
@@ -307,7 +299,6 @@ class MrpProduction(models.Model):
                         lot_quants.setdefault(quant.lot_id.id, self.env['stock.quant'])
                         raw_lot_quants.setdefault(quant.lot_id.id, self.env['stock.quant'])
                         lot_quants[quant.lot_id.id] |= quant
-                
                 for move_raw in moves_to_do:
                     if (move.has_tracking != 'none') and (move_raw.product_id.tracking != 'none'):
                         for lot in lot_quants:

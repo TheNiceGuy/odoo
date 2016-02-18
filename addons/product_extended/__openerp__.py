@@ -12,7 +12,7 @@ Product extension. This module adds:
 """,
     "init_xml" : [],
     "demo_xml" : [],
-    "data" : ["product_extended_wizard.xml","product_extended_view.xml", 'security/ir.model.access.csv'],
+    "data": ["product_extended_view.xml", 'security/ir.model.access.csv'],
     "active": False,
     "installable": True
 }

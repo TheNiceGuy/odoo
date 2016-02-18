@@ -344,7 +344,7 @@
                                         </div>
                                     </div>
                                     <div class="row">
-                                        <div class="col-xs-6 o_kanban_primary_left" style="position:absolute;">
+                                        <div class="col-xs-6 o_kanban_primary_left" style="position:absolute;" name="wc_stages">
                                             <t t-if="record.stage_id.raw_value == 'normal'">
                                                 <t t-set="status" t-value="'Work orders is not running'"/>
                                             </t>
@@ -1270,7 +1270,6 @@
                 <button name="button_pending" type="object" string="Pause" class="btn-warning" attrs="{'invisible': ['|', ('state', 'in', ('done', 'pending', 'ready')), ('show_state', '=', False)]}"><span>(<field name="delay" widget="float_time" class="oe_inline"/>)</span></button>
                 <button name="button_start" type="object" string="Continue Production" class="btn-warning" attrs="{'invisible': ['|', ('show_state', '=', True), ('state', 'in', ('done', 'pending', 'ready'))]}"></button>
                 <button name="button_start" type="object" string="Continue Production" attrs="{'invisible': [('state', '!=', 'done')]}"/>
-                <button name="record_production" type="object" string="Record Production" class="btn-success" attrs="{'invisible': ['|', '|', ('state', '!=', 'progress'), ('show_state', '=', False)]}"/>
                 <button name="button_scrap" type="object" string="Scrap" attrs="{'invisible': [('state', 'in', ('confirmed', 'cancel'))]}"/>
                 <field name="state" widget="statusbar" statusbar_visible="pending,ready,progress,done"/>
                 <field name="show_state" invisible="1"/>

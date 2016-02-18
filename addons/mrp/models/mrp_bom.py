@@ -142,7 +142,7 @@ class MrpBomLine(models.Model):
                 product_tmpl=bom_line.product_id.product_tmpl_id,
                 product=bom_line.product_id)
             if child_bom:
-                bom_line.write({'child_line_ids': (6, 0, [bom.id for bom in child_bom.bom_line_ids])})
+                bom_line.child_line_ids = [(6, 0, [bom.id for bom in child_bom.bom_line_ids])]
             else:
                 bom_line.child_line_ids = False
 

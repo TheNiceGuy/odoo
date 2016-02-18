@@ -1,11 +1,31 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
-from openerp import api, models, _
+from openerp import api, fields, models, _
 
+
+class MrpProductionWorkcenterLineTime(models.Model):
+    _inherit = 'mrp.production.work.order.time'
+
+    used = fields.Boolean('Used')
 
 class MrpProduction(models.Model):
     _inherit = 'mrp.production'
 
+    @api.multi
+    def _cal_price(self, consumed_moves):
+        work_center_cost = 0
+        if self.work_order_ids:
+            duration = 0
+            for work_order in self.work_order_ids:
+                time_lines = workorder.time_ids.filtered(lambda x: x.state == 'done' and not x.used)
+                duration += sum(time_lines.mapped('duration'))
+                time_lines.write({'used' : True})
+            # Convert duration into hour and calculate total cost of work.
+            work_center_cost = (duration / 60) * self.workcenter_id.costs_hour
+        for move in self.move_finished_ids.filtered(lambda x: x.product_id.id == self.product_id.id and x.state not in ('done', 'cancel')):
+            if move.product_id.cost_method in ('real', 'average'):
+                move.price_unit = (sum([q.qty * q.cost for q in consumed_moves.mapped('quant_ids')]) + work_center_cost) / move.product_qty
+        return True
 
     def _costs_generate(self):
         """ Calculates total costs at the end of the production.
