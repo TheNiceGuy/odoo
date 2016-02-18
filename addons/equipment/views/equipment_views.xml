@@ -520,12 +520,7 @@
     <menuitem
         id="menu_equipment_title"
         name="Equipments"
-<<<<<<< HEAD:addons/hr_equipment/views/hr_equipment_views.xml
-        web_icon="hr_equipment,static/description/icon.png"
-        groups="base.group_hr_user,base.group_equipment_manager"
-=======
         web_icon="equipment,static/description/icon.png"
->>>>>>> f31cef3... [REF] equipment: changed equipment so it doesn't depend on hr anymore:addons/equipment/views/equipment_views.xml
         sequence="110"/>
 
     <menuitem
