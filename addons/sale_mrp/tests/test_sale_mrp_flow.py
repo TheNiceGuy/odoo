@@ -53,14 +53,8 @@ class TestSaleMrpFlow(common.TransactionCase):
             return self.MrpBom.create({
                 'product_tmpl_id': product_tmpl_id,
                 'product_qty': qty,
-<<<<<<< HEAD
-                'type': bom_type,
-                'product_efficiency': 1.0,
-                'product_uom': uom_id})
-=======
                 'bom_type': bom_type,
                 'product_uom_id': uom_id})
->>>>>>> 5303ba5... [FIX] consume_operation_ids does not exist anymore
 
         self.uom_kg = self.ProductUom.create({
             'name': 'Test-KG',
