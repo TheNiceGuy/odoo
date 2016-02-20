@@ -17,7 +17,7 @@ class MrpProduction(models.Model):
         if self.work_order_ids:
             duration = 0
             for work_order in self.work_order_ids:
-                time_lines = workorder.time_ids.filtered(lambda x: x.state == 'done' and not x.used)
+                time_lines = work_order.time_ids.filtered(lambda x: x.state == 'done' and not x.used)
                 duration += sum(time_lines.mapped('duration'))
                 time_lines.write({'used' : True})
             # Convert duration into hour and calculate total cost of work.
