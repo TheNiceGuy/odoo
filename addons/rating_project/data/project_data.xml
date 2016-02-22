@@ -7,7 +7,7 @@
             <field name="name">Rating Project Request</field>
             <field name="email_from">${object.rated_partner_id.email or ''}</field>
             <field name="subject">${object.res_name}</field>
-            <field name="model_id" ref="rating.model_rating_rating"/>
+            <field name="model_id" ref="rating.model_rating_token"/>
             <field name="email_to" >${object.partner_id.email}</field>
             <field name="auto_delete" eval="True"/>
             <field name="body_html"><![CDATA[

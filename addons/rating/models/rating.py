@@ -18,6 +18,40 @@ class Rating(models.Model):
         name = self.env[self.res_model].sudo().browse(self.res_id).name_get()
         self.res_name = name and name[0][1] or ('%s/%s') % (self.res_model, self.res_id)
 
+    res_name = fields.Char(string='Resource Name', compute='_compute_res_name', store=True, help="The name of the rated resource.")
+    res_model = fields.Char(string='Document Model', required=True, help="Model name of the rated object", index=True)
+    res_id = fields.Integer(string='Document ID', required=True, help="Identifier of the rated object", index=True)
+    rated_partner_id = fields.Many2one('res.partner', string="Rated Partner", help="Owner of the rated resource")
+    partner_id = fields.Many2one('res.partner', string='Customer', help="Author of the rating")
+    rating = fields.Float(string="Rating", group_operator="avg", default=-1, help="Rating value")
+    feedback = fields.Text('Feedback reason', help="Reason of the rating")
+
+    message_id = fields.Many2one('mail.message', string="Linked message", help="Associated message when posting a review. Mainly used in website addons.", index=True)
+
+    @api.one
+    def reset(self):
+        self.write({
+            'rating': -1,
+            'feedback': False
+        })
+
+
+class RatingToken(models.TransientModel):
+    _name = "rating.token"
+    _description = "Token of rating"
+    _rec_name = 'res_name'
+
+    # Clear access tokens older than 1 month
+    def _register_hook(self, cr):
+        cls = type(self)
+        cls._transient_max_hours = 720.0  # 30 Days * 24 Hours = 720 Hours
+
+    @api.one
+    @api.depends('res_model', 'res_id')
+    def _compute_res_name(self):
+        name = self.env[self.res_model].sudo().browse(self.res_id).name_get()
+        self.res_name = name and name[0][1] or ('%s/%s') % (self.res_model, self.res_id)
+
     @api.model
     def new_access_token(self):
         return uuid.uuid4().hex
@@ -27,19 +61,8 @@ class Rating(models.Model):
     res_id = fields.Integer(string='Document ID', required=True, help="Identifier of the rated object", index=True)
     rated_partner_id = fields.Many2one('res.partner', string="Rated Partner", help="Owner of the rated resource")
     partner_id = fields.Many2one('res.partner', string='Customer', help="Author of the rating")
-    rating = fields.Float(string="Rating", group_operator="avg", default=-1, help="Rating value")
-    feedback = fields.Text('Feedback reason', help="Reason of the rating")
+    rating_id = fields.Many2one('rating.rating', string='Rating')
     access_token = fields.Char(string='Security Token', default=new_access_token, help="Access token to set the rating of the value")
-
-    message_id = fields.Many2one('mail.message', string="Linked message", help="Associated message when posting a review. Mainly used in website addons.", index=True)
-
-    @api.one
-    def reset(self):
-        self.write({
-            'rating': -1,
-            'access_token': self.new_access_token(),
-            'feedback' : False
-        })
 
 
 class RatingMixin(models.AbstractModel):
@@ -65,8 +88,9 @@ class RatingMixin(models.AbstractModel):
         creates empty rating objects or search existing one to reset and resue
         depending on the reuse_rating parameter. """
         ratings = self.env['rating.rating']
+        Token = self.env['rating.token']
         if not rated_partner_id.email or not partner_id.email:
-            return ratings
+            return Token
         for record in self:
             values = {
                 'res_model': self._name,
@@ -78,11 +102,11 @@ class RatingMixin(models.AbstractModel):
             if reuse_rating:
                 rating = ratings.search([('res_id', '=', record.id), ('res_model', '=', self._name), ('partner_id', '=', partner_id.id)], limit=1)
             if rating:
+                values['rating_id'] = rating.id
                 rating.reset()
-            else:
-                rating = ratings.create(values)
-            ratings |= rating
-        return ratings
+            token = Token.create(values)
+            Token |= token
+        return Token
 
     def _rating_get_partner_id(self):
         if hasattr(self, 'partner_id') and self.partner_id:
@@ -102,9 +126,9 @@ class RatingMixin(models.AbstractModel):
             partner_id = self._rating_get_partner_id()
         if rated_partner_id is None:
             rated_partner_id = self._rating_get_rated_partner_id()
-        ratings = self.rating_get_request(partner_id, rated_partner_id, reuse_rating=reuse_rating)
-        for rating in ratings:
-            template.send_mail(rating.id, force_send=True)
+        tokens = self.rating_get_request(partner_id, rated_partner_id, reuse_rating=reuse_rating)
+        for token in tokens:
+            template.send_mail(token.id, force_send=True)
 
     @api.multi
     def rating_apply(self, rate, token=None):
@@ -116,10 +140,21 @@ class RatingMixin(models.AbstractModel):
         :param token : access token
         :returns rating.rating record
         """
+        Rating, rating = self.env['rating.rating'], None
         if token:
-            rating = self.env['rating.rating'].search([('access_token', '=', token)], limit=1)
+            token_rec = self.env['rating.token'].search([('access_token', '=', token)], limit=1)
+            if token_rec.rating_id:
+                rating = token_rec.rating_id
+            else:
+                rating = Rating.create({
+                        'res_model': token_rec.res_model,
+                        'res_id': token_rec.res_id,
+                        'partner_id': token_rec.partner_id.id,
+                        'rated_partner_id': token_rec.rated_partner_id.id
+                    })
+                token_rec.rating_id = rating
         else:
-            rating = self.env['rating.rating'].search([('res_model', '=', self._name), ('res_id', '=', self.ids[0])], limit=1)
+            rating = Rating.search([('res_model', '=', self._name), ('res_id', '=', self.ids[0])], limit=1)
         if rating:
             rating.write({'rating': rate})
             if hasattr(self, 'message_post'):
