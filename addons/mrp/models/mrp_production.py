@@ -484,6 +484,7 @@ class MrpProductionWorkcenterLine(models.Model):
 
     production_state = fields.Selection(related='production_id.state', readonly=True)
     product = fields.Many2one('product.product', related='production_id.product_id', string="Product", readonly=True) #should be product_id
+    has_tracking = fields.Selection(related='production_id.product_id.tracking')
     qty = fields.Float(related='production_id.product_qty', string='Qty', readonly=True)
     uom = fields.Many2one('product.uom', related='production_id.product_uom_id', string='Unit of Measure')
 
