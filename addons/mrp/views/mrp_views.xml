@@ -880,10 +880,8 @@
                                     <field name="quantity_available"/>
                                     <field name="product_uom_qty" readonly="1" attrs="{'required': [('product_id', '!=', False)]}" string="To Consume"/>
                                     <field name="quantity_done" attrs="{'readonly': [('has_tracking', 'in', ['lot','serial'])]}" string="Consumed"/>
-
                                     <button name="split_move_lot" string="Register lots" type="object" icon="fa-list"
                                         attrs="{'invisible': [('has_tracking', 'not in', ['lot','serial'])]}"/>
-
                                 </tree>
                             </field>
                         </page>

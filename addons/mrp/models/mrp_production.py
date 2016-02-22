@@ -477,7 +477,7 @@ class MrpProductionWorkcenterLine(models.Model):
     move_traceability_ids = fields.One2many('stock.move.lots', 'workorder_id', string='Moves to Track',
         help="Inventory moves for which you must scan a lot number at this work order")
     active_move_traceability_ids = fields.One2many('stock.move.lots', 'workorder_id', string='Active Moves to Track',
-        help="Active Inventory moves for which you must scan a lot number at this work order")
+        help="Active Inventory moves for which you must scan a lot number at this work order", domain=[('done', '=', False)])
 
     # FP TODO: replace by a related through MO, otherwise too much computation without need
     availability = fields.Selection([('waiting', 'Waiting'), ('assigned', 'Available')], 'Stock Availability', store=True, compute='_compute_availability')
