@@ -41,7 +41,7 @@
                     <b t-if="record.rating_ids.raw_value.length">
                         <span class="fa fa-fw mt4 fa-thumbs-up text-success" t-if="record.rating_last_value.value == 10" title="Latest Rating: Happy"/>
                         <span class="fa fa-fw mt4 fa-thumbs-down text-warning" t-if="record.rating_last_value.value == 5" title="Latest Rating: Average"/>
-                        <span class="fa fa-fw mt4 fa-thumbs-down text-danger" t-if="record.rating_last_value.value == 0" title="Latest Rating: Not Happy"/>
+                        <span class="fa fa-fw mt4 fa-thumbs-down text-danger" t-if="record.rating_last_value.value == 1" title="Latest Rating: Not Happy"/>
                     </b>
                 </xpath>
             </field>

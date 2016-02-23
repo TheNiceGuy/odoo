@@ -34,8 +34,8 @@
                     </a>
                 </td>
                 <td>
-                    <a href="/rating/${object.access_token}/0">
-                        <img alt="Bad" src="rating/static/src/img/rating_0.png" title="It wasn't good"/>
+                    <a href="/rating/${object.access_token}/1">
+                        <img alt="Bad" src="rating/static/src/img/rating_1.png" title="It wasn't good"/>
                     </a>
                 </td>
             </tr>

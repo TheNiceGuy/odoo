@@ -32,7 +32,7 @@ class WebsiteRatingProject(http.Controller):
     def _calculate_rating(self, project_id, model_name):
         # Calculate rating for Tasks and Issues
         records = request.env[model_name].sudo().search([('project_id', '=', project_id)])
-        domain = [('res_model', '=', model_name), ('res_id', 'in', records.ids), ('rating', '!=', -1)]
+        domain = [('res_model', '=', model_name), ('res_id', 'in', records.ids)]
         ratings = request.env['rating.rating'].search(domain, order="id desc", limit=100)
 
         yesterday = (datetime.date.today()-datetime.timedelta(days=-1)).strftime('%Y-%m-%d 23:59:59')
@@ -40,7 +40,7 @@ class WebsiteRatingProject(http.Controller):
         for x in (7, 30, 90):
             todate = (datetime.date.today()-datetime.timedelta(days=x)).strftime('%Y-%m-%d 00:00:00')
             domdate = domain + [('create_date', '<=', yesterday), ('create_date', '>=', todate)]
-            stats[x] = {0: 0, 5: 0, 10: 0}
+            stats[x] = {1: 0, 5: 0, 10: 0}
             rating_stats = request.env['rating.rating'].read_group(domdate, [], ['rating'])
             total = reduce(lambda x, y: y['rating_count']+x, rating_stats, 0)
             for rate in rating_stats:

@@ -63,7 +63,7 @@
                     <field name="res_id"/>
                     <filter string="Happy" domain="[('rating', '&gt;=', 7)]"/>
                     <filter string="Okay" domain="[('rating', '&gt;', 3), ('rating', '&lt;', 7)]"/>
-                    <filter string="Unhappy" domain="[('rating', '&gt;=', 0), ('rating', '&lt;=',3)]"/>
+                    <filter string="Unhappy" domain="[('rating', '&gt;=', 1), ('rating', '&lt;=',3)]"/>
                     <separator/>
                     <filter string="My Ratings" domain="[('rated_partner_id.user_ids', 'in', [uid])]"/>
                     <group expand="0" string="Group By">

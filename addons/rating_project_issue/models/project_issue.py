@@ -69,7 +69,7 @@ class Project(models.Model):
     @api.multi
     def action_view_all_rating(self):
         action = super(Project, self).action_view_all_rating()
-        task_domain = action['domain'][1:] # remove the (rating != -1) condition
+        task_domain = action['domain'][1:]
         domain = []
         if self.use_tasks: # add task domain, if neeeded
             domain = ['&'] + task_domain
@@ -78,5 +78,4 @@ class Project(models.Model):
             domain = domain + ['&', ('res_id', 'in', issues.ids), ('res_model', '=', 'project.issue')]
         if self.use_tasks and self.use_issues:
             domain = ['|'] + domain
-        domain = [('rating', '!=', -1)] + domain # prepend the condition to avoid empty rating
         return dict(action, domain=domain)

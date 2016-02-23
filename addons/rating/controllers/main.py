@@ -11,7 +11,7 @@ class Rating(http.Controller):
     def add_rating(self, token, rate, **kwargs):
         token_rec = request.env['rating.token'].sudo().search([('access_token', '=', token)])
         if token_rec:
-            is_rated = bool(token_rec.rating_id.rating != -1) if token_rec.rating_id.rating else False
+            is_rated = bool(token_rec.rating_id.rating)
             if not is_rated:
                 record_sudo = request.env[token_rec.res_model].sudo().browse(token_rec.res_id)
                 record_sudo.rating_apply(rate, token=token)

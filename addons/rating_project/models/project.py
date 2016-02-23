@@ -93,7 +93,7 @@ class Project(models.Model):
     def action_view_task_rating(self):
         """ return the action to see all the rating about the tasks of the project """
         action = self.env['ir.actions.act_window'].for_xml_id('rating', 'action_view_rating')
-        return dict(action, domain=[('rating', '!=', -1), ('res_id', 'in', self.tasks.ids), ('res_model', '=', 'project.task')])
+        return dict(action, domain=[('res_id', 'in', self.tasks.ids), ('res_model', '=', 'project.task')])
 
     @api.multi
     def action_view_all_rating(self):

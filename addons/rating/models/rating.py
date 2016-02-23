@@ -9,7 +9,7 @@ class Rating(models.Model):
     _order = 'write_date desc'
     _rec_name = 'res_name'
     _sql_constraints = [
-        ('rating_range', 'check(rating >= -1 and rating <= 10)', 'Rating should be between -1 to 10'),
+        ('rating_range', 'check(rating >= 0 and rating <= 10)', 'Rating should be between 0 to 10'),
     ]
 
     @api.one
@@ -23,7 +23,7 @@ class Rating(models.Model):
     res_id = fields.Integer(string='Document ID', required=True, help="Identifier of the rated object", index=True)
     rated_partner_id = fields.Many2one('res.partner', string="Rated Partner", help="Owner of the rated resource")
     partner_id = fields.Many2one('res.partner', string='Customer', help="Author of the rating")
-    rating = fields.Float(string="Rating", group_operator="avg", default=-1, help="Rating value")
+    rating = fields.Float(string="Rating", group_operator="avg", help="Rating value")
     feedback = fields.Text('Feedback reason', help="Reason of the rating")
 
     message_id = fields.Many2one('mail.message', string="Linked message", help="Associated message when posting a review. Mainly used in website addons.", index=True)
@@ -31,7 +31,7 @@ class Rating(models.Model):
     @api.one
     def reset(self):
         self.write({
-            'rating': -1,
+            'rating': 0,
             'feedback': False
         })
 
@@ -184,12 +184,12 @@ class RatingMixin(models.AbstractModel):
                 otherwise, key is the value of the information (string) : either stat name (avg, total, ...) or 'repartition'
                 containing the same dict if add_stats was False.
         """
-        base_domain = [('res_model', '=', self._name), ('res_id', 'in', self.ids), ('rating', '>=', 0)]
+        base_domain = [('res_model', '=', self._name), ('res_id', 'in', self.ids), ('rating', '>=', 1)]
         if domain:
             base_domain += domain
         data = self.env['rating.rating'].read_group(base_domain, ['rating'], ['rating', 'res_id'])
-        # init dict with all posible rate value, except -1 (no value for the rating)
-        values = dict.fromkeys(range(11), 0)
+        # init dict with all posible rate value, except 0 (no value for the rating)
+        values = dict.fromkeys(range(1, 11), 0)
         values.update((d['rating'], d['rating_count']) for d in data)
         # add other stats
         if add_stats:
@@ -235,7 +235,7 @@ class RatingMixin(models.AbstractModel):
         result = {
             'avg': data['avg'],
             'total': data['total'],
-            'percent': dict.fromkeys(range(11), 0),
+            'percent': dict.fromkeys(range(1, 11), 0),
         }
         for rate in data['repartition']:
             result['percent'][rate] = (data['repartition'][rate] * 100) / data['total'] if data['total'] > 0 else 0
