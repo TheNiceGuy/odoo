@@ -544,6 +544,8 @@ class MrpProductionWorkcenterLine(models.Model):
         # One a piece is produced, you can launch the next work order
         if self.next_work_order_id.state=='pending':
             self.next_work_order_id.state='ready'
+        if self.next_work_order_id and self.final_lot_id and not self.next_work_order_id.final_lot_id:
+            self.next_work_order_id.final_lot_id = self.final_lot_id.id
 
         #TODO: add filter for those that have not been done yet
         self.move_traceability_ids.write({'lot_produced_id': self.final_lot_id.id,
@@ -568,6 +570,7 @@ class MrpProductionWorkcenterLine(models.Model):
         self.qty_produced += self.qty_producing
         self.qty_producing = 1.0
         self._generate_lot_ids()
+        self.final_lot_id = False
 
         if self.qty_produced >= self.qty:
             self.button_finish()
