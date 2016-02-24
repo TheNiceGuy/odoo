@@ -76,12 +76,12 @@ class StockMove(models.Model):
         quant_obj = self.env['stock.quant']
         moves_todo = self.env['stock.move']
         for move in self:
-            if move.state not in ('done', 'cancel'):
+            if move.state in ('done', 'cancel'):
                 continue
             moves_todo |= move
-            if move.quantity_done > move.product_qty:
-                remaining_qty = move.product_uom_qty - move.quantity_done #Convert to UoM of move
-                extra_move = move.copy(default={'product_uom_qty': remaining_qty, 'production_id': move.production_id.id, 'raw_material_production_id': move.raw_material_production_id.id})
+            if move.quantity_done > move.product_uom_qty:
+                remaining_qty = move.quantity_done - move.product_uom_qty #Convert to UoM of move
+                extra_move = move.copy(default={'quantity_done': remaining_qty, 'product_uom_qty': remaining_qty, 'production_id': move.production_id.id, 'raw_material_production_id': move.raw_material_production_id.id})
                 extra_move.action_confirm()
                 moves_todo |= extra_move
         

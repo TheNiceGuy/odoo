@@ -89,6 +89,7 @@ class MrpProduction(models.Model):
     name = fields.Char(string='Reference', readonly=True, copy=False, default='New')
     origin = fields.Char(string='Source', help="Reference of the document that generated this manufacturing order.", copy=False)
     product_id = fields.Many2one('product.product', string='Product', required=True, readonly=True, states={'confirmed': [('readonly', False)]}, domain=[('type', 'in', ['product', 'consu'])])
+    product_tmpl_id = fields.Many2one('product.template', string='Product Template', related='product_id.product_tmpl_id')
     product_qty = fields.Float(string='Quantity to Produce', digits=dp.get_precision('Product Unit of Measure'), required=True, readonly=True, states={'confirmed': [('readonly', False)]}, default=1.0)
     product_uom_id = fields.Many2one('product.uom', string='Product Unit of Measure', required=True, readonly=True, states={'confirmed': [('readonly', False)]}, oldname='product_uom')
 
@@ -105,7 +106,7 @@ class MrpProduction(models.Model):
     date_finished = fields.Datetime(string='End Date', readonly=True, copy=False)
 
     bom_id = fields.Many2one('mrp.bom', string='Bill of Material', readonly=True, states={'confirmed': [('readonly', False)]})
-    routing_id = fields.Many2one('mrp.routing', string='Routing', related='bom_id.routing_id', store=True, on_delete='set null', readonly=True)
+    routing_id = fields.Many2one('mrp.routing', string='Routing', related='bom_id.routing_id', store=True, readonly=True)
 
     # FP Note: what's the goal of this field? -> It is like the destination move of the production move
     move_prod_id = fields.Many2one('stock.move', string='Product Move', readonly=True, copy=False)
