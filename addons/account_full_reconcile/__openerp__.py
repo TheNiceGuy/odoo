@@ -11,9 +11,11 @@ Add the concept of full reconciliation back into the accounting.
     'website': 'https://www.odoo.com/page/accounting',
     'depends': ['account'],
     'data': [
+        'security/ir.model.access.csv',
         'views/account_full_reconcile_view.xml',
     ],
     'demo': [],
     'installable': True,
     'auto_install': True,
+    'post_init_hook': '_migrate_full_reconcile',
 }
