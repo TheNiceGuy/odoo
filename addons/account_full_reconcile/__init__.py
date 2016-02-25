@@ -50,7 +50,7 @@ def _migrate_full_reconcile(cr, registry):
         return
 
     #otherwise, use the table account_move_reconcile if it exists (not dropped by migration)
-    cr.execute("SELECT 1 FROM information_schema.tables WHERE name = 'account_move_reconcile')")
+    cr.execute("SELECT 1 FROM information_schema.tables WHERE table_name = 'account_move_reconcile'")
     if cr.fetchone():
         #account_move_reconcile exists
         #copy old table
@@ -65,7 +65,7 @@ def _migrate_full_reconcile(cr, registry):
         #account_move_reconcile was dropped during migration, rebuild that table
         cr.execute("""
             INSERT INTO account_full_reconcile (id, name)
-                SELECT DISTINCT reconcile_id, reconcile_ref FROM account_move_line WHERE reconcile_id IS NOT NULL)
+                SELECT DISTINCT reconcile_id, reconcile_ref FROM account_move_line WHERE reconcile_id IS NOT NULL
             """)
     #update the index of account_full_reconcile
     cr.execute("SELECT setval('account_full_reconcile_id_seq', (SELECT MAX(id) FROM account_full_reconcile))")
