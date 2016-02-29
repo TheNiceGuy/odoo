@@ -559,9 +559,9 @@ class XMLsheetAsset(WebAsset):
         if not self.context.get('lang'):
             return datas
 
-        trans = {t['src']: t['value'] for t in self.registry['ir.translation'].search_read(self.cr, openerp.SUPERUSER_ID,
+        trans = {t['src']: t['value'] for t in self.en['ir.translation'].sudo().search_read(
             [('type', '=', 'code'), ('name', 'like', self.url), ('lang', '=', self.context.get('lang'))],
-            ['src', 'value'], context=self.context)}
+            ['src', 'value'])}
 
         return xml_translate(lambda term: trans.get(term) or term, datas)
 

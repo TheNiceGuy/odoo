@@ -187,12 +187,11 @@ var Session = core.Class.extend(mixins.EventDispatcherMixin, {
         var to_load = _.difference(modules, self.module_list).join(',');
         this.module_list = all_modules;
 
-        var loaded = $.when(self.load_translations());
+        var loaded = $.when();
         var locale = "/web/webclient/locale/" + self.user_context.lang || 'en_US';
         var file_list = [ locale ];
         if(to_load.length) {
             loaded = $.when(
-                loaded,
                 self.rpc('/web/webclient/csslist', {mods: to_load}).done(self.load_css.bind(self)),
                 self.load_qweb(to_load),
                 self.rpc('/web/webclient/jslist', {mods: to_load}).done(function(files) {
@@ -206,9 +205,6 @@ var Session = core.Class.extend(mixins.EventDispatcherMixin, {
             self.on_modules_loaded();
             self.trigger('module_loaded');
        });
-    },
-    load_translations: function() {
-        return _t.database.load_translations(this, this.module_list, this.user_context.lang);
     },
     load_css: function (files) {
         var self = this;
