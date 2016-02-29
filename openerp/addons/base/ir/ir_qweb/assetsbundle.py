@@ -85,6 +85,7 @@ class AssetsBundle(object):
         self.max_css_rules = self.env.context.get('max_css_rules', MAX_CSS_RULES)
         self.javascripts = []
         self.stylesheets = []
+        self.templates = []
         self.css_errors = []
         self.remains = []
         self._checksum = None
@@ -99,6 +100,8 @@ class AssetsBundle(object):
                 self.stylesheets.append(StylesheetAsset(self, url=f['url'], filename=f['filename'], inline=f['content'], media=f['media']))
             elif f['atype'] == 'text/javascript':
                 self.javascripts.append(JavascriptAsset(self, url=f['url'], filename=f['filename'], inline=f['content']))
+            elif f['atype'] == 'application/xml':
+                self.templates.append(XMLsheetAsset(self, url=f['url'], filename=f['filename'], inline=f['content']))
 
     def to_html(self, sep=None, css=True, js=True, debug=False, async=False, url_for=(lambda url: url)):
         if sep is None:
@@ -129,6 +132,8 @@ class AssetsBundle(object):
                         response.append(style.to_html())
             if js and self.javascripts:
                 response.append('<script %s type="text/javascript" src="%s"></script>' % (async and 'async="async"' or '', url_for(self.js().url)))
+        if js and self.templates:
+            response.append('<script %s type="text/javascript" src="%s"></script>' % (async and 'async="async"' or '', self.xml().url))
         response.extend(self.remains)
 
         return sep + sep.join(response)
@@ -177,7 +182,7 @@ class AssetsBundle(object):
 
     def get_attachments(self, type, inc=None):
         ira = self.env['ir.attachment']
-        domain = [('url', '=like', '/web/content/%%-%s/%s%s.%s' % (self.version, self.name, ('%%' if inc is None else '.%s' % inc), type))]
+        domain = [('url', '=like', '/web/content/%%-%s/%s%s.%s' % (self.version, self.name, ('' if inc is '' else '%%' if inc is None else '.%s' % inc), type))]
         return ira.sudo().search(domain, order='name asc')
 
     def save_attachment(self, type, content, inc=None):
@@ -214,6 +219,57 @@ class AssetsBundle(object):
         if not attachments:
             content = ';\n'.join(asset.minify() for asset in self.javascripts)
             return self.save_attachment('js', content)
+        return attachments[0]
+
+    def js_translations(self, modules=None, lang=None):
+        module_obj = self.env['ir.module.module'].sudo()
+        res_lang_obj = self.env['res.lang'].sudo()
+        ir_translation_obj = self.env['ir.translation'].sudo()
+
+        if modules is None:
+            modules = module_obj.search([('state', '=', 'installed')]).mapped('name')
+
+        lang = res_lang_obj.search([("code", "=", lang)], limit=1)
+        lang_params = None
+        if lang:
+            lang_params = lang.read(["name", "direction", "date_format", "time_format", "grouping", "decimal_point", "thousands_sep"])
+
+        # Regional languages (ll_CC) must inherit/override their parent lang (ll), but this is
+        # done server-side when the language is loaded, so we only need to load the user's lang.
+        translations_per_module = {}
+        messages = ir_translation_obj.search_read([('module', 'in', modules),
+                                            ('lang', '=', lang),
+                                            ('comments', 'like', 'openerp-web'),
+                                            ('value', '!=', False), ('value', '!=', '')],
+                                            ['module', 'src', 'value', 'lang'], order='module')
+
+        for mod, msg_group in itertools.groupby(messages, key=operator.itemgetter('module')):
+            translations_per_module.setdefault(mod, {'messages': []})
+            translations_per_module[mod]['messages'].extend({'id': m['src'], 'string': m['value']} for m in msg_group)
+        return {
+            'lang_parameters': lang_params,
+            'modules': translations_per_module,
+            'multi_lang': len(res_lang_obj.get_installed()) > 1,
+        }
+
+    def xml(self, minify=True):
+        lang = self.context.get('lang', 'en_US')
+        inc = lang
+        attachments = self.get_attachments('xml.js', inc=inc)
+        if not attachments:
+            content = '\n'.join(asset.to_js() for asset in self.templates)
+            modules = list(set([asset.url.split("/", 2)[1] for asset in (self.templates + self.javascripts) if asset.url]))
+            if modules:
+                js = [
+                    'odoo.define("base.ir.translation.%s", function (require) {' % self.xmlid,
+                    '"use strict"',
+                    'var translation = require("web.translation");',
+                    '/* lang: %s, modules: %s */' % (lang, ','.join(modules)),
+                    'translation._t.database.set_bundle(%s)' % json.dumps(self.js_translations(modules, lang)),
+                    '});'
+                ]
+                content += '\n\n' + '\n'.join(js)
+            return self.save_attachment('xml.js', content, inc=inc)
         return attachments[0]
 
     def css(self):
@@ -493,6 +549,47 @@ class JavascriptAsset(WebAsset):
             return '<script type="text/javascript" src="%s"></script>' % (self.html_url)
         else:
             return '<script type="text/javascript" charset="utf-8">%s</script>' % self.with_header()
+
+
+class XMLsheetAsset(WebAsset):
+    def _fetch_content(self):
+        """ Fetch content from file or database"""
+        datas = super(XMLsheetAsset, self)._fetch_content()
+
+        if not self.context.get('lang'):
+            return datas
+
+        trans = {t['src']: t['value'] for t in self.registry['ir.translation'].search_read(self.cr, openerp.SUPERUSER_ID,
+            [('type', '=', 'code'), ('name', 'like', self.url), ('lang', '=', self.context.get('lang'))],
+            ['src', 'value'], context=self.context)}
+
+        return xml_translate(lambda term: trans.get(term) or term, datas)
+
+    def cleaned_content(self):
+        xml = self.content
+        xml = re.sub(r'[\s\n\r]*</?templates?[^>]*>[\s\n\r]*', '', xml)
+        xml = re.sub(r'[\s\n\r]*<[?]xml[^>]*[?]>[\s\n\r]*', '', xml)
+        xml = re.sub(r'[\s\n\r]*<!--[^>]*-->[\s\n\r]*', '', xml)
+        return xml
+
+    def to_js(self):
+        name = "%s[%s]" % (self.bundle.xmlid, self.url)
+        content = self.cleaned_content()
+        js = [
+            'odoo.define("base.ir.qweb.%s", function (require) {' % name,
+            '"use strict"',
+            'var core = require("web.core");',
+            'var _t = core._t;',
+            'var template = \'<t>\'+',
+        ]
+        js += [line and ("'" + line.replace("\\", "\\\\").replace("'", "\\'") + "\\n'+") or ""
+            for line in content.split('\n')]
+        js += [
+            '\'</t>\';',
+            'core.qweb.add_template(template);',
+            '});'
+        ]
+        return '\n'.join(js)
 
 
 class StylesheetAsset(WebAsset):

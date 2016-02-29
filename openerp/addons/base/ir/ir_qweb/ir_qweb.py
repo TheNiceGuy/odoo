@@ -8,9 +8,9 @@ from .qweb import QWeb, Contextifier
 from .assetsbundle import AssetsBundle
 from lxml import etree
 
-from openerp import api, models, tools
-from openerp.tools import safe_eval
-from openerp.addons.web.http import request
+from odoo import api, models, tools
+from odoo.tools import safe_eval
+from odoo.addons.web.http import request
 from odoo.modules.module import get_resource_path
 import json
 from time import time
@@ -205,6 +205,10 @@ class IrQWeb(models.AbstractModel, QWeb):
                     else:
                         filename = None
                     files.append({'atype': atype, 'url': src, 'filename': filename, 'content': el.text, 'media': media})
+                elif el.tag == 'link' and el.get('rel') == 'alternate' and atype == 'application/xml':
+                    path = filter(None, href.split('/'))
+                    filename = get_resource_path(*path)
+                    files.append({'atype': atype, 'url': href, 'filename': filename, 'content': el.text, 'media': media})
                 else:
                     remains.append(html.tostring(el))
             else:
