@@ -1263,7 +1263,7 @@
                 <button name="button_start" type="object" string="Continue Production" class="btn-warning" attrs="{'invisible': ['|', ('show_state', '=', True), ('state', 'in', ('done', 'pending', 'ready'))]}"></button>
                 <button name="button_start" type="object" string="Continue Production" attrs="{'invisible': [('state', '!=', 'done')]}"/>
                 <button name="button_scrap" type="object" string="Scrap" attrs="{'invisible': [('state', 'in', ('confirmed', 'cancel'))]}"/>
-                <field name="availability" widget="bullet_state" options="{'classes': {'assigned': 'success', 'waiting': 'danger'}}"/>
+                <field name="availability" widget="bullet_state" options="{'classes': {'assigned': 'success', 'waiting': 'danger'}}" attrs="{'invisible': [('state', 'in', ('progress', 'done'))]}"/>
                 <field name="state" widget="statusbar" statusbar_visible="pending,ready,progress,done"/>
                 <field name="show_state" invisible="1"/>
             </header>
