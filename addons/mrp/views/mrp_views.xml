@@ -1587,6 +1587,7 @@
           name="Traceability: Lots"
           parent="menu_mrp_reporting"
           action="stock.action_production_lot_form"
+          groups="stock.group_production_lot"
           sequence="10"/>
 
     <menuitem id="menu_mrp_production_report"
