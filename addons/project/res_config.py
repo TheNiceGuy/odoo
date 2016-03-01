@@ -26,14 +26,9 @@ class project_configuration(osv.osv_memory):
                  '-This installs the module pad.'),
         'module_rating_project': fields.selection([
             (0, "No customer rating"),
-            (1, "Allow activating customer rating on projects at task")
+            (1, "Track customer satisfaction on tasks")
             ], "Rating on task",
             help="This allows customers to give rating on task"),
-        'module_rating_project_issue': fields.selection([
-            (0, "No customer rating"),
-            (1, 'Allow activating customer rating on projects at issue')
-            ], "Rating on issue",
-            help="This allows customers to give rating on issue"),
         'module_project_issue_sheet': fields.selection([
             (0, "Do not track working hours on issues"),
             (1, "Activate timesheets on issues")

@@ -159,8 +159,8 @@ class RatingMixin(models.AbstractModel):
             rating.write({'rating': rate})
             if hasattr(self, 'message_post'):
                 self.message_post(
-                    body="%s %s <br/><img src='/rating/static/src/img/rating_%s.png' style='width:20px;height:20px'/>"
-                    % (rating.sudo().partner_id.name, _('rated it'), rate),
+                    body="<img src='/rating/static/src/img/rating_%s.png' style='width:20px;height:20px'/>"
+                    % (rate),
                     subtype='mail.mt_comment',
                     author_id=rating.partner_id and rating.partner_id.id or None  # None will set the default author in mail_thread.py
                 )

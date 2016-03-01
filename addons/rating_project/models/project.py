@@ -12,9 +12,9 @@ class ProjectTaskType(models.Model):
         string='Rating Email Template',
         domain=[('model', '=', 'rating.token')],
         help="Select an email template. An email will be sent to the customer when the task reach this step.")
-    auto_validation_kanban_state = fields.Boolean('Auto Kanban state validation', default=False,
+    auto_validation_kanban_state = fields.Boolean('Automatic kanban status', default=False,
         help="Automatically modify the kanban state when the customer reply to the feedback for this stage.\n"
-            " * A great feedback from the customer will update the kanban state to 'ready for the new stage' (green bullet).\n"
+            " * A good feedback from the customer will update the kanban state to 'ready for the new stage' (green bullet).\n"
             " * A medium or a bad feedback will set the kanban state to 'blocked' (red bullet).\n")
 
 class Task(models.Model):
@@ -75,11 +75,12 @@ class Project(models.Model):
     percentage_satisfaction_project = fields.Integer(
         compute="_compute_percentage_satisfaction_project", string="% Happy", store=True, default=-1)
     rating_request_deadline = fields.Datetime(compute='_compute_rating_request_deadline', store=True)
-    rating_status = fields.Selection([('stage', 'Rating on Stage'), ('periodic', 'Periodical Rating')], 'Customer Ratings', help="How to send rating mail?:\n"
-                    "- Rating on stage : Rating mail will be sent when a stage of a task/issue is changed\n"
-                    "- Periodical Rating: Rating mail will be sent periodically on a task/issue")
+    rating_status = fields.Selection([('stage', 'Rating on Stage'), ('periodic', 'Periodical Rating')], 'Customer(s) Ratings', help="How to get the customer's feedbacks?\n"
+                    "- Rating on stage : Email wiil be sent when a task/issue is pulled in another stage\n"
+                    "- Periodical Rating: Email will be sent periodically\n\n"
+                    "Don't forget to set up the mail templates on the stages for which you want to get the customer's feedbacks.")
     rating_status_period = fields.Selection([
-            ('daily', 'Every Day'), ('weekly', 'Every Week'), ('bimonthly', 'Twice a Month'),
+            ('daily', 'Daily'), ('weekly', 'Weekly'), ('bimonthly', 'Twice a Month'),
             ('monthly', 'Once a Month'), ('quarterly', 'Quarterly'), ('yearly', 'Yearly')
         ], 'Rating Frequency')
 

@@ -25,7 +25,7 @@
             <xpath expr="//div[contains(@class, 'o_kanban_card_manage_section')]" position="inside">
                 <div t-if="record.rating_status.raw_value">
                     <a name="action_view_all_rating" type="object">
-                        Customer Ratings
+                        Customers Ratings
                     </a>
                 </div>
             </xpath>
