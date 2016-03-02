@@ -131,13 +131,15 @@ class RatingMixin(models.AbstractModel):
             template.send_mail(token.id, force_send=True)
 
     @api.multi
-    def rating_apply(self, rate, token=None):
+    def rating_apply(self, rate, token=None, feedback=None):
         """ Apply a rating given a token. If the current model inherits from
         mail.thread mixing, a message is posted on its chatter.
 
         :param rate : the rating value to apply
         :type rate : float
         :param token : access token
+        :param feedback : additional feedback
+        :type feedback : string
         :returns rating.rating record
         """
         Rating, rating = self.env['rating.rating'], None
@@ -156,11 +158,11 @@ class RatingMixin(models.AbstractModel):
         else:
             rating = Rating.search([('res_model', '=', self._name), ('res_id', '=', self.ids[0])], limit=1)
         if rating:
-            rating.write({'rating': rate})
+            rating.write({'rating': rate, 'feedback': feedback})
             if hasattr(self, 'message_post'):
                 self.message_post(
-                    body="<img src='/rating/static/src/img/rating_%s.png' style='width:20px;height:20px'/>"
-                    % (rate),
+                    body="%s<img src='/rating/static/src/img/rating_%s.png' style='width:20px;height:20px'/>"
+                    % (feedback + '<br/>' if feedback else '', rate),
                     subtype='mail.mt_comment',
                     author_id=rating.partner_id and rating.partner_id.id or None  # None will set the default author in mail_thread.py
                 )
