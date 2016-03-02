@@ -350,7 +350,7 @@ class MrpProduction(models.Model):
         for production in self:
             production._make_production_produce_line()
             factor = self.product_uom_id._compute_qty(production.product_qty, production.bom_id.product_uom_id.id)
-            production.bom_id.explode(production.product_id, factor / production.bom_id.product_qty, self._generate_move)
+            production.bom_id.explode(production.product_id, factor, self._generate_move)
             production.move_raw_ids.action_confirm()
         return True
 
@@ -654,6 +654,7 @@ class MrpUnbuild(models.Model):
     mo_id = fields.Many2one('mrp.production', string='Manufacturing Order', states={'done': [('readonly', True)]})
     lot_id = fields.Many2one('stock.production.lot', 'Lot', domain="[('product_id','=', product_id)]", states={'done': [('readonly', True)]})
     location_id = fields.Many2one('stock.location', 'Location', required=True, default=_src_id_default, states={'done': [('readonly', True)]})
+    consume_line_ids = fields.One2many('stock.move', 'raw_material_unbuild_id', readonly=True)
     produce_line_ids = fields.One2many('stock.move', 'unbuild_id', readonly=True)
     state = fields.Selection([('draft', 'Draft'), ('done', 'Done')], default='draft', index=True)
     location_dest_id = fields.Many2one('stock.location', string='Destination Location', required=True, default=_dest_id_default, states={'done': [('readonly', True)]})
@@ -675,7 +676,7 @@ class MrpUnbuild(models.Model):
         # get components and work_order_ids from BoM structure
         factor = self.product_uom_id._compute_qty(self.product_qty, bom_point.product_uom_id.id)
         # product_line_ids, work_order_ids
-        return bom_point.explode(self.product_id, factor / bom_point.product_qty)
+        return bom_point.explode_data(self.product_id, factor / bom_point.product_qty)
 
     def generate_move_line(self):
         stock_moves = self.env['stock.move']
@@ -694,9 +695,7 @@ class MrpUnbuild(models.Model):
                     'origin': order.name,
                 }
                 stock_moves = stock_moves | self.env['stock.move'].create(vals)
-            if stock_moves:
-                self.produce_line_ids = stock_moves
-                stock_moves.action_confirm()
+            stock_moves.action_confirm()
 
     @api.model
     def create(self, vals):
@@ -717,10 +716,12 @@ class MrpUnbuild(models.Model):
             'restrict_lot_id': self.lot_id.id,
             'location_id': self.location_id.id,
             'location_dest_id': self.product_id.property_stock_production.id,
-            'unbuild_id': self.id,
+            'raw_material_unbuild_id': self.id,
             'origin': self.name
         }
-        self.env['stock.move'].create(data).action_confirm()
+        rec = self.env['stock.move'].create(data).action_confirm()
+        return rec
+
 
     @api.onchange('mo_id')
     def onchange_mo_id(self):
@@ -736,12 +737,16 @@ class MrpUnbuild(models.Model):
 
     @api.multi
     def button_unbuild(self):
+        self.consume_line_ids.action_assign()
+        # TODO : Need to assign quants which consumed at build product.
+        self.produce_line_ids.action_assign()
+        self.consume_line_ids.action_done()
         self.produce_line_ids.action_done()
         self.write({'state': 'done'})
 
     @api.multi
     def button_open_move(self):
-        stock_moves = self.env['stock.move'].search([('origin', '=', self.name)])
+        stock_moves = self.env['stock.move'].search(['|', ('unbuild_id', '=', self.id), ('raw_material_unbuild_id', '=', self.id)])
         return {
             'name': _('Stock Moves'),
             'view_type': 'form',
