@@ -90,6 +90,66 @@ class MrpBom(models.Model):
                 bom.explode(bom_line.product_id, qty2, method=method, method_wo=method_wo, done=done)
         return True
 
+    def _prepare_wc_line(self, wc_use, level=0, factor=1):
+        wc = wc_use.workcenter_id
+        d, m = divmod(factor, wc_use.workcenter_id.capacity)
+        mult = (d + (m and 1.0 or 0.0))
+        return {
+            'name': ("%s-  %s") % (wc_use.name, self.product_tmpl_id.display_name),
+            'workcenter_id': wc.id,
+            'sequence': level + (wc_use.sequence or 0),
+            'operation_id': wc_use.id,
+            'hour': float((wc_use.time_cycle or 0.0) * (wc.time_efficiency or 1.0)), #+ cycle * (wc.time_cycle or 0.0)) * (wc.time_efficiency or 1.0)),
+        }
+
+    def _prepare_consume_line(self, bom_line, quantity):
+        return {
+            'name': bom_line.product_id.name,
+            'product_id': bom_line.product_id.id,
+            'product_uom_qty': quantity,
+            'product_uom_id': bom_line.product_uom_id.id,
+            'operation_id': bom_line.operation_id.id,
+        }
+
+    def explode_data(self, product, factor, level=0, routing_id=False, previous_products=None, master_bom=None):
+        """ Finds Products and Work Centers for related BoM for manufacturing order.
+        :param product: Select a particular variant of the BoM. If False use BoM without variants.
+        :param factor: Factor represents the quantity, but in UoM of the BoM, taking into account the numbers produced by the BoM
+        :param properties: A List of properties.
+        :param level: Depth level to find BoM lines starts from 10.
+        :param previous_products: List of product previously use by bom explore to avoid recursion
+        :param master_bom: When recursion, used to display the name of the master bom
+        :return: result: List of dictionaries containing product details.
+                 result2: List of dictionaries containing Work Center details.
+        """
+        master_bom = master_bom or self
+        factor =  self.product_uom_id._compute_qty(self.product_qty, master_bom.product_uom_id.id)
+        result = []
+        result2 = []
+        routing = (routing_id and self.env['mrp.routing'].browse(routing_id)) or self.routing_id or False
+        if routing:
+            for wc_use in routing.work_order_ids:
+                result2.append(self._prepare_wc_line(wc_use, level=level, factor=factor))
+        for bom_line in self.bom_line_ids:
+            if bom_line._skip_bom_line(product):
+                continue
+            if previous_products and bom_line.product_id.product_tmpl_id.id in previous_products:
+                raise UserError(_('BoM "%s" contains a BoM line with a product recursion: "%s".') % (master_bom.name, bom_line.product_id.display_name))
+
+            quantity = bom_line.product_uom_id._compute_qty(master_bom.product_qty * bom_line.product_qty, bom_line.product_uom_id.id)
+            bom = self._bom_find(product=bom_line.product_id)
+            # If BoM should not behave like kit, just add the product, otherwise explode further
+            if not bom or bom.bom_type != "phantom":
+                result.append(self._prepare_consume_line(bom_line, quantity))
+            else:
+                all_product = [self.product_tmpl_id.id] + (previous_products or [])
+                # We need to convert to units/UoM of chosen BoM
+                quantity2 = bom_line.product_uom_id._compute_qty(quantity / self.product_qty * bom_line.product_qty, bom.product_uom_id.id)
+                res = bom.explode_data(bom_line.product_id, quantity2, level=level + 10, previous_products=all_product, master_bom=master_bom)
+                result = result + res[0]
+                result2 = result2 + res[1]
+        return result, result2
+
     @api.multi
     def copy_data(self, default=None):
         if default is None:
