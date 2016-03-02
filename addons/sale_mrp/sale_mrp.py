@@ -27,6 +27,7 @@ class MrpProduction(models.Model):
 class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'
 
+
     @api.multi
     def _get_delivered_qty(self):
         self.ensure_one()
@@ -40,8 +41,9 @@ class SaleOrderLine(models.Model):
             if bom.bom_type != 'phantom':
                 continue
             bom_delivered[bom.id] = False
-            bom_exploded = bom.explode(self.product_id.product_tmpl_id, self.product_uom_qty)[0]
-            for bom_line in bom_exploded:
+            result = []
+            bom.explode(self.product_id, self.product_uom_qty, method=bom._prepare_consume_line, result=result)
+            for bom_line in result:
                 qty = 0.0
                 for move in self.procurement_ids.mapped('move_ids'):
                     if move.state == 'done' and move.product_id.id == bom_line.get('product_id', False):

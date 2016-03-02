@@ -109,7 +109,7 @@ class mrp_production_workcenter_line(osv.osv):
             if flag:
                 button_produce_done = True
                 for production in prod_obj_pool.browse(cr, uid, [prod_obj.id], context= None):
-                    if production.move_line_ids or production.move_created_ids:
+                    if production.move_raw_ids or production.move_finished_ids:
                         prod_obj_pool.action_produce(cr, uid, production.id, production.product_qty, context = None)
                 prod_obj_pool.signal_workflow(cr, uid, [oper_obj.production_id.id], 'button_produce_done')
         return
@@ -272,7 +272,7 @@ class mrp_production(osv.osv):
         for po in self.browse(cr, uid, ids, context=context):
             if po.allow_reorder:
                 continue
-            todo = list(po.move_lines)
+            todo = list(po.move_raw_ids)
             dt = datetime.strptime(po.date_start,'%Y-%m-%d %H:%M:%S')
             while todo:
                 l = todo.pop(0)
@@ -301,7 +301,7 @@ class mrp_production(osv.osv):
         for po in self.browse(cr, uid, ids, context=context):
             if po.allow_reorder:
                 continue
-            for line in po.move_created_ids:
+            for line in po.move_finished_ids:
                 l = line
                 while l.move_dest_id:
                     l = l.move_dest_id
