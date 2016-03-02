@@ -24,6 +24,10 @@ class ProjectIssue(models.Model):
                 if partner and rated_partner:
                     issue.rating_send_request(rating_template, partner, rated_partner, False)
 
+    @api.multi
+    def rating_apply(self, rate, token=None, feedback=None, subtype=None):
+        return super(ProjectIssue, self).rating_apply(rate, token=token, feedback=feedback, subtype="rating_project_issue.mt_issue_rating")
+
 
 class Project(models.Model):
 

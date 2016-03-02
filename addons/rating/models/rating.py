@@ -131,7 +131,7 @@ class RatingMixin(models.AbstractModel):
             template.send_mail(token.id, force_send=True)
 
     @api.multi
-    def rating_apply(self, rate, token=None, feedback=None):
+    def rating_apply(self, rate, token=None, feedback=None, subtype=None):
         """ Apply a rating given a token. If the current model inherits from
         mail.thread mixing, a message is posted on its chatter.
 
@@ -140,6 +140,8 @@ class RatingMixin(models.AbstractModel):
         :param token : access token
         :param feedback : additional feedback
         :type feedback : string
+        :param subtype : subtype for mail
+        :type subtype : string
         :returns rating.rating record
         """
         Rating, rating = self.env['rating.rating'], None
@@ -161,9 +163,9 @@ class RatingMixin(models.AbstractModel):
             rating.write({'rating': rate, 'feedback': feedback})
             if hasattr(self, 'message_post'):
                 self.message_post(
-                    body="%s<img src='/rating/static/src/img/rating_%s.png' style='width:20px;height:20px'/>"
-                    % (feedback + '<br/>' if feedback else '', rate),
-                    subtype='mail.mt_comment',
+                    body="<img src='/rating/static/src/img/rating_%s.png' style='width:20px;height:20px'/>%s"
+                    % (rate, '<br/>' + feedback if feedback else ''),
+                    subtype=subtype or "mail.mt_comment",
                     author_id=rating.partner_id and rating.partner_id.id or None  # None will set the default author in mail_thread.py
                 )
             if hasattr(self, 'stage_id') and self.stage_id and hasattr(self.stage_id, 'auto_validation_kanban_state') and self.stage_id.auto_validation_kanban_state:

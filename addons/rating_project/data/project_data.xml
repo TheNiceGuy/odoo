@@ -2,6 +2,21 @@
 <openerp>
     <data>
 
+        <record id="mt_task_rating" model="mail.message.subtype">
+            <field name="name">Task Rating</field>
+            <field name="res_model">project.task</field>
+            <field name="default" eval="True"/>
+            <field name="description">Ratings</field>
+        </record>
+
+        <record id="mt_project_task_rating" model="mail.message.subtype">
+            <field name="name">Task Rating</field>
+            <field name="sequence">14</field>
+            <field name="res_model">project.project</field>
+            <field name="default" eval="True"/>
+            <field name="parent_id" eval="ref('mt_task_rating')"/>
+            <field name="relation_field">project_id</field>
+        </record>
 
         <record id="rating_project_request_email_template" model="mail.template">
             <field name="name">Rating Project Request</field>

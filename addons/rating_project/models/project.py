@@ -41,6 +41,9 @@ class Task(models.Model):
     def _get_partner_to_send_rating_mail(self, task):
         return task.partner_id or task.project_id.partner_id or None
 
+    @api.multi
+    def rating_apply(self, rate, token=None, feedback=None, subtype=None):
+        return super(Task, self).rating_apply(rate, token=token, feedback=feedback, subtype="rating_project.mt_task_rating")
 
 class Project(models.Model):
 
@@ -76,7 +79,7 @@ class Project(models.Model):
         compute="_compute_percentage_satisfaction_project", string="% Happy", store=True, default=-1)
     rating_request_deadline = fields.Datetime(compute='_compute_rating_request_deadline', store=True)
     rating_status = fields.Selection([('stage', 'Rating on Stage'), ('periodic', 'Periodical Rating')], 'Customer(s) Ratings', help="How to get the customer's feedbacks?\n"
-                    "- Rating on stage : Email wiil be sent when a task/issue is pulled in another stage\n"
+                    "- Rating on stage: Email will be sent when a task/issue is pulled in another stage\n"
                     "- Periodical Rating: Email will be sent periodically\n\n"
                     "Don't forget to set up the mail templates on the stages for which you want to get the customer's feedbacks.")
     rating_status_period = fields.Selection([
