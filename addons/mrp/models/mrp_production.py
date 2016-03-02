@@ -314,7 +314,7 @@ class MrpProduction(models.Model):
             move.write({'product_uom_qty': quantity})
             return move
         else:
-            self._generatre_move(bom_line, quantity)
+            self._generate_move(bom_line, quantity)
 
     @api.multi
     def _generate_move(self, bom_line, quantity):
@@ -514,17 +514,18 @@ class MrpProductionWorkcenterLine(models.Model):
         # If last work order, then post lots used
         #TODO: should be same as checking if for every workorder something has been done?
         if not self.next_work_order_id:
-            production_move = self.production_id.move_finished_ids.filtered(lambda x: (x.product_id.id == self.production_id.product_id.id) and (x.state not in ('done', 'cancel')))[0]
-            if production_move.product_id.tracking != 'none':
-                move_lot = production_move.quantity_lots.filtered(lambda x: x.lot_id.id == self.final_lot_id.id)
-                if move_lot:
-                    move_lot.quantity += self.qty_producing
+            production_move = self.production_id.move_finished_ids.filtered(lambda x: (x.product_id.id == self.production_id.product_id.id) and (x.state not in ('done', 'cancel')))
+            for move in production_move:
+                if move.product_id.tracking != 'none':
+                    move_lot = move.quantity_lots.filtered(lambda x: x.lot_id.id == self.final_lot_id.id)
+                    if move_lot:
+                        move_lot.quantity += self.qty_producing
+                    else:
+                        move_lot.create({'move_id': move.id,
+                                         'lot_id': self.final_lot_id.id,
+                                         'quantity': self.qty_producing, })
                 else:
-                    move_lot.create({'move_id': production_move.id,
-                                     'lot_id': self.final_lot_id.id, 
-                                     'quantity': self.qty_producing, })
-            else:
-                production_move.product_uom_qty += self.qty_producing #TODO: UoM conversion?
+                    move.product_uom_qty += self.qty_producing #TODO: UoM conversion?
         # Update workorder quantity produced
         self.qty_produced += self.qty_producing
         self.qty_producing = 1.0
