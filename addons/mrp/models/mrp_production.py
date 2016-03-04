@@ -359,8 +359,11 @@ class MrpProduction(models.Model):
 
     @api.multi
     def action_assign(self):
+        lots = self.env['stock.move.lots']
         for production in self:
-            production.move_raw_ids.action_assign()
+            move_to_assign = production.move_raw_ids.filtered(lambda x: x.state in ('confirmed', 'waiting', 'assigned'))
+            move_to_assign.action_assign()
+            move_to_assign.create_lots()
         return True
 
     @api.multi
@@ -767,9 +770,8 @@ class MrpUnbuild(models.Model):
     def _get_consumed_quants(self):
         self.ensure_one()
         quants = self.env['stock.quant']
-        for move in self.consume_line_ids:
-            for quant in move.reserved_quant_ids:
-                quants = quants | quant.consumed_quant_ids
+        for quant in move.consume_line_id.reserved_quant_ids:
+            quants = quants | quant.consumed_quant_ids
         return quants
 
     #TODO: need quants defined here
