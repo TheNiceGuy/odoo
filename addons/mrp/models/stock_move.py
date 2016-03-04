@@ -129,7 +129,7 @@ class StockMove(models.Model):
             quant_obj.quants_unreserve(move)
             move.write({'state': 'done', 'date': time.strftime(DEFAULT_SERVER_DATETIME_FORMAT)})
             #Next move in production order
-            if move.move_dest_id: 
+            if move.move_dest_id:
                 move.move_dest_id.action_assign()
         return moves_todo
 
@@ -165,6 +165,85 @@ class StockMove(models.Model):
     @api.multi
     def dummy(self):
         return True
+
+    def _action_explode(self):
+        """ Explodes pickings.
+        :return: True
+        """
+        ProductProduct = self.env['product.product']
+        ProcurementOrder = self.env['procurement.order']
+        to_explode_again_ids = self - self
+        bom_point = self.env['mrp.bom'].sudo()._bom_find(product=self.product_id)
+        if bom_point and bom_point.bom_type == 'phantom':
+            processed_ids = self - self
+            factor = self.product_uom.sudo()._compute_qty(self.product_uom_qty, bom_point.product_uom_id.id) / bom_point.product_qty
+            res = bom_point.sudo().explode_data(self.product_id, factor)
+            for line in res[0]:
+                product = ProductProduct.browse(line['product_id'])
+                if product.type in ['product', 'consu']:
+                    valdef = {
+                        'picking_id': self.picking_id.id if self.picking_id else False,
+                        'product_id': line['product_id'],
+                        'product_uom': line['product_uom_id'],
+                        'product_uom_qty': line['product_uom_qty'],
+                        'state': 'draft',  # will be confirmed below
+                        'name': line['name'],
+                        'procurement_id': self.procurement_id.id,
+                        'split_from': self.id,  # Needed in order to keep sale connection, but will be removed by unlink
+                    }
+                    mid = self.copy(default=valdef)
+                    to_explode_again_ids = to_explode_again_ids | mid
+                else:
+                    if product.type in ('consu', 'product'):
+                        valdef = {
+                            'name': self.rule_id and self.rule_id.name or "/",
+                            'origin': self.origin,
+                            'company_id': self.company_id and self.company_id.id or False,
+                            'date_planned': self.date,
+                            'product_id': line['product_id'],
+                            'product_qty': line['product_uom_qty'],
+                            'product_uom_id': line['product_uom_id'],
+                            'group_id': self.group_id.id,
+                            'priority': self.priority,
+                            'partner_dest_id': self.partner_id.id,
+                        }
+                        if self.procurement_id:
+                            procurement = self.procurement_id.copy(default=valdef)
+                        else:
+                            procurement = ProcurementOrder.create(valdef)
+                        procurement.run()  # could be omitted
+            # check if new moves needs to be exploded
+            if to_explode_again_ids:
+                for new_move in to_explode_again_ids:
+                    processed_ids = processed_ids | new_move._action_explode()
+
+            if not self.split_from and self.procurement_id:
+                # Check if procurements have been made to wait for
+                moves = self.procurement_id.move_ids
+                if len(moves) == 1:
+                    self.procurement_id.write({'state': 'done'})
+            if processed_ids and self.state == 'assigned':
+                # Set the state of resulting moves according to 'assigned' as the original move is assigned
+                processed_ids.write({'state': 'assigned'})
+            # delete the move with original product which is not relevant anymore
+            self.sudo().unlink()
+            # return list of newly created move
+            return processed_ids
+        return self
+
+    @api.multi
+    def action_confirm(self):
+        moves = self - self
+        for move in self:
+            # in order to explode a move, we must have a picking_type_id on that move because otherwise the move
+            # won't be assigned to a picking and it would be weird to explode a move into several if they aren't
+            # all grouped in the same picking.
+            if move.picking_type_id:
+                moves = moves | move._action_explode()
+            else:
+                moves = moves | move
+        # we go further with the list of ids potentially changed by action_explode
+        return super(StockMove, moves).action_confirm()
 
 
 class StockQuant(models.Model):

@@ -71,7 +71,6 @@ class MrpBom(models.Model):
         self.ensure_one()
         if method_wo and self.routing_id: method_wo(self, quantity)
         done = done or []
-        
         for bom_line in self.bom_line_ids:
             if bom_line._skip_bom_line(product):
                 continue
@@ -137,7 +136,7 @@ class MrpBom(models.Model):
                 raise UserError(_('BoM "%s" contains a BoM line with a product recursion: "%s".') % (master_bom.name, bom_line.product_id.display_name))
 
             quantity = bom_line.product_uom_id._compute_qty(master_bom.product_qty * bom_line.product_qty, bom_line.product_uom_id.id)
-            bom = self._bom_find(product=bom_line.product_id)
+            bom = self._bom_find(product=product)
             # If BoM should not behave like kit, just add the product, otherwise explode further
             if not bom or bom.bom_type != "phantom":
                 result.append(self._prepare_consume_line(bom_line, quantity))
