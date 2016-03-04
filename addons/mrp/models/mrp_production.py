@@ -356,8 +356,11 @@ class MrpProduction(models.Model):
 
     @api.multi
     def action_assign(self):
+        lots = self.env['stock.move.lots']
         for production in self:
-            production.move_raw_ids.action_assign()
+            move_to_assign = production.move_raw_ids.filtered(lambda x: x.state in ('confirmed', 'waiting', 'assigned'))
+            move_to_assign.action_assign()
+            move_to_assign.create_lots()
         return True
 
     @api.multi
