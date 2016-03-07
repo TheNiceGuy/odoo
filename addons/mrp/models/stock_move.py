@@ -233,7 +233,7 @@ class StockMove(models.Model):
 
     @api.multi
     def action_confirm(self):
-        moves = self - self
+        moves = self.env['stock.move']
         for move in self:
             # in order to explode a move, we must have a picking_type_id on that move because otherwise the move
             # won't be assigned to a picking and it would be weird to explode a move into several if they aren't
