@@ -349,7 +349,7 @@ class MrpProduction(models.Model):
     def _generate_moves(self):
         for production in self:
             production._make_production_produce_line()
-            factor = self.product_uom_id._compute_qty(production.product_qty, production.bom_id.product_uom_id.id)
+            factor = (production.product_qty) * production.product_uom_id.factor / production.bom_id.product_uom_id.factor
             production.bom_id.explode(production.product_id, factor, self._generate_move)
             production.move_raw_ids.action_confirm()
         return True
