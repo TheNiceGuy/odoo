@@ -366,7 +366,6 @@ class TestSaleMrpFlow(common.TransactionCase):
         self.assertEqual(self.so.invoice_status, 'no', 'Sale MRP: so invoice_status should be "no" after partial delivery of a kit')
         del_qty = sum(sol.qty_delivered for sol in self.so.order_line)
         self.assertEqual(del_qty, 0.0, 'Sale MRP: delivered quantity should be zero after partial delivery of a kit')
-
         # deliver remaining products, check the so's invoice_status and delivered quantities
         self.assertEqual(len(self.so.picking_ids), 2, 'Sale MRP: number of pickings should be 2')
         pick_2 = self.so.picking_ids[0]

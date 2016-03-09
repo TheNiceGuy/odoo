@@ -307,7 +307,7 @@ class MrpProduction(models.Model):
         return True
 
     @api.multi
-    def _update_move(self, bom_line, quantity):
+    def _update_move(self, bom_line, quantity, result=None):
         self.ensure_one()
         move = self.move_raw_ids.filtered(lambda x:x.bom_line_id.id == bom_line.id and x.state not in ('done', 'cancel'))
         if move:
@@ -317,7 +317,7 @@ class MrpProduction(models.Model):
             self._generate_move(bom_line, quantity)
 
     @api.multi
-    def _generate_move(self, bom_line, quantity):
+    def _generate_move(self, bom_line, quantity, result=None):
         self.ensure_one()
         if bom_line.product_id.type not in ['product', 'consu']:
             return False
@@ -337,7 +337,6 @@ class MrpProduction(models.Model):
             'raw_material_production_id': self.id,
             'company_id': self.company_id.id,
             'operation_id': bom_line.operation_id.id,
-            'procure_method': bom_line.procure_method,
             'price_unit': bom_line.product_id.standard_price,
             'origin': self.name,
             'warehouse_id': source_location.get_warehouse(),
@@ -349,8 +348,8 @@ class MrpProduction(models.Model):
     def _generate_moves(self):
         for production in self:
             production._make_production_produce_line()
-            factor = (production.product_qty) * production.product_uom_id.factor / production.bom_id.product_uom_id.factor
-            production.bom_id.explode(production.product_id, factor, self._generate_move)
+            factor = self.product_uom_id._compute_qty(production.product_qty, production.bom_id.product_uom_id.id)
+            production.bom_id.explode(production.product_id, factor / production.bom_id.product_qty, self._generate_move)
             production.move_raw_ids.action_confirm()
         return True
 
@@ -654,7 +653,7 @@ class MrpUnbuild(models.Model):
     mo_id = fields.Many2one('mrp.production', string='Manufacturing Order', states={'done': [('readonly', True)]})
     lot_id = fields.Many2one('stock.production.lot', 'Lot', domain="[('product_id','=', product_id)]", states={'done': [('readonly', True)]})
     location_id = fields.Many2one('stock.location', 'Location', required=True, default=_src_id_default, states={'done': [('readonly', True)]})
-    consume_line_ids = fields.One2many('stock.move', 'raw_material_unbuild_id', readonly=True)
+    consume_line_id = fields.Many2one('stock.move', readonly=True)
     produce_line_ids = fields.One2many('stock.move', 'unbuild_id', readonly=True)
     state = fields.Selection([('draft', 'Draft'), ('done', 'Done')], default='draft', index=True)
     location_dest_id = fields.Many2one('stock.location', string='Destination Location', required=True, default=_dest_id_default, states={'done': [('readonly', True)]})
@@ -680,8 +679,9 @@ class MrpUnbuild(models.Model):
         for unbuild in self:
             bom = unbuild._get_bom()
             factor = unbuild.product_uom_id._compute_qty(unbuild.product_qty, bom.product_uom_id.id)
-            bom.explode(unbuild.product_id, factor, self._generate_move)
-            unbuild.consume_line_ids.action_confirm()
+            bom.explode(unbuild.product_id, factor / bom.product_qty, self._generate_move)
+production.bom_id.explode(production.product_id, factor / production.bom_id.product_qty, self._generate_move)
+            unbuild.consume_line_id.action_confirm()
         return True
 
     @api.model
@@ -690,7 +690,7 @@ class MrpUnbuild(models.Model):
             vals['name'] = self.env['ir.sequence'].next_by_code('mrp.unbuild') or 'New'
         unbuild = super(MrpUnbuild, self).create(vals)
         unbuild._make_unbuild_consume_line()
-        unbuild.consume_line_ids.action_assign()
+        unbuild.consume_line_id.action_assign()
         unbuild._generate_moves()
         return unbuild
 
@@ -711,7 +711,7 @@ class MrpUnbuild(models.Model):
         return rec
 
     @api.multi
-    def _generate_move(self, bom_line, quantity):
+    def _generate_move(self, bom_line, quantity, result=None):
         self.ensure_one()
         data = {
             'name': self.name,
@@ -720,6 +720,7 @@ class MrpUnbuild(models.Model):
             'product_id': bom_line.product_id.id,
             'product_uom_qty': quantity,
             'product_uom': bom_line.product_uom_id.id,
+            'procure_method': 'make_to_stock',
             'location_dest_id': self.location_dest_id.id,
             'location_id': self.product_id.property_stock_production.id,
             'unbuild_id': self.id,
@@ -741,10 +742,10 @@ class MrpUnbuild(models.Model):
 
     @api.multi
     def button_unbuild(self):
-        self.consume_line_ids.action_assign()
+        self.consume_line_id.action_assign()
         # TODO : Need to assign quants which consumed at build product.
         self.quant_move_rel()
-        self.consume_line_ids.action_done()
+        self.consume_line_id.action_done()
         self.write({'state': 'done'})
 
 
@@ -817,4 +818,3 @@ class InventoryMessage(models.Model):
     def onchange_product_id(self):
         if self.product_id:
             self.bom_id = self.env['mrp.bom']._bom_find(product=self.product_id)
-

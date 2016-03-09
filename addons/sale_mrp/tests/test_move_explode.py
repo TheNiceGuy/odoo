@@ -22,7 +22,6 @@ class TestMoveExplode(common.TransactionCase):
         self.partner = self.env.ref('base.res_partner_1')
         #bom: PC Assemble (with property: DDR 512MB)
 #         self.bom_prop = self.env.ref('mrp.mrp_bom_property_0')
-
         self.template = self.env.ref('product.product_product_3_product_template')
         #product: RAM SR2
         self.product_bom_prop = self.env.ref('product.product_product_14')
@@ -59,9 +58,8 @@ class TestMoveExplode(common.TransactionCase):
         self.so.action_confirm()
         #get all move associated to that sale_order
         move_ids = self.so.picking_ids.mapped('move_lines').ids
-        #we should have same amount of move as the component in the phatom bom
-        bom_component_length = self.bom.explode_data(self.product_bom, 1)
-        self.assertEqual(len(move_ids), len(bom_component_length[0]))
+        # We should have same amount of move as the component in the phatom bom
+        self.assertEqual(len(move_ids), 5)
 
     # def test_00_bom_find(self):
     #     """Check that _bom_find searches the bom corresponding to the properties passed or takes the bom with the smallest

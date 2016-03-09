@@ -133,57 +133,36 @@ class StockMove(models.Model):
     def dummy(self):
         return True
 
+    def _generate_move_phantom(self, bom_line, quantity, result=None):
+        product = bom_line.product_id
+        if product.type in ['product', 'consu']:
+            valdef = {
+                'picking_id': self.picking_id.id if self.picking_id else False,
+                'product_id': bom_line.product_id.id,
+                'product_uom': bom_line.product_uom_id.id,
+                'product_uom_qty': quantity,
+                'state': 'draft',  # will be confirmed below
+                'name': self.name,
+                'procurement_id': self.procurement_id.id,
+                'split_from': self.id,  # Needed in order to keep sale connection, but will be removed by unlink
+            }
+            mid = self.copy(default=valdef)
+
     def _action_explode(self):
         """ Explodes pickings.
         :return: True
         """
         ProductProduct = self.env['product.product']
-        ProcurementOrder = self.env['procurement.order']
         to_explode_again_ids = self - self
         bom_point = self.env['mrp.bom'].sudo()._bom_find(product=self.product_id)
         if bom_point and bom_point.bom_type == 'phantom':
             processed_ids = self - self
             factor = self.product_uom.sudo()._compute_qty(self.product_uom_qty, bom_point.product_uom_id.id) / bom_point.product_qty
-            res = bom_point.sudo().explode_data(self.product_id, factor)
-            for line in res[0]:
-                product = ProductProduct.browse(line['product_id'])
-                if product.type in ['product', 'consu']:
-                    valdef = {
-                        'picking_id': self.picking_id.id if self.picking_id else False,
-                        'product_id': line['product_id'],
-                        'product_uom': line['product_uom_id'],
-                        'product_uom_qty': line['product_uom_qty'],
-                        'state': 'draft',  # will be confirmed below
-                        'name': line['name'],
-                        'procurement_id': self.procurement_id.id,
-                        'split_from': self.id,  # Needed in order to keep sale connection, but will be removed by unlink
-                    }
-                    mid = self.copy(default=valdef)
-                    to_explode_again_ids = to_explode_again_ids | mid
-                else:
-                    if product.type in ('consu', 'product'):
-                        valdef = {
-                            'name': self.rule_id and self.rule_id.name or "/",
-                            'origin': self.origin,
-                            'company_id': self.company_id and self.company_id.id or False,
-                            'date_planned': self.date,
-                            'product_id': line['product_id'],
-                            'product_qty': line['product_uom_qty'],
-                            'product_uom_id': line['product_uom_id'],
-                            'group_id': self.group_id.id,
-                            'priority': self.priority,
-                            'partner_dest_id': self.partner_id.id,
-                        }
-                        if self.procurement_id:
-                            procurement = self.procurement_id.copy(default=valdef)
-                        else:
-                            procurement = ProcurementOrder.create(valdef)
-                        procurement.run()  # could be omitted
-            # check if new moves needs to be exploded
+            bom_point.sudo().explode(self.product_id, factor, self._generate_move_phantom)
+            to_explode_again_ids = self.search([('split_from', '=', self.id)])
             if to_explode_again_ids:
                 for new_move in to_explode_again_ids:
                     processed_ids = processed_ids | new_move._action_explode()
-
             if not self.split_from and self.procurement_id:
                 # Check if procurements have been made to wait for
                 moves = self.procurement_id.move_ids
