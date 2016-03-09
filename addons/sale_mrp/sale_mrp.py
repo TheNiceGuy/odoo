@@ -37,10 +37,10 @@ class SaleOrderLine(models.Model):
         # delivery was created.
         bom_delivered = {}
         for bom in self.product_id.product_tmpl_id.bom_ids:
-            if bom.type != 'phantom':
+            if bom.bom_type != 'phantom':
                 continue
             bom_delivered[bom.id] = False
-            bom_exploded = self.env['mrp.bom']._bom_explode(bom, self.product_id, self.product_uom_qty)[0]
+            bom_exploded = bom.explode(self.product_id.product_tmpl_id, self.product_uom_qty)[0]
             for bom_line in bom_exploded:
                 qty = 0.0
                 for move in self.procurement_ids.mapped('move_ids'):
