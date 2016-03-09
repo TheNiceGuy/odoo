@@ -338,11 +338,12 @@ class MrpProduction(models.Model):
             'company_id': self.company_id.id,
             'operation_id': bom_line.operation_id.id,
             'price_unit': bom_line.product_id.standard_price,
+            'procure_method': bom_line.procure_method,
             'origin': self.name,
             'warehouse_id': source_location.get_warehouse(),
             'group_id': self.move_prod_id and self.move_prod_id.group_id.id or False,
         }
-        return self.env['stock.move'].create(data)
+        return self.env['stock.move'].create(data).action_confirm()
 
     @api.multi
     def _generate_moves(self):
@@ -350,7 +351,6 @@ class MrpProduction(models.Model):
             production._make_production_produce_line()
             factor = self.product_uom_id._compute_qty(production.product_qty, production.bom_id.product_uom_id.id)
             production.bom_id.explode(production.product_id, factor / production.bom_id.product_qty, self._generate_move)
-            production.move_raw_ids.action_confirm()
         return True
 
     @api.multi
@@ -678,7 +678,6 @@ class MrpUnbuild(models.Model):
             bom = unbuild._get_bom()
             factor = unbuild.product_uom_id._compute_qty(unbuild.product_qty, bom.product_uom_id.id)
             bom.explode(unbuild.product_id, factor / bom.product_qty, self._generate_move)
-production.bom_id.explode(production.product_id, factor / production.bom_id.product_qty, self._generate_move)
             unbuild.consume_line_id.action_confirm()
         return True
 
