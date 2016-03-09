@@ -42,11 +42,12 @@ class TestSaleMrpFlow(common.TransactionCase):
                 'uom_po_id': uom_id,
                 'route_ids': route_ids})
 
-        def create_bom_lines(bom_id, product_id, qty, uom_id):
+        def create_bom_lines(bom_id, product_id, qty, uom_id, procure_method):
             self.MrpBomLine.create({
                 'product_id': product_id,
                 'product_qty': qty,
                 'bom_id': bom_id,
+                'procure_method': procure_method,
                 'product_uom_id': uom_id})
 
         def create_bom(product_tmpl_id, qty, uom_id, bom_type):
@@ -95,17 +96,17 @@ class TestSaleMrpFlow(common.TransactionCase):
 
         # Bill of materials for Product A.
         bom_a = create_bom(product_a.product_tmpl_id.id, 2, self.uom_dozen.id, 'normal')
-        create_bom_lines(bom_a.id, product_b.id, 3, self.uom_unit.id)
-        create_bom_lines(bom_a.id, product_c.id, 300.5, self.uom_gm.id)
-        create_bom_lines(bom_a.id, product_d.id, 4, self.uom_unit.id)
+        create_bom_lines(bom_a.id, product_b.id, 3, self.uom_unit.id, 'make_to_order')
+        create_bom_lines(bom_a.id, product_c.id, 300.5, self.uom_gm.id, 'make_to_stock')
+        create_bom_lines(bom_a.id, product_d.id, 4, self.uom_unit.id, 'make_to_order')
 
         # Bill of materials for Product B.
         bom_b = create_bom(product_b.product_tmpl_id.id, 1, self.uom_unit.id, 'phantom')
-        create_bom_lines(bom_b.id, product_c.id, 0.400, self.uom_kg.id)
+        create_bom_lines(bom_b.id, product_c.id, 0.400, self.uom_kg.id, 'make_to_stock')
 
         # Bill of materials for Product D.
         bom_d = create_bom(product_d.product_tmpl_id.id, 1, self.uom_unit.id, 'normal')
-        create_bom_lines(bom_d.id, product_c.id, 1, self.uom_kg.id)
+        create_bom_lines(bom_d.id, product_c.id, 1, self.uom_kg.id, 'make_to_stock')
 
         # ----------------------------------------
         # Create sale order of 10 Dozen product A.
@@ -235,7 +236,6 @@ class TestSaleMrpFlow(common.TransactionCase):
         # -----------------------------------------------------------------------------
 
         move = self.StockMove.search([('raw_material_production_id', '=', mnf_product_d.id), ('product_id', '=', product_c.id)])
-
         self.assertEqual(move.product_uom_qty, 20, "Wrong product quantity in 'To consume line' of manufacturing order.")
         self.assertEqual(move.product_uom.id, self.uom_kg.id, "Wrong unit of measure in 'To consume line' of manufacturing order.")
         self.assertEqual(move.state, 'confirmed', "Wrong state in 'To consume line' of manufacturing order.")
