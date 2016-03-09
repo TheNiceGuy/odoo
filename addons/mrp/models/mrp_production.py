@@ -514,23 +514,21 @@ class MrpProductionWorkcenterLine(models.Model):
         #TODO: should be same as checking if for every workorder something has been done?
         if not self.next_work_order_id:
             production_move = self.production_id.move_finished_ids.filtered(lambda x: (x.product_id.id == self.production_id.product_id.id) and (x.state not in ('done', 'cancel')))
-            for move in production_move:
-                if move.product_id.tracking != 'none':
-                    move_lot = move.quantity_lots.filtered(lambda x: x.lot_id.id == self.final_lot_id.id)
-                    if move_lot:
-                        move_lot.quantity += self.qty_producing
-                    else:
-                        move_lot.create({'move_id': move.id,
-                                         'lot_id': self.final_lot_id.id,
-                                         'quantity': self.qty_producing, })
+            if production_move.product_id.tracking != 'none':
+                move_lot = production_move.quantity_lots.filtered(lambda x: x.lot_id.id == self.final_lot_id.id)
+                if move_lot:
+                    move_lot.quantity += self.qty_producing
                 else:
-                    move.product_uom_qty += self.qty_producing #TODO: UoM conversion?
+                    move_lot.create({'move_id': production_move.id,
+                                     'lot_id': self.final_lot_id.id,
+                                     'quantity': self.qty_producing, })
+            else:
+                production_move.product_uom_qty += self.qty_producing #TODO: UoM conversion?
         # Update workorder quantity produced
         self.qty_produced += self.qty_producing
         self.qty_producing = 1.0
         self._generate_lot_ids()
         self.final_lot_id = False
-
         if self.qty_produced >= self.qty:
             self.button_finish()
 
