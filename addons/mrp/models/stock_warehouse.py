@@ -20,7 +20,8 @@ class StockWarehouse(models.Model):
             manufacture_route = manufacture_route and manufacture_route[0] or False
         if not manufacture_route:
             raise UserError(_('Can\'t find any generic Manufacture route.'))
-
+        if not self.manu_type_id:
+            self._create_manufacturing_picking_type()
         return {
             'name': self._format_routename(self, _(' Manufacture')),
             'location_id': self.lot_stock_id.id,
