@@ -803,7 +803,7 @@
 
                     <button name="post_inventory" string="Post Inventory" type="object" class="oe_highlight" attrs="{'invisible': [('post_visible', '=', False)]}"/>
                     <button name="button_scrap" type="object" string="Scrap" attrs="{'invisible': [('state', 'in', ('cancel'))]}"/>
-                    <span class="label label-danger" attrs="{'invisible': ['|', ('availability', '=', 'assigned'), ('state', 'not in', ('confirmed','progress'))]}">Raw materials not available!</span>
+                    <span class="label label-danger" attrs="{'invisible': ['|', ('availability', 'in', ('assigned', 'none')), ('state', 'not in', ('confirmed','progress'))]}">Raw materials not available!</span>
                     <field name="state" widget="statusbar" statusbar_visible="confirmed,progress,done" statusbar_colors='{"confirmed":"blue"}'/>
                 </header>
                 <sheet>
@@ -856,7 +856,7 @@
                         <page string="Consumed Materials">
                             <field name="move_raw_ids" options="{'reload_on_button': True}" context="{'default_location_id': location_src_id, 'default_location_dest_id': location_dest_id}">
                                 <tree editable="bottom" delete="0" decoration-danger="quantity_done&gt;product_uom_qty" decoration-success="quantity_done==product_uom_qty">
-                                    <field name="product_id" on_change="product_id_change(product_id, product_uom_id, product_uom_qty)" required="1"/>
+                                    <field name="product_id" on_change="onchange_product_id(product_id, location_id, location_dest_id)" required="1"/>
                                     <field name="product_uom" groups="product.group_uom"/>
                                     <field name="has_tracking" invisible="1"/>
                                     <field name="location_id" domain="[('id', 'child_of', parent.location_id)]" invisible="1"/>
@@ -873,7 +873,7 @@
                         <page string="Finished Products">
                             <field name="move_finished_ids" options="{'reload_on_button': True}" context="{'default_location_id': location_src_id, 'default_location_dest_id': location_dest_id}">
                                 <tree editable="bottom" delete="0" decoration-danger="quantity_done&gt;product_uom_qty" decoration-success="quantity_done==product_uom_qty">
-                                    <field name="product_id" on_change="product_id_change(product_id, product_uom_id, product_uom_qty)" required="1"/>
+                                    <field name="product_id" on_change="onchange_product_id(product_id, location_id, location_dest_id)" required="1"/>
                                     <field name="product_uom" groups="product.group_uom"/>
 
                                     <field name="has_tracking" invisible="1"/>
@@ -1235,7 +1235,7 @@
         <field name="name">mrp.production.work.order.tree</field>
         <field name="model">mrp.production.work.order</field>
         <field name="arch" type="xml">
-            <tree string="Work Orders" delete="0" decoration-success="date_planned_start&gt;=current_date and state == 'ready'" decoration-muted="state in ('done','cancel')" decoration-danger="date_planned_start&lt;current_date and state in ('ready')">
+            <tree string="Work Orders" delete="0" create="0" decoration-success="date_planned_start&gt;=current_date and state == 'ready'" decoration-muted="state in ('done','cancel')" decoration-danger="date_planned_start&lt;current_date and state in ('ready')">
                 <field name="sequence" widget="handle"/>
                 <field name="name"/>
                 <field name="date_planned_start"/>
@@ -1253,7 +1253,7 @@
         <field name="name">mrp.production.work.order.form</field>
         <field name="model">mrp.production.work.order</field>
         <field name="arch" type="xml">
-            <form string="Production Workcenter" delete="0">
+            <form string="Production Workcenter" delete="0" create="0">
             <header>
                 <button name="button_finish" type="object" string="Finish Order" attrs="{'invisible': ['|',('state', '!=', 'progress'), ('qty_produced', '=', 0)]}" class="btn-info"/>
                 <button name="button_start" type="object" string="Start Working" attrs="{'invisible': [('state', '!=', 'pending')]}"/>
