@@ -6,7 +6,6 @@ from openerp import api, models, _
 class MrpProduction(models.Model):
     _inherit = 'mrp.production'
 
-
     @api.multi
     def _generate_moves(self):
         """

@@ -24,7 +24,7 @@ Key Features
 * Multi-level bill of materials, no limit
 * Multi-level routing, no limit
 * Routings and work center integrated with analytic accounting
-* Periodical scheduler computation 
+* Periodical scheduler computation
 * Allows to browse bills of materials in a complete structure that includes child and phantom bills of materials
 
 Dashboard / Reports for MRP will include:

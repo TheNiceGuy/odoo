@@ -13,9 +13,8 @@ class TestOrderProcess(TestOrderDemo):
 
         def assert_equals(value1, value2, msg, float_compare=float_compare):
             assert float_compare(value1, value2, precision_digits=2) == 0, msg
-        
-        #self.assertTrue(len(self.mrp_production_test1.work_order_ids), "Workcenter lines are not generated proper.")
 
+        # self.assertTrue(len(self.mrp_production_test1.work_order_ids), "Workcenter lines are not generated proper.")
 
    # I check details of Produce Move of Production Order to trace Final Product.
 
@@ -43,7 +42,7 @@ class TestOrderProcess(TestOrderDemo):
             if move.product_id.id == self.env.ref("product.product_product_6").id:
                 move.action_scrap(5.0, scrap_location_id)
 
-    #I check procurements have been generated for every consume line
+    # I check procurements have been generated for every consume line
 
         # order = self.env["mrp.production"].browse(self.env.ref("mrp_production_test1"))
         move_line_ids = [x.id for x in self.mrp_production_test1.move_raw_ids]
@@ -63,16 +62,15 @@ class TestOrderProcess(TestOrderDemo):
         ctx = dict(self.env.context)
         ctx.update({'active_id': self.mrp_production_test1.id})
 
-
-        #TODO: fix change production qty
-        #self.mrp_production_qty = self.env['change.production.qty'].with_context(ctx).create({
+        # TODO: fix change production qty
+        # self.mrp_production_qty = self.env['change.production.qty'].with_context(ctx).create({
         #    'product_qty': 3.0
-        #})
+        # })
 
-        #self.mrp_production_qty.change_prod_qty()
+        # self.mrp_production_qty.change_prod_qty()
 
         # I check qty after changed in production order.
-        #self.assertEqual(self.mrp_production_test1.product_qty, 3, "Qty is not changed in order.")
+        # self.assertEqual(self.mrp_production_test1.product_qty, 3, "Qty is not changed in order.")
         move = self.mrp_production_test1.move_finished_ids[0]
         self.assertEqual(move.product_qty, self.mrp_production_test1.product_qty, "Qty is not changed in move line.")
 
@@ -81,11 +79,11 @@ class TestOrderProcess(TestOrderDemo):
 
         # The production order is Waiting Goods, will force production which should set consume lines as available
         self.mrp_production_test1.button_plan()
-        
+
 
         # I check that production order in ready state after forcing production.
 
-        #self.assertEqual(self.mrp_production_test1.availability, 'assigned', 'Production order availability should be set as available')
+        # self.assertEqual(self.mrp_production_test1.availability, 'assigned', 'Production order availability should be set as available')
 
 
     # I produce product.
@@ -104,4 +102,3 @@ class TestOrderProcess(TestOrderDemo):
             if not r:
                 return f
             return math.ceil(f / r) * r
-

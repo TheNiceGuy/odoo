@@ -5,8 +5,8 @@ from openerp import fields, models
 
 
 class report_workcenter_load(models.Model):
-    _name="report.workcenter.load"
-    _description="Work Center Load"
+    _name = "report.workcenter.load"
+    _description = "Work Center Load"
     _auto = False
     _log_access = False
 
@@ -33,8 +33,8 @@ class report_workcenter_load(models.Model):
 
 
 class report_mrp_inout(models.Model):
-    _name="report.mrp.inout"
-    _description="Stock value variation"
+    _name = "report.mrp.inout"
+    _description = "Stock value variation"
     _auto = False
     _log_access = False
     _rec_name = 'date'
@@ -57,7 +57,7 @@ class report_mrp_inout(models.Model):
                         sm.price_unit * sm.product_qty
                     else
                         0.0
-                    end) as value, 
+                    end) as value,
                     sm.company_id
                 from
                     stock_move sm

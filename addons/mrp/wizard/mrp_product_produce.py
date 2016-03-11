@@ -4,6 +4,7 @@
 from openerp import api, fields, models
 import openerp.addons.decimal_precision as dp
 
+
 class MrpProductProduce(models.TransientModel):
     _name = "mrp.product.produce"
     _description = "Record Production"
@@ -28,7 +29,7 @@ class MrpProductProduce(models.TransientModel):
                     while qty > 0.000001:
                         lines.append({
                             'move_id': move.id,
-                            'quantity': min(1,qty),
+                            'quantity': min(1, qty),
                             'product_id': move.product_id.id,
                             'production_id': production.id,
                         })
@@ -46,7 +47,7 @@ class MrpProductProduce(models.TransientModel):
             res['product_qty'] = quantity
             res['product_id'] = production.product_id.id
             res['product_uom_id'] = production.product_uom_id.id
-            res['consume_line_ids'] = map(lambda x: (0,0,x), lines)
+            res['consume_line_ids'] = map(lambda x: (0, 0, x), lines)
         return res
 
     serial = fields.Boolean('Requires Serial')

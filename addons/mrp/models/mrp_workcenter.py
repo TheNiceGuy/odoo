@@ -13,7 +13,6 @@ class MrpWorkcenter(models.Model):
     _description = 'Work Center'
     _inherits = {'resource.resource': "resource_id"}
 
-
     note = fields.Text(string='Description', help="Description of the Work Center. ")
     capacity = fields.Float(string='Capacity', default=1.0, help="Number of pieces work center can produce in parallel.")
     time_start = fields.Float(string='Time before prod.', help="Time in minutes for the setup.")
@@ -37,12 +36,11 @@ class MrpWorkcenter(models.Model):
             else:
                 workcenter.stage_id = 'normal'
 
-
     @api.depends('order_ids')
     def _compute_orders(self):
         WorkcenterLine = self.env['mrp.production.work.order']
         for workcenter in self:
-            workcenter.nb_orders = WorkcenterLine.search_count([('workcenter_id', '=', workcenter.id), ('state', '!=', 'done')]) #('state', 'in', ['pending', 'startworking'])
+            workcenter.nb_orders = WorkcenterLine.search_count([('workcenter_id', '=', workcenter.id), ('state', '!=', 'done')])  # ('state', 'in', ['pending', 'startworking'])
             workcenter.count_ready_order = WorkcenterLine.search_count([('workcenter_id', '=', workcenter.id), ('state', '=', 'ready')])
             workcenter.count_progress_order = WorkcenterLine.search_count([('workcenter_id', '=', workcenter.id), ('state', '=', 'progress')])
 

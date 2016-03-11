@@ -16,7 +16,7 @@ class StockMoveConsume(models.TransientModel):
     location_id = fields.Many2one('stock.location', string='Location', required=True)
     restrict_lot_id = fields.Many2one('stock.production.lot', string='Lot')
 
-    #TOFIX: product_uom should not have different category of default UOM of product. Qty should be convert into UOM of original move line before going in consume and scrap
+    # TOFIX: product_uom should not have different category of default UOM of product. Qty should be convert into UOM of original move line before going in consume and scrap
     @api.model
     def default_get(self, fields):
         res = super(StockMoveConsume, self).default_get(fields)
@@ -43,15 +43,15 @@ class StockMoveConsume(models.TransientModel):
         for data in self:
             qty = data['product_uom_id']._compute_qty(data.product_qty, data.product_id.uom_id.id)
             remaining_qty = move.product_qty - qty
-            #check for product quantity is less than previously planned
+            # check for product quantity is less than previously planned
             if float_compare(remaining_qty, 0, precision_digits=precision) >= 0:
                 StockMove.action_consume(move_ids, qty, data.location_id.id, restrict_lot_id=data.restrict_lot_id.id)
             else:
                 consumed_qty = min(move.product_qty, qty)
                 StockMove.action_consume(move_ids, consumed_qty, data.location_id.id, restrict_lot_id=data.restrict_lot_id.id)
-                #consumed more in wizard than previously planned
+                # consumed more in wizard than previously planned
                 extra_more_qty = qty - consumed_qty
-                #create new line for a remaining qty of the product
+                # create new line for a remaining qty of the product
                 extra_move_id = production._make_consume_line_from_data(data.product_id, data.product_id.uom_id.id, extra_more_qty)
                 extra_move_id.write({'restrict_lot_id': data.restrict_lot_id.id})
                 extra_move_id.action_done()

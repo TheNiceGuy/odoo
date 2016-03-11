@@ -49,12 +49,10 @@ class TestMrpByProduct(common.TransactionCase):
         # I finish the production order.
         context = {"active_model": "mrp.production", "active_ids": [mnf_hardisk.id], "active_id": mnf_hardisk.id}
         product_consume.with_context(context).do_produce()
-        
+
         mnf_hardisk.post_inventory()
 
         # I see that stock moves of External Hard Disk including Headset USB are done now.
         moves = self.Move.search([('origin', '=', mnf_hardisk.name), ('product_id', 'in', [self.product_28.id, self.product_33.id])])
         for move in moves:
             self.assertEqual(move.state, 'done', 'Moves are not done!')
-        
-        

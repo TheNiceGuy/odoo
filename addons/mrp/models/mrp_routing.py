@@ -46,7 +46,7 @@ class MrpRoutingWorkcenter(models.Model):
     worksheet = fields.Binary('worksheet')
 
     time_mode = fields.Selection([
-        ('auto','Compute based on real time'), ('manual','Set duration manually')],
+        ('auto', 'Compute based on real time'), ('manual', 'Set duration manually')],
         'Duration Computation', default='auto')
     time_mode_batch = fields.Integer('Based on', default=10)
     time_cycle_manual = fields.Float(string='Manual Duration', default=60, help="Time in minutes")
@@ -56,17 +56,17 @@ class MrpRoutingWorkcenter(models.Model):
 
     @api.multi
     def _wo_count(self):
-        result = self.env['mrp.production.work.order'].read_group([('operation_id', 'in', self.mapped('id')),('state','=','done')], ['operation_id'], ['operation_id'])
+        result = self.env['mrp.production.work.order'].read_group([('operation_id', 'in', self.mapped('id')), ('state', '=', 'done')], ['operation_id'], ['operation_id'])
         mapped_data = dict([(op['operation_id'][0], op['operation_id_count']) for op in result])
         for operation in self:
             operation.wo_count = mapped_data.get(operation.id, 0)
 
     @api.multi
     def _get_time_cycle(self):
-        results = self.env['mrp.production.work.order'].read_group([('state','=','done'),('operation_id','in',self.mapped('id'))], ['operation_id', 'delay','qty_produced'], ['operation_id'])
+        results = self.env['mrp.production.work.order'].read_group([('state', '=', 'done'), ('operation_id', 'in', self.mapped('id'))], ['operation_id', 'delay', 'qty_produced'], ['operation_id'])
         totals = dict(map(lambda x: (x['operation_id'][0], (x['delay'], x['qty_produced'])), results))
         for operation in self:
-            if operation.time_mode=='manual':
+            if operation.time_mode == 'manual':
                 operation.time_cycle = operation.time_cycle_manual
                 continue
             (delay, qty) = totals.get(operation.id, (operation.time_cycle_manual, 1))

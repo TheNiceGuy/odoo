@@ -29,15 +29,13 @@ class ChangeProductionQty(models.TransientModel):
         return res
 
     def _update_product_to_produce(self, production, qty):
-        production_move = production.move_finished_ids.filtered(lambda x:x.product_id.id == production.product_id.id and x.state not in ('done', 'cancel'))
+        production_move = production.move_finished_ids.filtered(lambda x: x.product_id.id == production.product_id.id and x.state not in ('done', 'cancel'))
         if production_move:
             production_move.write({'product_uom_qty': qty})
         else:
             production._make_production_produce_line()
-            production_move = production.move_finished_ids.filtered(lambda x : x.state not in ('done', 'cancel') and production.product_id.id == x.product_id.id)
+            production_move = production.move_finished_ids.filtered(lambda x: x.state not in ('done', 'cancel') and production.product_id.id == x.product_id.id)
             production_move.write({'product_uom_qty': qty})
-
-
 
     @api.multi
     def change_prod_qty(self):
@@ -58,11 +56,11 @@ class ChangeProductionQty(models.TransientModel):
             production = MrpProduction.browse(record_id)
             produced = sum(production.move_finished_ids.mapped('quantity_done'))
             if wizard_qty.product_qty < produced:
-                raise UserError(_("You have already produced %d qty , Please give update quantity more then %d ")%(produced, produced))
+                raise UserError(_("You have already produced %d qty , Please give update quantity more then %d ") % (produced, produced))
             production.write({'product_qty': wizard_qty.product_qty})
-            #production.action_compute() 
-            #TODO: Do we still need to change the quantity of a production order?
-            production_move = production.move_finished_ids.filtered(lambda x : x.state not in ('done', 'cancel') and production.product_id.id == x.product_id.id)
+            # production.action_compute()
+            # TODO: Do we still need to change the quantity of a production order?
+            production_move = production.move_finished_ids.filtered(lambda x: x.state not in ('done', 'cancel') and production.product_id.id == x.product_id.id)
             for move in production.move_raw_ids:
                 bom_point = production.bom_id
                 if not bom_point:

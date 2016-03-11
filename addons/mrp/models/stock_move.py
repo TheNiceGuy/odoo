@@ -9,6 +9,7 @@ import openerp.addons.decimal_precision as dp
 import time
 from openerp.tools import DEFAULT_SERVER_DATETIME_FORMAT
 
+
 class StockMoveLots(models.Model):
     _name = 'stock.move.lots'
     _description = "Quantities to Process by lots"
@@ -33,12 +34,12 @@ class StockMoveLots(models.Model):
         self.quantity = self.quantity + 1
         return self.move_id.split_move_lot()
 
-
     @api.multi
     def do_minus(self):
         self.ensure_one()
         self.quantity = self.quantity - 1
         return self.move_id.split_move_lot()
+
 
 class StockMove(models.Model):
     _inherit = 'stock.move'
@@ -75,7 +76,7 @@ class StockMove(models.Model):
         return True
 
     @api.multi
-    @api.depends('quantity_lots','quantity_lots.quantity')
+    @api.depends('quantity_lots', 'quantity_lots.quantity')
     def _qty_done_compute(self):
         for move in self:
             if move.has_tracking != 'none':
@@ -110,7 +111,7 @@ class StockMove(models.Model):
                 continue
             moves_todo |= move
             if move.quantity_done > move.product_uom_qty:
-                remaining_qty = move.quantity_done - move.product_uom_qty #Convert to UoM of move
+                remaining_qty = move.quantity_done - move.product_uom_qty  # Convert to UoM of move
                 extra_move = move.copy(default={'quantity_done': remaining_qty, 'product_uom_qty': remaining_qty, 'production_id': move.production_id.id, 'raw_material_production_id': move.raw_material_production_id.id})
                 extra_move.action_confirm()
                 moves_todo |= extra_move
@@ -118,21 +119,20 @@ class StockMove(models.Model):
             if move.quantity_done < move.product_qty:
                 new_move = self.env['stock.move'].split(move, move.product_qty - move.quantity_done)
                 self.browse(new_move).quantity_done = 0.0
-            #TODO: code for when quantity > move.product_qty (extra move or change qty?)
+            # TODO: code for when quantity > move.product_qty (extra move or change qty?)
             if move.has_tracking == 'none':
                 quants = quant_obj.quants_get_preferred_domain(move.product_qty, move)
                 self.env['stock.quant'].quants_move(quants, move, move.location_dest_id)
             else:
                 for movelot in move.quantity_lots:
                     quants = quant_obj.quants_get_preferred_domain(movelot.quantity, move, lot_id=movelot.lot_id.id)
-                    self.env['stock.quant'].quants_move(quants, move, move.location_dest_id, lot_id = movelot.lot_id.id)
+                    self.env['stock.quant'].quants_move(quants, move, move.location_dest_id, lot_id=movelot.lot_id.id)
             quant_obj.quants_unreserve(move)
             move.write({'state': 'done', 'date': time.strftime(DEFAULT_SERVER_DATETIME_FORMAT)})
-            #Next move in production order
+            # Next move in production order
             if move.move_dest_id:
                 move.move_dest_id.action_assign()
         return moves_todo
-
 
     @api.multi
     def split_move_lot(self):

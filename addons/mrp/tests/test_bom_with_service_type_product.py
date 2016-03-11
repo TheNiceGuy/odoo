@@ -34,10 +34,10 @@ class TestBomWithServiceTypeProduct(common.TransactionCase):
             'bom_line_ids': [(0, 0, {
                 'product_id': self.product_2.id,
                 'product_uom_id': self.product_uom_unit.id,
-                'product_qty': 1.0,}), 
+                'product_qty': 1.0}),
                 (0, 0, {'product_id': self.product_44.id,
-                'product_uom_id': self.product_uom_unit.id,
-                'product_qty': 1.0})]})
+                        'product_uom_id': self.product_uom_unit.id,
+                        'product_qty': 1.0})]})
 
 # I make the production order using BoM having one service type product and one consumable product.
 

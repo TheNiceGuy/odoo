@@ -5,6 +5,7 @@ from openerp import api, fields, models, _
 from openerp.exceptions import UserError
 from openerp.tools import float_compare
 
+
 class StockWarehouse(models.Model):
     _inherit = 'stock.warehouse'
 
@@ -39,15 +40,15 @@ class StockWarehouse(models.Model):
             manufacture_pull_vals = warehouse._get_manufacture_pull_rule()
             self.manufacture_pull_id = self.env['procurement.rule'].create(manufacture_pull_vals)
         return res
-    
+
     def _create_manufacturing_picking_type(self):
         picking_type_obj = self.env['stock.picking.type']
         seq_obj = self.env['ir.sequence']
         for warehouse in self:
-            #man_seq_id = seq_obj.sudo().create('name': warehouse.name + _(' Sequence Manufacturing'), 'prefix': warehouse.code + '/MANU/', 'padding')
+            # man_seq_id = seq_obj.sudo().create('name': warehouse.name + _(' Sequence Manufacturing'), 'prefix': warehouse.code + '/MANU/', 'padding')
             wh_stock_loc = warehouse.lot_stock_id
             seq = seq_obj.search([('code', '=', 'mrp.production')], limit=1)
-            other_pick_type = picking_type_obj.search([('warehouse_id', '=', warehouse.id)], order = 'sequence desc', limit=1)
+            other_pick_type = picking_type_obj.search([('warehouse_id', '=', warehouse.id)], order='sequence desc', limit=1)
             color = other_pick_type and other_pick_type.color or 0
             max_sequence = other_pick_type and other_pick_type.sequence or 0
             manu_type = picking_type_obj.create({

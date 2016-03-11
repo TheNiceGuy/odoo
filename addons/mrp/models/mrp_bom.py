@@ -41,7 +41,6 @@ class MrpBom(models.Model):
     company_id = fields.Many2one('res.company', string='Company', required=True, default=lambda self: self.env['res.company']._company_default_get('mrp.bom'))
     operation_id = fields.Many2one('mrp.routing.workcenter', string='Produced at Operation')
 
-
     @api.model
     def _bom_find(self, product_tmpl=None, product=None, picking_type=None):
         """ Finds BoM for particular product and product uom.
@@ -49,7 +48,6 @@ class MrpBom(models.Model):
         :param product_uom_id: Unit of measure of a product.
         :return: False or BoM id.
         """
-        today_date = fields.date.today()
         if product:
             if not product_tmpl:
                 product_tmpl = product.product_tmpl_id
@@ -98,7 +96,7 @@ class MrpBom(models.Model):
             'workcenter_id': wc.id,
             'sequence': level + (wc_use.sequence or 0),
             'operation_id': wc_use.id,
-            'hour': float((wc_use.time_cycle or 0.0) * (wc.time_efficiency or 1.0)), #+ cycle * (wc.time_cycle or 0.0)) * (wc.time_efficiency or 1.0)),
+            'hour': float((wc_use.time_cycle or 0.0) * (wc.time_efficiency or 1.0)),  # + cycle * (wc.time_cycle or 0.0)) * (wc.time_efficiency or 1.0)),
         }
 
     def _prepare_consume_line(self, bom_line, quantity):
@@ -122,7 +120,7 @@ class MrpBom(models.Model):
                  result2: List of dictionaries containing Work Center details.
         """
         master_bom = master_bom or self
-        factor =  self.product_uom_id._compute_qty(self.product_qty, master_bom.product_uom_id.id)
+        factor = self.product_uom_id._compute_qty(self.product_qty, master_bom.product_uom_id.id)
         result = []
         result2 = []
         routing = (routing_id and self.env['mrp.routing'].browse(routing_id)) or self.routing_id or False
@@ -201,7 +199,7 @@ class MrpBomLine(models.Model):
         for bom_line in self:
             child_bom = self.env['mrp.bom']._bom_find(
                 product_tmpl=bom_line.product_id.product_tmpl_id,
-                product=bom_line.product_id, 
+                product=bom_line.product_id,
                 picking_type=bom_line.bom_id.picking_type_id)
             if child_bom:
                 bom_line.child_line_ids = [(6, 0, [bom.id for bom in child_bom.bom_line_ids])]
@@ -214,7 +212,7 @@ class MrpBomLine(models.Model):
                                      help="Unit of Measure (Unit of Measure) is the unit of measurement for the inventory control", oldname='product_uom')
     sequence = fields.Integer(default=1, help="Gives the sequence order when displaying.")
     routing_id = fields.Many2one('mrp.routing', string='Routing',
-                                 related="bom_id.routing_id", store=True, 
+                                 related="bom_id.routing_id", store=True,
                                  help="The list of operations (list of work centers) to produce the finished product. The routing is mainly used to compute work center costs during operations and to plan future loads on work centers based on production planning.")
     bom_id = fields.Many2one('mrp.bom', string='Parent BoM', ondelete='cascade', index=True, required=True)
     attribute_value_ids = fields.Many2many('product.attribute.value', string='Variants', help="BOM Product Variants needed form apply this line.")

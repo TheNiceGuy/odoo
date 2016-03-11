@@ -26,13 +26,13 @@ class MakeInvoice(models.TransientModel):
         tree_res = self.env.ref('account.invoice_tree')
         tree_id = tree_res and tree_res.id or False
         return {
-            'domain': [('id','in', newinv.values())],
+            'domain': [('id', 'in', newinv.values())],
             'name': 'Invoices',
             'view_type': 'form',
             'view_mode': 'tree,form',
             'res_model': 'account.invoice',
             'view_id': False,
-            'views': [(tree_id, 'tree'),(form_id, 'form')],
+            'views': [(tree_id, 'tree'), (form_id, 'form')],
             'context': "{'type':'out_invoice'}",
             'type': 'ir.actions.act_window'
         }

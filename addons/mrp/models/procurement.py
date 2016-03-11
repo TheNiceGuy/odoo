@@ -29,7 +29,7 @@ class ProcurementOrder(models.Model):
     def _run(self):
         self.ensure_one()
         if self.rule_id and self.rule_id.action == 'manufacture':
-            #make a manufacturing order for the procurement
+            # make a manufacturing order for the procurement
             return self.make_mo()[self.id]
         return super(ProcurementOrder, self)._run()
 
