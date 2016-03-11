@@ -775,8 +775,9 @@
                         <tree editable="bottom">
                             <field name="lot_id" domain="[('product_id', '=', parent.product_id)]"/>
                             <field name="quantity"/>
-                            <button name="do_minus" type="object" icon="fa-minus-square" attrs="{'invisible': [('quantity', '&lt;=', 0.99)]}" invisible="context.get('show_reserved') or context.get('state_done')"/>
-                            <button name="do_plus" type="object" icon="fa-plus-square" attrs="{'invisible': [('plus_visible', '=', False)]}" invisible="context.get('show_reserved') or context.get('state_done')"/>
+                            <field name="qty_done"/>
+                            <button name="do_minus" type="object" icon="fa-minus-square" attrs="{'invisible': [('quantity', '&lt;=', 0.99)]}" invisible="not context.get('show_reserved') or context.get('state_done')"/>
+                            <button name="do_plus" type="object" icon="fa-plus-square" attrs="{'invisible': [('plus_visible', '=', False)]}" invisible="not context.get('show_reserved') or context.get('state_done')"/>
                             <field name="plus_visible" invisible="1"/>
                         </tree>
                     </field>
