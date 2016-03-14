@@ -458,6 +458,12 @@ class MrpProductionWorkcenterLine(models.Model):
     next_work_order_id = fields.Many2one('mrp.production.work.order', "Next Work Order")
     tracking = fields.Selection(related='product.tracking', readonly=True)
 
+    @api.multi
+    def write(self, values):
+        if self.state == 'done' and values.get('date_planned_start') and values.get('date_planned_end'):
+            raise UserError(_('You can not change the finished work order.'))
+        return super(MrpProductionWorkcenterLine, self).write(values)
+
     def _generate_lot_ids(self):
         """
             Generate stock move lots
