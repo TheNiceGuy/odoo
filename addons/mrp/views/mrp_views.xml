@@ -802,7 +802,7 @@
                     <button name="%(act_mrp_product_produce)d" attrs="{'invisible': ['|', ('state', 'not in', ('confirmed','progress')), ('routing_id', '!=', False)]}" string="Produce" type="action" class="oe_highlight"/>
 
                     <button name="%(action_mrp_workorder_production_specific)d" type="action" attrs="{'invisible': ['|', ('nb_orders', '=', 0), ('state', '=', 'done')]}" string="Work Orders" class="oe_highlight"/>
-                    <button name="%(act_mrp_product_produce)d" attrs="{'invisible': ['|', ('nb_orders', '=', 0), ('state', '=', 'done')]}" string="Produce" type="action"/>
+                    <button name="%(act_mrp_product_produce)d" attrs="{'invisible': ['|', '|', ('nb_orders', '=', 0), ('state', '=', 'done'), ('routing_id', '!=', False)]}" string="Produce" type="action"/>
 
                     <button name="post_inventory" string="Post Inventory" type="object" class="oe_highlight" attrs="{'invisible': [('post_visible', '=', False)]}"/>
                     <button name="button_scrap" type="object" string="Scrap" attrs="{'invisible': [('state', 'in', ('cancel'))]}"/>
@@ -828,7 +828,7 @@
                         <group>
                             <field name="availability" invisible="1"/>
                             <field name="check_to_done" invisible="1"/>
-                            <field name="product_id" attrs="{'readonly': [('move_raw_ids', '!=', [])]}"/>
+                            <field name="product_id" attrs="{'readonly': [('move_raw_ids', '!=', [])]}" domain="[('bom_ids', '!=', [])]"/>
                             <field name="product_tmpl_id" invisible="1"/>
                             <label for="product_qty"/>
                             <div class="o_row">
@@ -843,7 +843,8 @@
                                             ('product_id','=',product_id),
                                             '&amp;',
                                                 ('product_tmpl_id.product_variant_ids','=',product_id),
-                                                ('product_id','=',False)]"
+                                                ('product_id','=',False),
+                                                ('bom_type', '=', 'normal')]"
                                 context="{'default_product_tmpl_id': product_tmpl_id}" required="1" attrs="{'readonly': [('move_raw_ids', '!=', [])]}"/>
                             <field name="routing_id" groups="mrp.group_mrp_routings"/>
                         </group>
@@ -1588,7 +1589,8 @@
     <menuitem id="menu_mrp_workorder_todo"
             name="Work Orders"
             action="mrp_workorder_todo"
-            parent="menu_mrp_manufacturing"/>
+            parent="menu_mrp_manufacturing"
+            groups="group_mrp_routings"/>
 
     <menuitem id="menu_mrp_traceability"
           name="Traceability: Lots"
