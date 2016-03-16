@@ -41,6 +41,13 @@ class StockMove(models.Model):
         compute='_qty_done_compute', inverse='_qty_done_set')
     quantity_lots = fields.One2many('stock.move.lots', 'move_id', string='Lots')
     bom_line_id = fields.Many2one('mrp.bom.line', string="BoM Line")
+    is_done = fields.Boolean('Done', compute='_compute_is_done', help='Technical Field to order moves', store=True)
+
+    @api.multi
+    @api.depends('state')
+    def _compute_is_done(self):
+        for move in self:
+            move.is_done = (move.state in ('done', 'cancel'))
 
     @api.multi
     @api.depends('quantity_lots','quantity_lots.quantity')
