@@ -207,6 +207,19 @@ class StockQuant(models.Model):
     produced_quant_ids = fields.Many2many('stock.quant', 'stock_quant_consume_rel', 'consume_quant_id', 'produce_quant_id')
 
 
+class StockProductionLot(models.Model):
+    _inherit = "stock.production.lot"
+    
+    @api.model
+    def name_search(self, name, args=None, operator='ilike', limit=100):
+        args = args or []
+        domain = []
+        if name:
+            domain = ['|', ('name', operator, name), '|', ('quant_ids.consumed_quant_ids.lot_id.name', operator, name), ('quant_ids.produced_quant_ids.lot_id.name', operator, name)]
+        pos = self.search(domain + args, limit=limit)
+        return pos.name_get()
+
+
 class StockPickingType(models.Model):
     _inherit = 'stock.picking.type'
 
