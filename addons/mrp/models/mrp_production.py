@@ -156,14 +156,18 @@ class MrpProduction(models.Model):
                 tocheck.append(False)
 
             # Add raw materials for this operation
-            self.move_raw_ids.filtered(lambda x: x.operation_id.id in tocheck).write({
-                'workorder_id': workorder_id.id
+            move_raw_to_check = self.move_raw_ids.filtered(lambda x: x.operation_id.id in tocheck)
+            move_raw_to_check.write({
+                'workorder_id': workorder_id.id,
             })
+            for move in [x for x in move_raw_to_check if x.move_lot_ids]:
+                move.move_lot_ids.write({'workorder_id': workorder_id.id})
+            
             # Add finished products for this operation
             self.move_finished_ids.filtered(lambda x: x.operation_id.id in tocheck).write({
                 'workorder_id': workorder_id.id
             })
-            workorder_id._generate_lot_ids()
+            #workorder_id._generate_lot_ids()
             state = 'pending'
         return True
 
@@ -259,7 +263,7 @@ class MrpProduction(models.Model):
                 for move_raw in moves_to_do:
                     if (move.has_tracking != 'none') and (move_raw.has_tracking != 'none'):
                         for lot in lot_quants:
-                            lots = move_raw.quantity_lots.filtered(lambda x: x.lot_produced_id.id == lot).mapped('lot_id')
+                            lots = move_raw.move_lot_ids.filtered(lambda x: x.lot_produced_id.id == lot).mapped('lot_id')
                             raw_lot_quants[lot] |= move_raw.quant_ids.filtered(lambda x: (x.lot_id in lots) and (x.qty > 0.0))
                     else:
                         quants |= move_raw.quant_ids.filtered(lambda x: x.qty > 0.0)
@@ -463,7 +467,7 @@ class MrpProductionWorkcenterLine(models.Model):
 
     @api.multi
     def write(self, values):
-        if self.state == 'done' and values.get('date_planned_start') and values.get('date_planned_end'):
+        if any([x.state == 'done' for x in self]) and values.get('date_planned_start') and values.get('date_planned_end'):
             raise UserError(_('You can not change the finished work order.'))
         return super(MrpProductionWorkcenterLine, self).write(values)
 
@@ -528,7 +532,7 @@ class MrpProductionWorkcenterLine(models.Model):
         if not self.next_work_order_id:
             production_move = self.production_id.move_finished_ids.filtered(lambda x: (x.product_id.id == self.production_id.product_id.id) and (x.state not in ('done', 'cancel')))
             if production_move.product_id.tracking != 'none':
-                move_lot = production_move.quantity_lots.filtered(lambda x: x.lot_id.id == self.final_lot_id.id)
+                move_lot = production_move.move_lot_ids.filtered(lambda x: x.lot_id.id == self.final_lot_id.id)
                 if move_lot:
                     move_lot.quantity += self.qty_producing
                 else:

@@ -16,7 +16,7 @@ class StockMoveLots(models.Model):
     def _compute_plus(self):
         for movelot in self:
             if movelot.move_id.product_id.tracking == 'serial':
-                movelot.plus_visible = (movelot.qauntity == 0.0)
+                movelot.plus_visible = (movelot.quantity_done <= 0.0)
             else:
                 movelot.plus_visible = (movelot.quantity == 0.0) or (movelot.quantity_done < movelot.quantity)
 
@@ -59,7 +59,7 @@ class StockMove(models.Model):
     quantity_done_store = fields.Float('Quantity', digits_compute=dp.get_precision('Product Unit of Measure'))
     quantity_done = fields.Float('Quantity', digits_compute=dp.get_precision('Product Unit of Measure'),
         compute='_qty_done_compute', inverse='_qty_done_set')
-    quantity_lots = fields.One2many('stock.move.lots', 'move_id', string='Lots')
+    move_lot_ids = fields.One2many('stock.move.lots', 'move_id', string='Lots')
     bom_line_id = fields.Many2one('mrp.bom.line', string="BoM Line")
     is_done = fields.Boolean('Done', compute='_compute_is_done', help='Technical Field to order moves', store=True)
 
@@ -73,7 +73,7 @@ class StockMove(models.Model):
     def create_lots(self):
         lots = self.env['stock.move.lots']
         for move in self:
-            move.quantity_lots.unlink()
+            move.move_lot_ids.unlink()
             for quant in move.reserved_quant_ids.filtered(lambda x: x.lot_id):
                 vals = {
                     'move_id': move.id,
@@ -86,11 +86,11 @@ class StockMove(models.Model):
         return True
 
     @api.multi
-    @api.depends('quantity_lots','quantity_lots.quantity_done')
+    @api.depends('move_lot_ids','move_lot_ids.quantity_done')
     def _qty_done_compute(self):
         for move in self:
             if move.has_tracking != 'none':
-                move.quantity_done = sum(move.quantity_lots.mapped('quantity_done'))
+                move.quantity_done = sum(move.move_lot_ids.mapped('quantity_done'))
             else:
                 move.quantity_done = move.quantity_done_store
 
@@ -135,7 +135,7 @@ class StockMove(models.Model):
                 quants = quant_obj.quants_get_preferred_domain(move.product_qty, move)
                 self.env['stock.quant'].quants_move(quants, move, move.location_dest_id)
             else:
-                for movelot in move.quantity_lots:
+                for movelot in move.move_lot_ids:
                     quants = quant_obj.quants_get_preferred_domain(movelot.quantity_done, move, lot_id=movelot.lot_id.id)
                     self.env['stock.quant'].quants_move(quants, move, move.location_dest_id, lot_id = movelot.lot_id.id)
             quant_obj.quants_unreserve(move)
@@ -152,7 +152,7 @@ class StockMove(models.Model):
         view = self.env['ir.model.data'].xmlid_to_res_id('stock.view_stock_move_lots')
         serial = (self.has_tracking == 'serial')
         only_create = False # Check picking type in theory
-        show_reserved = any([x for x in self.quantity_lots if x.quantity > 0.0])
+        show_reserved = any([x for x in self.move_lot_ids if x.quantity > 0.0])
         ctx = {
             'serial': serial,
             'only_create': only_create,
