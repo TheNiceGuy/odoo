@@ -22,6 +22,7 @@ class StockMoveLots(models.Model):
 
     move_id = fields.Many2one('stock.move', string='Inventory Move', required=True)
     workorder_id = fields.Many2one('mrp.production.work.order', string='Work Order')
+    production_id = fields.Many2one('mrp.production')
     lot_id = fields.Many2one('stock.production.lot', string='Lot')
     lot_produced_id = fields.Many2one('stock.production.lot', string='Finished Lot')
     lot_produced_qty = fields.Float('Quantity Finished Product')
@@ -36,7 +37,6 @@ class StockMoveLots(models.Model):
         self.ensure_one()
         self.quantity_done = self.quantity_done + 1
         return self.move_id.split_move_lot()
-
 
     @api.multi
     def do_minus(self):
@@ -69,20 +69,41 @@ class StockMove(models.Model):
         for move in self:
             move.is_done = (move.state in ('done', 'cancel'))
 
+
     @api.multi
     def create_lots(self):
         lots = self.env['stock.move.lots']
         for move in self:
-            move.move_lot_ids.unlink()
-            for quant in move.reserved_quant_ids.filtered(lambda x: x.lot_id):
-                vals = {
-                    'move_id': move.id,
-                    'product_id': move.product_id.id,
-                    'workorder_id': move.workorder_id.id,
-                    'quantity': quant.qty,
-                    'lot_id': quant.lot_id.id
-                }
-                lots.create(vals)
+            unlink_move_lots = move.move_lot_ids.filtered(lambda x : x.quantity_done == 0)
+            unlink_move_lots.unlink()
+            group_new_quant = {}
+            old_move_lot = {}
+            for movelot in move.move_lot_ids:
+                key = (movelot.lot_id.id or False)
+                old_move_lot.setdefault(key, []).append(movelot)
+            for quant in move.reserved_quant_ids:
+                key = (quant.lot_id.id or False)
+                if group_new_quant.get(key):
+                    group_new_quant[key] += quant.qty
+                else:
+                    group_new_quant[key] = quant.qty
+            for key in group_new_quant:
+                quantity = group_new_quant[key]
+                if old_move_lot.get(key):
+                    if old_move_lot[key][0].quantity == quantity:
+                        continue
+                    else:
+                        old_move_lot[key].quantity = quantity
+                else:
+                    vals = {
+                        'move_id': move.id,
+                        'product_id': move.product_id.id,
+                        'workorder_id': move.workorder_id.id,
+                        'production_id': move.raw_material_production_id.id,
+                        'quantity': quantity,
+                        'lot_id': key,
+                    }
+                    lots.create(vals)
         return True
 
     @api.multi
@@ -148,26 +169,31 @@ class StockMove(models.Model):
 
     @api.multi
     def split_move_lot(self):
+        ctx = dict(self.env.context)
         self.ensure_one()
-        view = self.env['ir.model.data'].xmlid_to_res_id('stock.view_stock_move_lots')
+        view = self.env.ref('mrp.view_stock_move_lots')
         serial = (self.has_tracking == 'serial')
         only_create = False # Check picking type in theory
         show_reserved = any([x for x in self.move_lot_ids if x.quantity > 0.0])
-        ctx = {
+        ctx.update({
             'serial': serial,
             'only_create': only_create,
             'create_lots': True,
             'state_done': self.is_done,
             'show_reserved': show_reserved,
-        }
+        })
+        if ctx.get('w_production'):
+            action = self.env.ref('mrp.act_mrp_product_produce').read()[0]
+            action['context'] = ctx
+            return action
         result = {
              'name': _('Register Lots'),
              'type': 'ir.actions.act_window',
              'view_type': 'form',
              'view_mode': 'form',
              'res_model': 'stock.move',
-             'views': [(view, 'form')],
-             'view_id': view,
+             'views': [(view.id, 'form')],
+             'view_id': view.id,
              'target': 'new',
              'res_id': self.id,
              'context': ctx,

@@ -23,7 +23,7 @@ class MrpProductProduce(models.TransientModel):
                 quantity = quantity if (quantity > 0) else 0
             lines = []
             existing_lines = []
-            for move in production.move_raw_ids.filtered(lambda x: (x.product_id.tracking <> 'none') and x.state not in ('done', 'cancel')):
+            for move in production.move_raw_ids.filtered(lambda x: (x.product_id.tracking != 'none') and x.state not in ('done', 'cancel')):
                 if not move.move_lot_ids:
                     qty = quantity / move.bom_line_id.bom_id.product_qty * move.bom_line_id.product_qty
                     if production._check_serial():
@@ -31,6 +31,8 @@ class MrpProductProduce(models.TransientModel):
                             lines.append({
                                 'move_id': move.id,
                                 'quantity': min(1,qty),
+                                'quantity_done': 0.0,
+                                'plus_visible': True,
                                 'product_id': move.product_id.id,
                                 'production_id': production.id,
                             })
@@ -39,6 +41,8 @@ class MrpProductProduce(models.TransientModel):
                         lines.append({
                             'move_id': move.id,
                             'quantity': qty,
+                            'quantity_done': 0.0,
+                            'plus_visible': True,
                             'product_id': move.product_id.id,
                             'production_id': production.id,
                         })
@@ -71,4 +75,4 @@ class MrpProductProduce(models.TransientModel):
             if move.bom_line_id:
                 quantity = quantity / move.bom_line_id.bom_id.product_qty * move.bom_line_id.product_qty
             move.quantity_done_store += quantity
-        return {}
+        return {'type': 'ir.actions.act_window_close'}

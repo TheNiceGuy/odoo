@@ -162,7 +162,6 @@ class MrpProduction(models.Model):
             })
             for move in [x for x in move_raw_to_check if x.move_lot_ids]:
                 move.move_lot_ids.write({'workorder_id': workorder_id.id})
-            
             # Add finished products for this operation
             self.move_finished_ids.filtered(lambda x: x.operation_id.id in tocheck).write({
                 'workorder_id': workorder_id.id
@@ -486,6 +485,7 @@ class MrpProductionWorkcenterLine(models.Model):
                         move_lot_obj.create({
                             'move_id': move.id,
                             'quantity': min(1,qty),
+                            'quantity_done': min(1,qty),
                             'product_id': move.product_id.id,
                             'production_id': self.production_id.id,
                             'workorder_id': self.id,
@@ -495,11 +495,11 @@ class MrpProductionWorkcenterLine(models.Model):
                     move_lot_obj.create({
                         'move_id': move.id,
                         'quantity': qty,
+                        'quantity_done': qty,
                         'product_id': move.product_id.id,
                         'production_id': self.production_id.id,
                         'workorder_id': self.id,
                         })
-                #self.env['stock.move.lots'].create({'':''})
 
     @api.multi
     def record_production(self):
@@ -538,7 +538,10 @@ class MrpProductionWorkcenterLine(models.Model):
                 else:
                     move_lot.create({'move_id': production_move.id,
                                      'lot_id': self.final_lot_id.id,
-                                     'quantity': self.qty_producing, })
+                                     'quantity': self.qty_producing,
+                                     'quantity_done': slef.qty_producing,
+                                     'workorder_id': self.id
+                                     })
             else:
                 production_move.product_uom_qty += self.qty_producing #TODO: UoM conversion?
         # Update workorder quantity produced
