@@ -1612,6 +1612,7 @@
           name="Work Orders"
           parent="menu_mrp_reporting"
           action="mrp_workorder_report"
+          groups="group_mrp_routings"
           sequence="11"/>
 
 
