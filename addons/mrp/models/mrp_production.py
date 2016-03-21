@@ -417,6 +417,12 @@ class MrpProductionWorkcenterLine(models.Model):
             messages = InventoryMessage.search(domain).mapped('message')
             workorder.inv_message = "<br/>".join(messages) or False
 
+    @api.depends('qty', 'qty_produced')
+    def _is_produced(self):
+        for workorder in self:
+            if workorder.qty_produced >= workorder.qty:
+                workorder.is_produced = True
+
     name = fields.Char(string='Work Order', required=True, states={'done': [('readonly', True)]})
     workcenter_id = fields.Many2one('mrp.workcenter', string='Work Center', required=True, states={'done': [('readonly', True)]})
     duration = fields.Float(string='Expected Duration', digits=(16, 2), help="Expected duration in minutes", states={'done': [('readonly', True)]})
@@ -457,6 +463,7 @@ class MrpProductionWorkcenterLine(models.Model):
     qty_producing = fields.Float('Qty Producing', default=1.0, states={'done': [('readonly', True)]})
     next_work_order_id = fields.Many2one('mrp.production.work.order', "Next Work Order")
     tracking = fields.Selection(related='product.tracking', readonly=True)
+    is_produced = fields.Boolean(compute='_is_produced')
 
     @api.multi
     def write(self, values):

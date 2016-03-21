@@ -1266,7 +1266,7 @@
         <field name="arch" type="xml">
             <form string="Production Workcenter" delete="0" create="0">
             <header>
-                <button name="button_finish" type="object" string="Finish Order" attrs="{'invisible': ['|',('state', '!=', 'progress'), ('qty_produced', '=', 0)]}" class="btn-info"/>
+                <button name="button_finish" type="object" string="Finish Order" attrs="{'invisible': ['|',('state', '!=', 'progress'), ('is_produced', '=', False)]}" class="btn-info"/>
                 <button name="button_start" type="object" string="Start Working" attrs="{'invisible': [('state', '!=', 'pending')]}"/>
                 <button name="button_start" type="object" string="Start Working" attrs="{'invisible': [('state', '!=', 'ready')]}" class="btn-success"/>
                 <button name="record_production" type="object" string="Record Production" class="btn-success" attrs="{'invisible': ['|', '|', ('state', '!=', 'progress'), ('show_state', '=', False)]}"/>
@@ -1289,6 +1289,7 @@
                             <field name="uom" widget="selection"/>
                         </div>
                         <field name="sequence" invisible="1"/>
+                        <field name="is_produced" invisible="1"/>
                     </group>
                     <div class="alert alert-warning alert-dismissible text-center" role="alert" attrs="{'invisible': [('inv_message', '=', False)]}">
                         <a href="#" class="close" data-dismiss="alert" aria-label="close">x</a>
