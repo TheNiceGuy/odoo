@@ -598,6 +598,12 @@ class MrpProductionWorkcenterLine(models.Model):
         self.end_previous()
 
     @api.multi
+    def button_block(self):
+        for order in self:
+            order.end_previous()
+            order.workcenter_id.write({'stage_id': 'blocked'})
+
+    @api.multi
     def button_cancel(self):
         self.write({'state': 'cancel'})
 
