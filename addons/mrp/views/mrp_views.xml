@@ -258,7 +258,7 @@
             <field name="name">Manufacturing Orders</field>
             <field name="res_model">mrp.production</field>
             <field name="view_id" ref="mrp_production_tree_view"/>
-            <field name="domain">[('routing_id', '!=', False)]</field>
+            <field name="domain">[('routing_id', '!=', False),('routing_id.work_order_ids.workcenter_id','=', active_id)]</field>
         </record>
 
         <record id="production_order_server_action" model="ir.actions.server">
@@ -341,7 +341,7 @@
                                     <div class="row">
                                         <div class="col-xs-6 o_kanban_primary_left" style="position:absolute;" name="wc_stages">
                                             <t t-if="record.stage_id.raw_value == 'normal'">
-                                                <t t-set="status" t-value="'Work orders is not running'"/>
+                                                <t t-set="status" t-value="'No work order in progress'"/>
                                             </t>
                                             <t t-if="record.stage_id.raw_value == 'blocked'">
                                                 <t t-set="status" t-value="'Work orders is blocked'"/>
