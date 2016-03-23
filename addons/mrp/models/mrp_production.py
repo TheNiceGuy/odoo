@@ -11,7 +11,6 @@ from dateutil.relativedelta import relativedelta
 import time
 import math
 
-
 class MrpProduction(models.Model):
     """ Manufacturing Orders """
     _name = 'mrp.production'
@@ -500,6 +499,7 @@ class MrpProductionWorkcenterLine(models.Model):
                         'production_id': self.production_id.id,
                         'workorder_id': self.id,
                         })
+                #self.env['stock.move.lots'].create({'':''})
 
     @api.multi
     def record_production(self):
@@ -539,12 +539,12 @@ class MrpProductionWorkcenterLine(models.Model):
                     move_lot.create({'move_id': production_move.id,
                                      'lot_id': self.final_lot_id.id,
                                      'quantity': self.qty_producing,
-                                     'quantity_done': slef.qty_producing,
+                                     'quantity_done': self.qty_producing,
                                      'workorder_id': self.id
                                      })
-            else:
-                production_move.product_uom_qty += self.qty_producing #TODO: UoM conversion?
-        # Update workorder quantity produced
+        #     else:
+        #         production_move.product_uom_qty += self.qty_producing #TODO: UoM conversion?
+        # # Update workorder quantity produced
         self.qty_produced += self.qty_producing
         self.qty_producing = 1.0
         self._generate_lot_ids()
