@@ -198,7 +198,7 @@ class MrpProduction(models.Model):
     @api.multi
     def unlink(self):
         for production in self:
-            if production.state not in ('draft', 'cancel'):
+            if production.state != 'cancel':
                 raise UserError(_('Cannot delete a manufacturing order in state \'%s\'.') % production.state)
         return super(MrpProduction, self).unlink()
 
