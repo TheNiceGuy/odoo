@@ -289,7 +289,7 @@
                     <field name="name"/>
                     <field name="color"/>
                     <field name="nb_orders"/>
-                     <field name="stage_id"/>
+                     <field name="working_state"/>
                     <templates>
                         <t t-name="kanban-box">
                             <div t-attf-class="#{kanban_color(record.color.raw_value)}">
@@ -340,17 +340,17 @@
                                     </div>
                                     <div class="row">
                                         <div class="col-xs-6 o_kanban_primary_left" style="position:absolute;" name="wc_stages">
-                                            <t t-if="record.stage_id.raw_value == 'normal'">
+                                            <t t-if="record.working_state.raw_value == 'normal'">
                                                 <t t-set="status" t-value="'No work order in progress'"/>
                                             </t>
-                                            <t t-if="record.stage_id.raw_value == 'blocked'">
+                                            <t t-if="record.working_state.raw_value == 'blocked'">
                                                 <t t-set="status" t-value="'Work orders is blocked'"/>
                                             </t>
-                                            <t t-if="record.stage_id.raw_value == 'done'">
+                                            <t t-if="record.working_state.raw_value == 'done'">
                                                 <t t-set="status" t-value="'Work orders is running'"/>
                                             </t>
                                             <div t-att-title="status">
-                                                <field name="stage_id" widget="kanban_state_selection"/>
+                                                <field name="working_state" widget="kanban_state_selection"/>
                                             </div>
                                         </div>
                                     </div>
@@ -1269,18 +1269,20 @@
         <field name="arch" type="xml">
             <form string="Production Workcenter" delete="0" create="0">
             <header>
-                <button name="button_finish" type="object" string="Finish Order" attrs="{'invisible': ['|',('state', '!=', 'progress'), ('is_produced', '=', False)]}" class="btn-info"/>
-                <button name="button_start" type="object" string="Start Working" attrs="{'invisible': [('state', '!=', 'pending')]}"/>
-                <button name="button_start" type="object" string="Start Working" attrs="{'invisible': [('state', '!=', 'ready')]}" class="btn-success"/>
-                <button name="record_production" type="object" string="Record Production" class="btn-success" attrs="{'invisible': ['|', '|', ('state', '!=', 'progress'), ('show_state', '=', False)]}"/>
+                <button name="button_finish" type="object" string="Finish Order" attrs="{'invisible': ['|', ('state', '!=', 'progress'), ('is_produced', '=', False)]}" class="btn-info"/>
+                <button name="button_start" type="object" string="Start Working" attrs="{'invisible': ['|', ('blocked', '=', True), ('state', '!=', 'pending')]}"/>
+                <button name="button_start" type="object" string="Start Working" attrs="{'invisible': ['|', ('blocked', '=', True), ('state', '!=', 'ready')]}" class="btn-success"/>
+                <button name="record_production" type="object" string="Record Production" class="btn-success" attrs="{'invisible': ['|', ('state', '!=', 'progress'), ('show_state', '=', False)]}"/>
                 <button name="button_pending" type="object" string="Pause" class="btn-warning" attrs="{'invisible': ['|', ('state', 'in', ('done', 'pending', 'ready')), ('show_state', '=', False)]}"><span>(<field name="delay" widget="float_time" class="oe_inline"/>)</span></button>
-                <button name="button_block" type="object" string="Blocked" class="btn-danger" attrs="{'invisible': ['|', ('state', 'in', ('done', 'pending', 'ready')), ('show_state', '=', False)]}"/>
-                <button name="button_start" type="object" string="Continue Production" class="btn-warning" attrs="{'invisible': ['|', ('show_state', '=', True), ('state', 'in', ('done', 'pending', 'ready'))]}"></button>
-                <button name="button_start" type="object" string="Continue Production" attrs="{'invisible': [('state', '!=', 'done')]}"/>
+                <button name="button_block" type="object" string="Block" class="btn-danger" attrs="{'invisible': ['|', ('state', 'in', ('done', 'pending', 'ready')), ('show_state', '=', False)]}"/>
+                <button name="button_unblock" type="object" string="Unblock" class="btn-danger" attrs="{'invisible': [('blocked', '=', False)]}"/>
+                <button name="button_start" type="object" string="Continue Production" class="btn-warning" attrs="{'invisible': ['|', '|', ('blocked', '=', True), ('show_state', '=', True), ('state', 'in', ('done', 'pending', 'ready'))]}"></button>
+                <button name="button_start" type="object" string="Continue Production" attrs="{'invisible': ['|', ('blocked', '=', True), ('state', '!=', 'done')]}"/>
                 <button name="button_scrap" type="object" string="Scrap" attrs="{'invisible': [('state', 'in', ('confirmed', 'cancel'))]}"/>
                 <field name="availability" nolabel="1" widget="bullet_state" options="{'classes': {'assigned': 'success', 'waiting': 'danger'}}"/>
                 <field name="state" widget="statusbar" statusbar_visible="pending,ready,progress,done"/>
                 <field name="show_state" invisible="1"/>
+                <field name="blocked" invisible="1"/>
             </header>
             <sheet>
                 <group>

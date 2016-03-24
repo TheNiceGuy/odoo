@@ -467,6 +467,7 @@ class MrpProductionWorkcenterLine(models.Model):
     next_work_order_id = fields.Many2one('mrp.production.work.order', "Next Work Order")
     tracking = fields.Selection(related='product.tracking', readonly=True)
     is_produced = fields.Boolean(compute='_is_produced')
+    blocked = fields.Boolean(related='workcenter_id.blocked')
 
     @api.multi
     def write(self, values):
@@ -610,8 +611,12 @@ class MrpProductionWorkcenterLine(models.Model):
     @api.multi
     def button_block(self):
         for order in self:
-            order.end_previous()
-            order.workcenter_id.write({'stage_id': 'blocked'})
+            order.workcenter_id.write({'working_state': 'blocked'}) #Will stop t!mers
+
+    @api.multi
+    def button_unblock(self):
+        for order in self:
+            order.workcenter_id.write({'blocked': False})
 
     @api.multi
     def button_cancel(self):
