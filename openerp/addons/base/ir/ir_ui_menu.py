@@ -250,13 +250,15 @@ class IrUiMenu(models.Model):
 
     @api.model
     @tools.ormcache_context('self._uid', 'debug', keys=('lang',))
-    def load_menus(self, debug):
+    def load_menus(self, debug, additional_fields=None):
         """ Loads all menu items (all applications and their sub-menus).
 
         :return: the menu root
         :rtype: dict('children': menu_nodes)
         """
         fields = ['name', 'sequence', 'parent_id', 'action', 'web_icon_data']
+        if additional_fields:
+            fields = fields + additional_fields
         menu_roots = self.get_user_roots()
         menu_roots_data = menu_roots.read(fields) if menu_roots else []
         menu_root = {
