@@ -41,12 +41,10 @@ def _migrate_full_reconcile(cr, registry):
         #update the index of account_full_reconcile
         cr.execute("SELECT setval('account_full_reconcile_id_seq', (SELECT MAX(id) FROM account_full_reconcile))")
 
-        #copy values on account.move.line
-        cr.execute("UPDATE account_move_line SET full_reconcile_id = reconcile_id WHERE reconcile_id IS NOT NULL")
         #copy the full_reconcile_id existing of account.move.line to their account.partial.reconcile
         cr.execute("""
             WITH tmp_table AS (
-              SELECT partial_id, MAX(full_id) FROM (
+              SELECT partial_id, MAX(full_id) AS full_id FROM (
                 SELECT rec.id AS partial_id, aml.reconcile_id AS full_id
                 FROM account_move_line aml
                 RIGHT JOIN account_partial_reconcile rec
@@ -60,8 +58,7 @@ def _migrate_full_reconcile(cr, registry):
                 WHERE aml.reconcile_id IS NOT NULL) tmp_table_with_duplicated_recs
              GROUP BY partial_id HAVING COUNT(partial_id) = 1)
             UPDATE account_partial_reconcile p
-            SET full_reconcile_id = (SELECT full_id FROM tmp_table tmp WHERE p.id = tmp.partial_id)
-            WHERE p.id IN (SELECT partial_id FROM tmp_table)
+            SET full_reconcile_id = tmp.full_id FROM tmp_table tmp WHERE p.id = tmp.partial_id
             """)
     #if it's a fresh v9 database, or it has been used after the migration, we need to fill the table based on partial
     all_partial_rec_ids = registry['account.partial.reconcile'].search(cr, SUPERUSER_ID, [('full_reconcile_id', '=', False)])
@@ -93,9 +90,19 @@ def _migrate_full_reconcile(cr, registry):
                 #in that case, mark the reference on the partial reconciliations and the entries
                 registry['account.full.reconcile'].create(cr, SUPERUSER_ID, {
                     'partial_reconcile_ids': [(6, 0, partial_rec_ids)],
-                    'reconciled_line_ids': [(6, 0, aml_ids)]
                     }, context={'check_move_validity': False})
-    #finally, remove reference to full reconcile if the amount_residual is not 0 (had a reconcile_id before migration, but was unreconciled)
-    tofix_aml_ids = registry['account.move.line'].search(cr, SUPERUSER_ID, [('full_reconcile_id', '!=', False), ('amount_residual', '!=', False)])
-    registry['account.move.line'].write(cr, SUPERUSER_ID, tofix_aml_ids, {'full_reconcile_id': False})
+        #copy values on account.move.line: rely on partial reconciliations only, as the reconcile_id column may not be
+        #up-to-date, as unreconciliations/new reconciliations may have been done after migration
+        cr.execute("""
+            WITH tmp_table AS (
+                SELECT debit_move_id AS aml_id, full_reconcile_id
+                FROM account_partial_reconcile rec
+                WHERE rec.full_reconcile_id IS NOT NULL
+                UNION ALL
+                SELECT credit_move_id AS aml_id, full_reconcile_id
+                FROM account_partial_reconcile rec
+                WHERE rec.full_reconcile_id IS NOT NULL)
+            UPDATE account_move_line aml
+            SET full_reconcile_id = tmp.full_reconcile_id FROM tmp_table tmp WHERE aml.id = tmp.aml_id
+            """)
     return
