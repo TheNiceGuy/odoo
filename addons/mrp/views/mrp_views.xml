@@ -814,7 +814,7 @@
                 </header>
                 <sheet>
                     <field name="post_visible" invisible="1"/>
-                    <div class="oe_button_box">
+                    <div class="oe_button_box" name="button_box">
                         <button name="%(action_mrp_workorder_production_specific)d" type="action" attrs="{'invisible': [('nb_orders', '=', 0)]}" class="oe_stat_button" icon="fa-play-circle-o">
                             <div class="o_form_field o_stat_info">
                                 <span class="o_stat_value"><field name="nb_done" widget="statinfo" nolabel="1"/> / <field name="nb_orders" widget="statinfo" nolabel="1"/></span>
@@ -1285,6 +1285,7 @@
                 <field name="blocked" invisible="1"/>
             </header>
             <sheet>
+                <div class="oe_button_box" name="button_box"/>
                 <group>
                     <group>
                         <field name="product" string="To Produce"/>
