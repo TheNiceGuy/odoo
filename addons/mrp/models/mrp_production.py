@@ -28,6 +28,7 @@ class MrpProduction(models.Model):
         return types[0].id if types else False
 
     def _location_src_default(self):
+        location=False
         if self.env.context.get('default_picking_type_id'):
             location = self.env['stock.picking_type'].browse(self.env.context['default_picking_type_id']).default_location_src_id.id
         if not location:
@@ -39,6 +40,7 @@ class MrpProduction(models.Model):
         return location
 
     def _location_dest_default(self):
+        location=False
         if self.env.context.get('default_picking_type_id'):
             location = self.env['stock.picking_type'].browse(self.env.context['default_picking_type_id']).default_location_dest_id.id
         if not location:
