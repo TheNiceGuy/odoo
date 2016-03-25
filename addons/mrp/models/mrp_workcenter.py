@@ -28,7 +28,7 @@ class MrpWorkcenter(models.Model):
     count_progress_order = fields.Integer(compute='_compute_orders', string="Total Running Orders")
     blocked = fields.Boolean('Blocked')
     working_state = fields.Selection([('normal', 'Normal'), ('blocked', 'Blocked'), ('done', 'In Progress')], string='Status', default="normal", store=True, 
-                                compute="_compute_stages", inverse='_set_blocked')
+                                compute="_compute_working_state", inverse='_set_blocked')
 
     @api.one
     def _set_blocked(self):
@@ -39,7 +39,7 @@ class MrpWorkcenter(models.Model):
 
     @api.multi
     @api.depends('order_ids', 'order_ids.state', 'blocked')
-    def _compute_stages(self):
+    def _compute_working_state(self):
         for workcenter in self:
             if workcenter.blocked:
                 workcenter.working_state = 'blocked'

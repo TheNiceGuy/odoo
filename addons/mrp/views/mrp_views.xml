@@ -289,7 +289,7 @@
                     <field name="name"/>
                     <field name="color"/>
                     <field name="nb_orders"/>
-                     <field name="working_state"/>
+                    <field name="working_state"/>
                     <templates>
                         <t t-name="kanban-box">
                             <div t-attf-class="#{kanban_color(record.color.raw_value)}">
@@ -350,9 +350,9 @@
                                                 <t t-set="status" t-value="'Work orders is running'"/>
                                             </t>
                                             <div t-att-title="status">
-                                                <field name="working_state" widget="kanban_state_selection"/>
+                                                <field name="working_state"/><!--  widget="kanban_state_selection"/>-->
                                             </div>
-                                        </div>
+                                        </div> 
                                     </div>
                                 </div><div class="container o_kanban_card_manage_pane o_invisible">
                                     <div class="row">
