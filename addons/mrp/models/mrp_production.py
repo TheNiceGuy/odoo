@@ -20,7 +20,6 @@ class MrpProduction(models.Model):
     _inherit = ['mail.thread', 'ir.needaction_mixin']
     _order = 'date_planned asc,id'
 
-
     @api.model
     def _default_picking_type(self):
         type_obj = self.env['stock.picking.type']
@@ -28,12 +27,26 @@ class MrpProduction(models.Model):
         types = type_obj.search([('code', '=', 'mrp_operation'), ('warehouse_id.company_id', 'in', [company_id, False])])
         return types[0].id if types else False
 
-    def _location_default(self):
-        try:
-            location = self.env.ref('stock.stock_location_stock')
-            location.check_access_rule('read')
-        except (AccessError, ValueError):
-            location = False
+    def _location_src_default(self):
+        if self.env.context.get('default_picking_type_id'):
+            location = self.env['stock.picking_type'].browse(self.env.context['default_picking_type_id']).default_location_src_id.id
+        if not location:
+            try:
+                location = self.env.ref('stock.stock_location_stock')
+                location.check_access_rule('read')
+            except (AccessError, ValueError):
+                location = False
+        return location
+
+    def _location_dest_default(self):
+        if self.env.context.get('default_picking_type_id'):
+            location = self.env['stock.picking_type'].browse(self.env.context['default_picking_type_id']).default_location_dest_id.id
+        if not location:
+            try:
+                location = self.env.ref('stock.stock_location_stock')
+                location.check_access_rule('read')
+            except (AccessError, ValueError):
+                location = False
         return location
 
     @api.multi
@@ -77,9 +90,9 @@ class MrpProduction(models.Model):
     product_uom_id = fields.Many2one('product.uom', string='Product Unit of Measure', required=True, readonly=True, states={'confirmed': [('readonly', False)]}, oldname='product_uom')
 
     picking_type_id = fields.Many2one('stock.picking.type', 'Picking Type', default=_default_picking_type, required=True)
-    location_src_id = fields.Many2one('stock.location', string='Raw Materials Location', default=_location_default,
+    location_src_id = fields.Many2one('stock.location', string='Raw Materials Location', default=_location_src_default,
                                       readonly=True, states={'confirmed': [('readonly', False)]})
-    location_dest_id = fields.Many2one('stock.location', string='Finished Products Location', default=_location_default,
+    location_dest_id = fields.Many2one('stock.location', string='Finished Products Location', default=_location_dest_default,
                                        readonly=True, states={'confirmed': [('readonly', False)]})
     date_planned = fields.Datetime(string='Expected Date', required=True, index=True, readonly=True, states={'confirmed': [('readonly', False)]}, copy=False, default=fields.Datetime.now)
 
