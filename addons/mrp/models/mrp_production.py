@@ -810,9 +810,8 @@ class MrpUnbuild(models.Model):
     def _get_consumed_quants(self):
         self.ensure_one()
         quants = self.env['stock.quant']
-        for move in self.consume_line_ids:
-            for quant in move.reserved_quant_ids:
-                quants = quants | quant.consumed_quant_ids
+        for quant in self.consume_line_id.reserved_quant_ids:
+            quants = quants | quant.consumed_quant_ids
         return quants
 
     #TODO: need quants defined here
