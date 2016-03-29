@@ -829,15 +829,15 @@
                     </div>
                     <group>
                         <group>
-                            <field name="is_move_raw" invisible="1"/>
+                            <field name="has_moves" invisible="1"/>
                             <field name="availability" invisible="1"/>
                             <field name="check_to_done" invisible="1"/>
-                            <field name="product_id" attrs="{'readonly': [('is_move_raw', '=', True)]}" domain="[('bom_ids', '!=', [])]"/>
+                            <field name="product_id" attrs="{'readonly': [('has_moves', '=', True)]}" domain="[('bom_ids', '!=', [])]"/>
                             <field name="product_tmpl_id" invisible="1"/>
                             <label for="product_qty"/>
                             <div class="o_row">
-                                <field name="product_qty" attrs="{'readonly': [('is_move_raw', '=', True)]}"/>
-                                <field name="product_uom_id" options="{'no_open':True,'no_create':True}" groups="product.group_uom" attrs="{'readonly': [('is_move_raw', '=', True)]}"/>
+                                <field name="product_qty" attrs="{'readonly': [('has_moves', '=', True)]}"/>
+                                <field name="product_uom_id" options="{'no_open':True,'no_create':True}" groups="product.group_uom" attrs="{'readonly': [('has_moves', '=', True)]}"/>
                                 <button type="action"
                                     name="%(mrp.action_change_production_qty)d"
                                     string="Update" states="confirmed,planned,progress" class="oe_link" attrs="{'invisible': [('state','=','done')]}"/>
@@ -849,15 +849,15 @@
                                                 ('product_tmpl_id.product_variant_ids','=',product_id),
                                                 ('product_id','=',False),
                                                 ('bom_type', '=', 'normal')]"
-                                context="{'default_product_tmpl_id': product_tmpl_id}" required="1" attrs="{'readonly': [('is_move_raw', '=', True)]}"/>
+                                context="{'default_product_tmpl_id': product_tmpl_id}" required="1" attrs="{'readonly': [('has_moves', '=', True)]}"/>
                             <field name="routing_id" groups="mrp.group_mrp_routings"/>
                         </group>
                         <group>
-                            <field name="date_planned" attrs="{'readonly': [('is_move_raw', '=', True)]}"/>
-                            <field name="user_id" attrs="{'readonly': [('is_move_raw', '=', True)]}"/>
-                            <field name="origin" attrs="{'readonly': [('is_move_raw', '=', True)]}"/>
-                            <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}" attrs="{'readonly': [('is_move_raw', '=', True)]}"/>
-                            <field name="move_prod_id" groups="base.group_no_one" attrs="{'readonly': [('is_move_raw', '=', True)]}"/>
+                            <field name="date_planned" attrs="{'readonly': [('has_moves', '=', True)]}"/>
+                            <field name="user_id" attrs="{'readonly': [('has_moves', '=', True)]}"/>
+                            <field name="origin" attrs="{'readonly': [('has_moves', '=', True)]}"/>
+                            <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}" attrs="{'readonly': [('has_moves', '=', True)]}"/>
+                            <field name="move_prod_id" groups="base.group_no_one" attrs="{'readonly': [('has_moves', '=', True)]}"/>
                         </group>
                     </group>
                     <notebook>
@@ -902,9 +902,9 @@
                         <page string="Miscellaneous">
                             <group>
                                 <group groups="stock.group_stock_multi_locations">
-                                    <field name="picking_type_id" attrs="{'readonly': [('is_move_raw', '=', True)]}"/>
-                                    <field name="location_src_id" domain="[('usage','=','internal')]" attrs="{'readonly': [('is_move_raw', '=', True)]}"/>
-                                    <field name="location_dest_id" domain="[('usage','=','internal')]" attrs="{'readonly': [('is_move_raw', '=', True)]}"/>
+                                    <field name="picking_type_id" attrs="{'readonly': [('has_moves', '=', True)]}"/>
+                                    <field name="location_src_id" domain="[('usage','=','internal')]" attrs="{'readonly': [('has_moves', '=', True)]}"/>
+                                    <field name="location_dest_id" domain="[('usage','=','internal')]" attrs="{'readonly': [('has_moves', '=', True)]}"/>
                                 </group>
                             </group>
                         </page>
