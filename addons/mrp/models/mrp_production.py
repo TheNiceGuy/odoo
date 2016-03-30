@@ -528,14 +528,13 @@ class MrpProductionWorkcenterLine(models.Model):
             raise UserError(_('Please set the quantity you produced in the Current Qty field. It can not be 0!'))
 
         # Update quantities done on each raw material line
-        raw_moves = self.move_raw_ids.filtered(lambda x: (x.has_tracking == 'none') and (x.state not in ('done', 'cancel')))
+        raw_moves = self.move_raw_ids.filtered(lambda x: (x.has_tracking == 'none') and (x.state not in ('done', 'cancel')) and x.bom_line_id)
         for move in raw_moves:
             factor = 1.0
             #if it's a finished product, we use factor 1 as no bom_line
             if move.bom_line_id:
                 factor = move.bom_line_id.bom_id.product_qty * move.bom_line_id.product_qty
-            move.quantity_done += self.qty_producing / factor
-
+            move.quantity_done += factor * self.qty_producing
         # One a piece is produced, you can launch the next work order
         if self.next_work_order_id.state=='pending':
             self.next_work_order_id.state='ready'
@@ -560,7 +559,7 @@ class MrpProductionWorkcenterLine(models.Model):
                                      'lot_id': self.final_lot_id.id,
                                      'quantity': self.qty_producing, })
             else:
-                production_move.product_uom_qty += self.qty_producing #TODO: UoM conversion?
+                production_move.quantity_done += self.qty_producing #TODO: UoM conversion?
         # Update workorder quantity produced
         self.qty_produced += self.qty_producing
         self.qty_producing = 1.0
