@@ -532,6 +532,9 @@ class MrpProductionWorkcenterLine(models.Model):
         if self.qty_producing <= 0:
             raise UserError(_('Please set the quantity you produced in the Current Qty field. It can not be 0!'))
 
+        if (self.product_id.tracking != 'none') and not self.final_lot_id:
+            raise UserError(_('You should provide a lot for the final product'))
+
         # Update quantities done on each raw material line
         raw_moves = self.move_raw_ids.filtered(lambda x: (x.has_tracking == 'none') and (x.state not in ('done', 'cancel')))
         for move in raw_moves:
@@ -540,6 +543,20 @@ class MrpProductionWorkcenterLine(models.Model):
             if move.bom_line_id:
                 factor = move.bom_line_id.bom_id.product_qty * move.bom_line_id.product_qty
             move.quantity_done += self.qty_producing / factor
+        # Transfer quantities from temporary to definitive work orders
+        for move_lot in self.active_move_lot_ids:
+            #Check if move_lot already exists
+            if move_lot.quantity_done <= 0: #rounding...
+                continue
+            if not move_lot.lot_id:
+                raise UserError(_('You should provide a lot for a component'))
+            #Search other move_lot where it could be added:
+            lots = self.move_lot_ids.filtered(lambda x: (x.lot_id.id == move_lot.id))
+            if lots:
+                lots[0].quantity_done += move_lot.quantity_done
+                move_lot.unlink()
+            else:
+                move_lot.done_wo = True
 
         # One a piece is produced, you can launch the next work order
         if self.next_work_order_id.state=='pending':
@@ -548,7 +565,7 @@ class MrpProductionWorkcenterLine(models.Model):
             self.next_work_order_id.final_lot_id = self.final_lot_id.id
 
         #TODO: add filter for those that have not been done yet
-        self.move_lot_ids.write({'lot_produced_id': self.final_lot_id.id,
+        self.move_lot_ids.filtered(lambda x: not x.done).write({'lot_produced_id': self.final_lot_id.id,
                                           'lot_produced_qty': self.qty_producing,
                                           'done': True})
 

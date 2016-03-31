@@ -30,6 +30,7 @@ class StockMoveLots(models.Model):
     quantity_done = fields.Float('Done')
     product_id = fields.Many2one('product.product', related="move_id.product_id")
     done_wo = fields.Boolean('Done for Work Order', default=True)
+    done = fields.Boolean('Done for Inventory Posting', default=False)
     plus_visible = fields.Boolean(compute='_compute_plus', string="Plus Visible")
 
     @api.multi
