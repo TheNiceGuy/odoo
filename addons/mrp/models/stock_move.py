@@ -22,7 +22,6 @@ class StockMoveLots(models.Model):
 
     move_id = fields.Many2one('stock.move', string='Move')
     workorder_id = fields.Many2one('mrp.production.work.order', string='Work Order')
-    active_workorder_id = fields.Many2one('mrp.production.work.order', string='Active Work Order')
     production_id = fields.Many2one('mrp.production')
     lot_id = fields.Many2one('stock.production.lot', string='Lot')
     lot_produced_id = fields.Many2one('stock.production.lot', string='Finished Lot')
@@ -30,7 +29,7 @@ class StockMoveLots(models.Model):
     quantity = fields.Float('Quantity', default=1.0)
     quantity_done = fields.Float('Done')
     product_id = fields.Many2one('product.product', related="move_id.product_id")
-    on_workorder = fields.Boolean('On Work Order', default=False)
+    done_wo = fields.Boolean('Done for Work Order', default=True)
     plus_visible = fields.Boolean(compute='_compute_plus', string="Plus Visible")
 
     @api.multi
@@ -60,7 +59,7 @@ class StockMove(models.Model):
     quantity_done_store = fields.Float('Quantity', digits_compute=dp.get_precision('Product Unit of Measure'))
     quantity_done = fields.Float('Quantity', digits_compute=dp.get_precision('Product Unit of Measure'),
         compute='_qty_done_compute', inverse='_qty_done_set')
-    move_lot_ids = fields.One2many('stock.move.lots', 'move_id', string='Lots')
+    move_lot_ids = fields.One2many('stock.move.lots', 'move_id', domain=[('done_wo', '=', True)], string='Lots')
     bom_line_id = fields.Many2one('mrp.bom.line', string="BoM Line")
     is_done = fields.Boolean('Done', compute='_compute_is_done', help='Technical Field to order moves', store=True)
 
