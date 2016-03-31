@@ -177,7 +177,7 @@ class MrpProduction(models.Model):
             self.move_finished_ids.filtered(lambda x: x.operation_id.id in tocheck).write({
                 'workorder_id': workorder_id.id
             })
-            #workorder_id._generate_lot_ids()
+            workorder_id._generate_lot_ids()
             state = 'pending'
         return True
 
@@ -188,20 +188,9 @@ class MrpProduction(models.Model):
         for order in orders_new:
             quantity = order.product_uom_id._compute_qty(order.product_qty, order.bom_id.product_uom_id.id)
             order.bom_id.explode(order.product_id, quantity, method_wo=order._workorders_create)
+        #Create 
+        orders_new.create_move_lots()
         orders_new.write({'state': 'planned'})
-
-    def _check_serial(self):
-        '''
-            Checks if the production should help with this
-        '''
-        self.ensure_one()
-        for move in self.move_raw_ids:
-            if move.product_id.tracking == 'serial':
-                return True
-        for move in self.move_finished_ids:
-            if move.product_id.tracking == 'serial':
-                return True
-        return False
 
     @api.multi
     def unlink(self):
@@ -464,10 +453,11 @@ class MrpProductionWorkcenterLine(models.Model):
     operation_id = fields.Many2one('mrp.routing.workcenter', 'Operation') #Should be used differently as BoM can change in the meantime
 
     move_raw_ids = fields.One2many('stock.move', 'workorder_id', 'Moves')
-    move_traceability_ids = fields.One2many('stock.move.lots', 'workorder_id', string='Moves to Track',
+    move_lot_ids = fields.One2many('stock.move.lots', 'workorder_id', string='Moves to Track',
         help="Inventory moves for which you must scan a lot number at this work order")
-    active_move_traceability_ids = fields.One2many('stock.move.lots', 'workorder_id', string='Active Moves to Track',
-        help="Active Inventory moves for which you must scan a lot number at this work order", domain=[('done', '=', False)])
+    active_move_lot_ids = fields.One2many('stock.move.lots', 'active_workorder_id')
+    #active_move_lot_ids = fields.One2many('stock.move.lots', 'workorder_id', string='Active Moves to Track',
+    #    help="Active Inventory moves for which you must scan a lot number at this work order", domain=[('done', '=', False)])
 
     # FP TODO: replace by a related through MO, otherwise too much computation without need
     availability = fields.Selection([('waiting', 'Waiting'), ('assigned', 'Available')], 'Stock Availability', store=True, compute='_compute_availability')
@@ -501,6 +491,7 @@ class MrpProductionWorkcenterLine(models.Model):
         """
         self.ensure_one()
         move_lot_obj = self.env['stock.move.lots']
+        
         if self.move_raw_ids:
             moves = self.move_raw_ids.filtered(lambda x: (x.state not in ('done', 'cancel')) and (x.product_id.tracking != 'none') and (x.product_id.id != self.product.id))
             for move in moves:
@@ -508,22 +499,22 @@ class MrpProductionWorkcenterLine(models.Model):
                 if move.product_id.tracking=='serial':
                     while qty > 0.000001:
                         move_lot_obj.create({
-                            'move_id': move.id,
+                            'active_move_id': move.id,
                             'quantity': min(1,qty),
                             'quantity_done': min(1,qty),
                             'product_id': move.product_id.id,
                             'production_id': self.production_id.id,
-                            'workorder_id': self.id,
+                            'active_workorder_id': self.id,
                         })
                         qty -= 1
                 else:
                     move_lot_obj.create({
-                        'move_id': move.id,
+                        'active_move_id': move.id,
                         'quantity': qty,
                         'quantity_done': qty,
                         'product_id': move.product_id.id,
                         'production_id': self.production_id.id,
-                        'workorder_id': self.id,
+                        'active_workorder_id': self.id,
                         })
                 #self.env['stock.move.lots'].create({'':''})
 
@@ -549,7 +540,7 @@ class MrpProductionWorkcenterLine(models.Model):
             self.next_work_order_id.final_lot_id = self.final_lot_id.id
 
         #TODO: add filter for those that have not been done yet
-        self.move_traceability_ids.write({'lot_produced_id': self.final_lot_id.id,
+        self.move_lot_ids.write({'lot_produced_id': self.final_lot_id.id,
                                           'lot_produced_qty': self.qty_producing,
                                           'done': True})
 

@@ -20,8 +20,9 @@ class StockMoveLots(models.Model):
             else:
                 movelot.plus_visible = (movelot.quantity == 0.0) or (movelot.quantity_done < movelot.quantity)
 
-    move_id = fields.Many2one('stock.move', string='Inventory Move', required=True)
+    move_id = fields.Many2one('stock.move', string='Move')
     workorder_id = fields.Many2one('mrp.production.work.order', string='Work Order')
+    active_workorder_id = fields.Many2one('mrp.production.work.order', string='Active Work Order')
     production_id = fields.Many2one('mrp.production')
     lot_id = fields.Many2one('stock.production.lot', string='Lot')
     lot_produced_id = fields.Many2one('stock.production.lot', string='Finished Lot')
@@ -29,7 +30,7 @@ class StockMoveLots(models.Model):
     quantity = fields.Float('Quantity', default=1.0)
     quantity_done = fields.Float('Done')
     product_id = fields.Many2one('product.product', related="move_id.product_id")
-    done = fields.Boolean('Done', default=False)
+    on_workorder = fields.Boolean('On Work Order', default=False)
     plus_visible = fields.Boolean(compute='_compute_plus', string="Plus Visible")
 
     @api.multi

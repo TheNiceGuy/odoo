@@ -1314,11 +1314,11 @@
                     <group>
                         <group>
                             <field name="qty_producing" string="Current Qty"/>
-                            <field name="final_lot_id" context="{'default_product_id': product}" attrs="{'invisible': [('has_tracking', '=', 'none')], 'required': [('has_tracking', '!=', 'none')]}" groups="stock.group_production_lot"/>
+                            <field name="final_lot_id" context="{'default_product_id': product}" attrs="{'invisible': [('has_tracking', '=', 'none')]}" groups="stock.group_production_lot"/>
                             <field name="has_tracking" invisible="1"/>
                         </group>
                     </group>
-                    <field name="active_move_traceability_ids" attrs="{'invisible': [('active_move_traceability_ids', '=', [])]}">
+                    <field name="active_move_lot_ids" attrs="{'invisible': [('active_move_lot_ids', '=', [])]}">
                         <tree editable="bottom">
                             <field name="product_id"/>
                             <field name="quantity"/>
