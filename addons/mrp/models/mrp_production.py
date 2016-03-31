@@ -395,6 +395,16 @@ class MrpProduction(models.Model):
             'target': 'new',
         }
 
+    @api.multi
+    def button_scrapped_moves(self):
+        self.ensure_one()
+        action_rec = self.env.ref('stock.action_move_form2')
+        scrap_moves = self.env['stock.move'].search([('production_id', '=', self.id), ('scrapped', '=', True), ('state', '=', 'done')])
+        if action_rec:
+            action = action_rec.read([])[0]
+            action['domain'] = [('id', 'in', scrap_moves.ids)]
+            return action
+
 
 class MrpProductionWorkcenterLine(models.Model):
     _name = 'mrp.production.work.order'
@@ -428,8 +438,9 @@ class MrpProductionWorkcenterLine(models.Model):
         for workorder in self:
             domain = [
                 ('picking_type_id', '=', workorder.production_id.picking_type_id.id), '|',
-                ('bom_id', '=', workorder.production_id.bom_id.id),
+                ('bom_id', '=', workorder.production_id.bom_id.id), '|',
                 ('workcenter_id', '=', workorder.workcenter_id.id),
+                ('routing_id', '=', workorder.operation_id.routing_id.id),
                 ('valid_until', '>=', fields.Date.today())
             ]
             messages = InventoryMessage.search(domain).mapped('message')
@@ -851,10 +862,11 @@ class InventoryMessage(models.Model):
     message = fields.Html(required=True)
     picking_type_id = fields.Many2one('stock.picking.type', string="Alert on Operation", required=True)
     code = fields.Selection(related='picking_type_id.code', store=True)
-    product_id = fields.Many2one('product.product', string="Product", required=True)
+    product_id = fields.Many2one('product.product', string="Product")
     bom_id = fields.Many2one('mrp.bom', 'Bill of Material')
     workcenter_id = fields.Many2one('mrp.workcenter', string='Work Center')
     valid_until = fields.Date(default=_default_valid_until, required=True)
+    routing_id = fields.Many2one('mrp.routing', string='Routing')
 
     @api.onchange('product_id')
     def onchange_product_id(self):
