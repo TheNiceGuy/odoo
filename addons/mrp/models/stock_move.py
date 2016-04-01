@@ -23,14 +23,14 @@ class StockMoveLots(models.Model):
     move_id = fields.Many2one('stock.move', string='Move')
     workorder_id = fields.Many2one('mrp.production.work.order', string='Work Order')
     production_id = fields.Many2one('mrp.production')
-    lot_id = fields.Many2one('stock.production.lot', string='Lot')
+    lot_id = fields.Many2one('stock.production.lot', string='Lot', domain="[('product_id', '=', product_id)]")
     lot_produced_id = fields.Many2one('stock.production.lot', string='Finished Lot')
     lot_produced_qty = fields.Float('Quantity Finished Product')
     quantity = fields.Float('Quantity', default=1.0)
     quantity_done = fields.Float('Done')
-    product_id = fields.Many2one('product.product', related="move_id.product_id")
+    product_id = fields.Many2one('product.product', related="move_id.product_id", store=True, readonly=True)
     done_wo = fields.Boolean('Done for Work Order', default=True)
-    done = fields.Boolean('Done for Inventory Posting', default=False)
+    done_move = fields.Boolean('Move Done', related='move_id.is_done', store=True)
     plus_visible = fields.Boolean(compute='_compute_plus', string="Plus Visible")
 
     @api.multi
