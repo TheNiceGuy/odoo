@@ -553,7 +553,7 @@ class MrpProductionWorkcenterLine(models.Model):
             if not move_lot.lot_id:
                 raise UserError(_('You should provide a lot for a component'))
             #Search other move_lot where it could be added:
-            lots = self.move_lot_ids.filtered(lambda x: (x.lot_id.id == move_lot.id))
+            lots = self.move_lot_ids.filtered(lambda x: (x.lot_id.id == move_lot.id) and (not x.lot_produced_id) and (not self.done_move))
             if lots:
                 lots[0].quantity_done += move_lot.quantity_done
                 move_lot.unlink()
@@ -586,7 +586,7 @@ class MrpProductionWorkcenterLine(models.Model):
                                      'workorder_id': self.id,
                                      })
             else:
-                production_move.product_uom_qty += self.qty_producing #TODO: UoM conversion?
+                production_move.quantity_done += self.qty_producing #TODO: UoM conversion?
         # Update workorder quantity produced
         self.qty_produced += self.qty_producing
         self.qty_producing = 1.0
