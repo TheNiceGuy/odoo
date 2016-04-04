@@ -345,6 +345,7 @@ class MrpProduction(models.Model):
             source_location = self.bom_id.routing_id.location_id
         else:
             source_location = self.location_src_id
+        
         data = {
             'name': self.name,
             'date': self.date_planned,
@@ -358,13 +359,31 @@ class MrpProduction(models.Model):
             'company_id': self.company_id.id,
             'operation_id': bom_line.operation_id.id,
             'price_unit': bom_line.product_id.standard_price,
-            'procure_method': bom_line.procure_method,
+            'procure_method': 'make_to_stock',
             'origin': self.name,
             'warehouse_id': source_location.get_warehouse(),
             'group_id': self.procurement_group_id.id,
             'propagate': self.propagate,
         }
-        return self.env['stock.move'].create(data).action_confirm()
+        return self.env['stock.move'].create(data)
+
+    @api.multi
+    def _adjust_procure_method(self):
+        try: 
+            mto_route = self.env['stock.warehouse']._get_mto_route()
+        except:
+            mto_route = False 
+        for move in self.move_raw_ids:
+            product = move.product_id
+            routes = product.route_ids + product.categ_id.route_ids
+            #TODO: optimize with read_group?
+            pull = self.env['procurement.rule'].search([('route_id', 'in', [x.id for x in routes]), ('location_src_id', '=', move.location_id.id),
+                                                         ('location_id', '=', move.location_dest_id.id)], limit=1)
+            if pull and (pull.procure_method == 'make_to_order'):
+                move.procure_method = pull.procure_method
+            elif not pull:
+                if mto_route and mto_route in [x.id for x in routes]:
+                    move.procure_method = 'make_to_order'
 
     @api.multi
     def _generate_moves(self):
@@ -372,6 +391,9 @@ class MrpProduction(models.Model):
             production._make_production_produce_line()
             factor = self.env['product.uom']._compute_qty(self.product_uom_id.id, production.product_qty, production.bom_id.product_uom_id.id)
             production.bom_id.explode(production.product_id, factor / production.bom_id.product_qty, self._generate_move)
+            #Check for all draft moves whether they are mto or not
+            self._adjust_procure_method()
+            self.move_raw_ids.action_confirm()
         return True
 
     @api.multi
