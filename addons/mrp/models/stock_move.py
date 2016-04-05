@@ -141,6 +141,8 @@ class StockMove(models.Model):
         for move in self:
             if move.state in ('done', 'cancel'):
                 continue
+            if move.quantity_done <= 0:
+                continue
             moves_todo |= move
             if move.quantity_done > move.product_uom_qty:
                 remaining_qty = move.quantity_done - move.product_uom_qty #Convert to UoM of move
