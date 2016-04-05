@@ -589,8 +589,10 @@ class MrpProductionWorkcenterLine(models.Model):
             lots = self.move_lot_ids.filtered(lambda x: (x.lot_id.id == move_lot.id) and (not x.lot_produced_id) and (not self.done_move))
             if lots:
                 lots[0].quantity_done += move_lot.quantity_done
+                lots[0].lot_produced_id = self.final_lot_id.id
                 move_lot.unlink()
             else:
+                move_lot.lot_produced_id = self.final_lot_id.id
                 move_lot.done_wo = True
 
         # One a piece is produced, you can launch the next work order
@@ -622,8 +624,17 @@ class MrpProductionWorkcenterLine(models.Model):
                 production_move.quantity_done += self.qty_producing #TODO: UoM conversion?
         # Update workorder quantity produced
         self.qty_produced += self.qty_producing
-        self.qty_producing = 1.0
-        self._generate_lot_ids()
+
+        # Set a qty producing 
+        if self.qty_produced >= self.qty:
+            self.qty_producing = 0
+        elif self.product.tracking == 'serial':
+            self.qty_producing = 1.0
+            self._generate_lot_ids()
+        else:
+            self.qty_producing = self.qty - self.qty_produced
+            self._generate_lot_ids()
+
         self.final_lot_id = False
         if self.qty_produced >= self.qty:
             self.button_finish()
