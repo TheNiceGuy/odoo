@@ -648,8 +648,6 @@ class MrpProductionWorkcenterLine(models.Model):
             if move.product_id.tracking == 'lot':
                 if existing_move_lots:
                     existing_move_lots[0].quantity = qty
-                #else:
-                #    self.active_move_lot_ids += self.env['stock.move.lots'].new({'workorder_id'})
             elif move.product_id.tracking == 'serial':
                 if existing_move_lots:
                     #Create extra pseudo record
@@ -665,6 +663,18 @@ class MrpProductionWorkcenterLine(models.Model):
                                                                                         'workorder_id': self.id,
                                                                                         'done_wo': False})
                             qty_todo -= 1
+                    elif qty < sum_quantities:
+                        qty_todo = sum_quantities - qty
+                        for movelot in existing_move_lots:
+                            if qty_todo <= 0:
+                                break
+                            if (movelot.quantity_done == 0) and (qty_todo - movelot.quantity > 0):
+                                qty_todo -= movelot.quantity
+                                self.active_move_lot_ids -= movelot
+                            else:
+                                movelot.quantity = movelot.quantity - qty_todo
+                                qty_todo = 0
+
 
     def _get_current_state(self):
         for order in self:
