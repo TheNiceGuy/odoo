@@ -73,6 +73,13 @@ class MrpProductProduce(models.TransientModel):
         for move in moves.filtered(lambda x: x.product_id.tracking == 'none' and x.state not in ('done', 'cancel')):
             quantity = self.product_qty
             if move.bom_line_id:
-                quantity = quantity / move.bom_line_id.bom_id.product_qty * move.bom_line_id.product_qty
-            move.quantity_done_store += quantity
+                if move.bom_line_id.bom_id.bom_type == 'phantom':
+                    result = []
+                    self.production_id.bom_id.explode(self.product_id, quantity, method=self.production_id.bom_id._prepare_consume_line, result=result)
+                    for res in result:
+                        if res['bom_line_id'] == move.bom_line_id.id:
+                            quantity = res['product_uom_qty']
+                else:
+                    quantity = quantity / move.bom_line_id.bom_id.product_qty * move.bom_line_id.product_qty
+            move.quantity_done += quantity
         return {'type': 'ir.actions.act_window_close'}
