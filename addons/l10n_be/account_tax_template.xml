@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <openerp>
   <data noupdate="0">
+        <!-- Tax Tags, used in VAT report-->
         <record id="tax_tag_00" model="account.account.tag">
             <field name="name">Belgium VAT Form: grid 0</field>
             <field name="applicability">taxes</field>
@@ -268,7 +269,7 @@
             <field name="price_include" eval="0"/>
             <field name="amount">0</field>
             <field name="amount_type">percent</field>
-            <field name="type_tax_use">tax_adjustments</field>
+            <field name="type_tax_use">none</field>
             <field name="chart_template_id" ref="l10nbe_chart_template"/>
             <field name="tag_ids" eval="[(6,0,[ref('tax_tag_46L'), ref('tax_tag_48s46L')])]"/>
         </record>
@@ -279,7 +280,7 @@
             <field name="price_include" eval="0"/>
             <field name="amount">0</field>
             <field name="amount_type">percent</field>
-            <field name="type_tax_use">tax_adjustments</field>
+            <field name="type_tax_use">none</field>
             <field name="chart_template_id" ref="l10nbe_chart_template"/>
             <field name="tag_ids" eval="[(6,0,[ref('tax_tag_46T'), ref('tax_tag_48s46T')])]"/>
         </record>
@@ -1764,7 +1765,7 @@
             <field name="name">Régularisation en faveur de l'état</field>
             <field name="price_include" eval="0"/>
             <field name="amount">0.0</field>
-            <field name="amount_type">percent</field>
+            <field name="amount_type">fixed</field>
             <field name="type_tax_use">none</field>
             <field name="chart_template_id" ref="l10nbe_chart_template"/>
             <field name="tag_ids" eval="[(6,0,[ref('tax_tag_61')])]"/>
@@ -1775,7 +1776,7 @@
             <field name="name">Régularisation en faveur du déclarant</field>
             <field name="price_include" eval="0"/>
             <field name="amount">0.0</field>
-            <field name="amount_type">percent</field>
+            <field name="amount_type">fixed</field>
             <field name="type_tax_use">none</field>
             <field name="chart_template_id" ref="l10nbe_chart_template"/>
             <field name="tag_ids" eval="[(6,0,[ref('tax_tag_62')])]"/>

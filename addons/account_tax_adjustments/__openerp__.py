@@ -12,12 +12,12 @@ Accounting Tax Adjustments.
 This module adds a wizard to deal with manual Tax adjustments, to manually correct the VAT declaration through a miscellaneous operation for example
     """,
     'website': 'https://www.odoo.com/page/accounting',
-    'depends': ['account_accountant'],
+    'depends': ['account'],
     'data': [
         'views/tax_adjustments.xml',
         'wizard/wizard_tax_adjustments_view.xml',
     ],
     'demo': [],
     'installable': True,
-    'auto_install': True,
+    'auto_install': False,
 }
