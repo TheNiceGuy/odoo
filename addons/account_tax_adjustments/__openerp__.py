@@ -9,7 +9,14 @@
 Accounting Tax Adjustments.
 ===========================
 
-This module adds a wizard to deal with manual Tax adjustments, to manually correct the VAT declaration through a miscellaneous operation for example
+This module adds a wizard to deal with manual Tax adjustments, to manually correct the VAT declaration through a miscellaneous operation for example.
+
+The correct definition of an adjustment tax is
+- type_tax_use: none
+- amount_type: fixed
+- amount: 0
+- tags: a grid used in your vat report for manual correction.
+
     """,
     'website': 'https://www.odoo.com/page/accounting',
     'depends': ['account'],
