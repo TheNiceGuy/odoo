@@ -380,7 +380,6 @@ class MrpProduction(models.Model):
         for production in self:
             move_to_assign = production.move_raw_ids.filtered(lambda x: x.state in ('confirmed', 'waiting', 'assigned'))
             move_to_assign.action_assign()
-            move_to_assign.create_lots()
         return True
 
     @api.multi

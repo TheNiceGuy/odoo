@@ -39,7 +39,6 @@ class StockMoveConsume(models.TransientModel):
         production_id = move.raw_material_production_id.id
         production = self.env['mrp.production'].browse(production_id)
         precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
-
         for data in self:
             qty = data['product_uom_id']._compute_qty(data.product_qty, data.product_id.uom_id.id)
             remaining_qty = move.product_qty - qty

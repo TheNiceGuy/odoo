@@ -48,7 +48,6 @@ class MrpProductProduce(models.TransientModel):
                         })
                 else:
                     existing_lines += [x.id for x in move.move_lot_ids]
-
             res['serial'] = serial
             res['production_id'] = production.id
             res['product_qty'] = quantity
@@ -75,4 +74,26 @@ class MrpProductProduce(models.TransientModel):
             if move.bom_line_id:
                 quantity = quantity / move.bom_line_id.bom_id.product_qty * move.bom_line_id.product_qty
             move.quantity_done_store += quantity
+        self.check_finished_move_lots()
         return {'type': 'ir.actions.act_window_close'}
+
+    @api.multi
+    def check_finished_move_lots(self):
+        lots = self.env['stock.move.lots']
+        produce_move = self.production_id.move_finished_ids.filtered(lambda x: x.product_id == self.product_id and x.state not in ('done', 'cancel'))
+        if produce_move.product_id.tracking != 'none':
+            existing_move_lot = produce_move.move_lot_ids.filtered(lambda x: x.lot_id == self.lot_id)
+            if existing_move_lot:
+                existing_move_lot.quantity += self.product_qty
+                existing_move_lot.quantity_done += self.product_qty
+            else:
+                vals = {
+                    'move_id': produce_move.id,
+                    'product_id': produce_move.product_id.id,
+                    'production_id': self.production_id.id,
+                    'quantity': self.product_qty,
+                    'quantity_done': self.product_qty,
+                    'lot_id': self.lot_id.id,
+                }
+                lots.create(vals)
+        return True

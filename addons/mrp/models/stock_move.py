@@ -88,13 +88,14 @@ class StockMove(models.Model):
                     group_new_quant[key] += quant.qty
                 else:
                     group_new_quant[key] = quant.qty
+            # Recompute if exist
             for key in group_new_quant:
                 quantity = group_new_quant[key]
                 if old_move_lot.get(key):
                     if old_move_lot[key][0].quantity == quantity:
                         continue
                     else:
-                        old_move_lot[key].quantity = quantity
+                        old_move_lot[key][0].quantity = quantity
                 else:
                     vals = {
                         'move_id': move.id,
@@ -108,7 +109,22 @@ class StockMove(models.Model):
         return True
 
     @api.multi
-    @api.depends('move_lot_ids','move_lot_ids.quantity_done')
+    def action_assign(self, no_prepare=False):
+        res = super(StockMove, self).action_assign(no_prepare=no_prepare)
+        self.check_recompute_move_lots()
+        return res
+
+    @api.multi
+    def check_recompute_move_lots(self):
+        todo_lots = self.env['stock.move']
+        for move in self.filtered(lambda x : x.raw_material_production_id):
+            todo_lots = todo_lots | move
+        todo_lots.create_lots()
+        return True
+
+
+    @api.multi
+    @api.depends('move_lot_ids','move_lot_ids.quantity_done', 'quantity_done_store')
     def _qty_done_compute(self):
         for move in self:
             if move.has_tracking != 'none':
@@ -273,7 +289,7 @@ class StockQuant(models.Model):
 
 class StockProductionLot(models.Model):
     _inherit = "stock.production.lot"
-    
+
     @api.model
     def name_search(self, name, args=None, operator='ilike', limit=100):
         args = args or []
