@@ -299,6 +299,9 @@ class MrpProduction(models.Model):
 
     @api.multi
     def button_mark_done(self):
+        self.ensure_one()
+        if any([(x.state != 'done') for x in self.work_order_ids]):
+            raise UserError(_('You still need to produce qty or need to done workorder!'))
         self.post_inventory()
         # self._costs_generate()
         write_res = self.write({'state': 'done', 'date_finished': fields.datetime.now()})
