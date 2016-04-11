@@ -1278,7 +1278,7 @@
                 <button name="button_start" type="object" string="Start Working" attrs="{'invisible': ['|', ('blocked', '=', True), ('state', '!=', 'pending')]}"/>
                 <button name="button_start" type="object" string="Start Working" attrs="{'invisible': ['|', ('blocked', '=', True), ('state', '!=', 'ready')]}" class="btn-success"/>
                 <button name="record_production" type="object" string="Record Production" class="btn-success" attrs="{'invisible': ['|', ('state', '!=', 'progress'), ('show_state', '=', False)]}"/>
-                <button name="button_pending" type="object" string="Pause" class="btn-warning" attrs="{'invisible': ['|', ('state', 'in', ('done', 'pending', 'ready')), ('show_state', '=', False)]}"><span>(<field name="delay" widget="float_time" class="oe_inline"/>)</span></button>
+                <button name="button_pending" type="object" string="Pause" class="btn-warning" attrs="{'invisible': ['|', ('state', 'in', ('done', 'pending', 'ready')), ('show_state', '=', False)]}"/>
                 <button name="button_block" type="object" string="Block" class="btn-danger" attrs="{'invisible': ['|', ('state', 'in', ('done', 'pending', 'ready')), ('show_state', '=', False)]}"/>
                 <button name="button_unblock" type="object" string="Unblock" class="btn-danger" attrs="{'invisible': [('blocked', '=', False)]}"/>
                 <button name="button_start" type="object" string="Continue Production" class="btn-warning" attrs="{'invisible': ['|', '|', ('blocked', '=', True), ('show_state', '=', True), ('state', 'in', ('done', 'pending', 'ready'))]}"></button>
@@ -1386,6 +1386,7 @@
                             <field name="name"/>
                             <field name="workcenter_id" readonly="1"/>
                             <field name="production_id" readonly="1"/>
+                            <field name="delay" widget="float_time" attrs="{'invisible': [('show_state', '=', True)]}"/>
                         </group>
                     </group>
                 </page>
