@@ -73,6 +73,17 @@ class StockMove(models.Model):
         for move in self:
             move.is_done = (move.state in ('done', 'cancel'))
 
+    @api.multi
+    def action_assign(self):
+        res = super(StockMove, self).action_assign()
+        self.check_move_lots()
+        return res
+
+    @api.multi
+    def check_move_lots(self):
+        moves_todo = self.filtered(lambda x: x.raw_material_production_id and x.state not in ('done', 'cancel') )
+        return moves_todo.create_lots()
+
 
     @api.multi
     def create_lots(self):
