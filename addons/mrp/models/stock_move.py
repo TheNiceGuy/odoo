@@ -74,8 +74,8 @@ class StockMove(models.Model):
             move.is_done = (move.state in ('done', 'cancel'))
 
     @api.multi
-    def action_assign(self):
-        res = super(StockMove, self).action_assign()
+    def action_assign(self, no_prepare=False):
+        res = super(StockMove, self).action_assign(no_prepare=no_prepare)
         self.check_move_lots()
         return res
 
