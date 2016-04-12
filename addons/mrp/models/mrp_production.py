@@ -461,18 +461,6 @@ class MrpProductionWorkcenterLine(models.Model):
             workorder.delay = duration
             workorder.delay_unit = round(duration / max(workorder.qty_produced, 1), 2)
 
-    @api.multi
-    @api.depends('move_raw_ids.state')
-    def _compute_availability(self):
-        for workorder in self:
-            if workorder.move_raw_ids:
-                if any([x.state != 'assigned' for x in workorder.move_raw_ids]):
-                    workorder.availability = 'waiting'
-                else:
-                    workorder.availability = 'assigned'
-            else:
-                workorder.availability = workorder.production_id.availability == 'assigned' and 'assigned' or 'waiting'
-
     @api.depends('production_id', 'workcenter_id', 'production_id.bom_id', 'production_id.picking_type_id')
     def _get_inventory_message(self):
         InventoryMessage = self.env['inventory.message']
@@ -514,12 +502,8 @@ class MrpProductionWorkcenterLine(models.Model):
     move_lot_ids = fields.One2many('stock.move.lots', 'workorder_id', string='Moves to Track', domain=[('done_wo', '=', True)],
         help="Inventory moves for which you must scan a lot number at this work order")
     active_move_lot_ids = fields.One2many('stock.move.lots', 'workorder_id', domain=[('done_wo', '=', False)])
-    #active_move_lot_ids = fields.One2many('stock.move.lots', 'workorder_id', string='Active Moves to Track',
-    #    help="Active Inventory moves for which you must scan a lot number at this work order", domain=[('done', '=', False)])
 
-    # FP TODO: replace by a related through MO, otherwise too much computation without need
-    availability = fields.Selection([('waiting', 'Waiting'), ('assigned', 'Available')], 'Stock Availability', store=True, compute='_compute_availability')
-
+    availability = fields.Selection('Stock Availability', related='production_id.availability', store=True)
     production_state = fields.Selection(related='production_id.state', readonly=True)
     product = fields.Many2one('product.product', related='production_id.product_id', string="Product", readonly=True) #should be product_id
     has_tracking = fields.Selection(related='production_id.product_id.tracking')
