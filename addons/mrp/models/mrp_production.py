@@ -748,14 +748,9 @@ class MrpProductionWorkcenterLine(models.Model):
         self.end_previous()
 
     @api.multi
-    def button_block(self):
-        for order in self:
-            order.workcenter_id.write({'working_state': 'blocked'}) #Will stop t!mers
-
-    @api.multi
     def button_unblock(self):
         for order in self:
-            order.workcenter_id.write({'blocked': False})
+            order.workcenter_id.unblock()
 
     @api.multi
     def button_cancel(self):
