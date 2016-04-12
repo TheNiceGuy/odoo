@@ -102,6 +102,10 @@
                                             <field name="time_stop" widget="float_time" class="oe_inline"/> minutes
                                         </div>
                                     </group>
+                                    <group>
+                                        <field name="blocked_time"/>
+                                        <field name="oee"/>
+                                    </group>
                                 </group>
                                 <separator string="Description"/>
                                 <field name="note" nolabel="1" placeholder="Description of the work center..."/>
@@ -1279,7 +1283,7 @@
                 <button name="button_start" type="object" string="Start Working" attrs="{'invisible': ['|', ('blocked', '=', True), ('state', '!=', 'ready')]}" class="btn-success"/>
                 <button name="record_production" type="object" string="Record Production" class="btn-success" attrs="{'invisible': ['|', ('state', '!=', 'progress'), ('show_state', '=', False)]}"/>
                 <button name="button_pending" type="object" string="Pause" class="btn-warning" attrs="{'invisible': ['|', ('state', 'in', ('done', 'pending', 'ready')), ('show_state', '=', False)]}"/>
-                <button name="button_block" type="object" string="Block" class="btn-danger" attrs="{'invisible': ['|', ('state', 'in', ('done', 'pending', 'ready')), ('show_state', '=', False)]}"/>
+                <button name="%(act_mrp_block_workcenter)d" type="action" string="Block" class="btn-danger" attrs="{'invisible': ['|', ('state', 'in', ('done', 'pending', 'ready')), ('show_state', '=', False)]}"/>
                 <button name="button_unblock" type="object" string="Unblock" class="btn-danger" attrs="{'invisible': [('blocked', '=', False)]}"/>
                 <button name="button_start" type="object" string="Continue Production" class="btn-warning" attrs="{'invisible': ['|', '|', ('blocked', '=', True), ('show_state', '=', True), ('state', 'in', ('done', 'pending', 'ready'))]}"></button>
                 <button name="button_start" type="object" string="Continue Production" attrs="{'invisible': ['|', ('blocked', '=', True), ('state', '!=', 'done')]}"/>
