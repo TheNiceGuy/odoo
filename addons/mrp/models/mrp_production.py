@@ -247,13 +247,17 @@ class MrpProduction(models.Model):
             if any(workorder.state == 'running' for workorder in production.work_order_ids):
                 raise UserError(_('You can not cancel production order, Workorder still running.'))
             else:
-                finish_moves = production.move_finished_ids.filtered(lambda x : x.state in ('done', 'cancel'))
+                finish_moves = production.move_finished_ids.filtered(lambda x : x.state not in ('done', 'cancel'))
                 if finish_moves:
                     finish_moves.action_cancel()
-                procs = ProcurementOrder.search([('move_dest_id', 'in', [mvoe.id for move in finish_moves])])
+                procs = ProcurementOrder.search([('move_dest_id', 'in', [move.id for move in finish_moves])])
                 if procs:
                     procs.cancel()
-                production.move_raw_ids.filtered(lambda x: x.state in ('done','cancel')).action_cancel()
+                raw_moves = production.move_raw_ids.filtered(lambda x: x.state not in ('done','cancel'))
+                for move in raw_moves:
+                    if move.quantity_done:
+                        raise UserError(_("Already consumed material %s , So you can not cancel production."%(move.product_id.name)))
+                raw_moves.action_cancel()
                 self.write({'state': 'cancel'})
                 # Put relatfinish_to_canceled procurements in exception
                 procs = ProcurementOrder.search([('production_id', 'in', [self.ids])])
