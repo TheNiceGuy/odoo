@@ -105,8 +105,8 @@ class MrpProduction(models.Model):
 
     # FP Note: what's the goal of this field? -> It is like the destination move of the production move
     move_prod_id = fields.Many2one('stock.move', string='Product Move', readonly=True, copy=False)
-    move_raw_ids = fields.One2many('stock.move', 'raw_material_production_id', string='Raw Materials', states={'done': [('readonly', True)]}, copy=False)
-    move_finished_ids = fields.One2many('stock.move', 'production_id', string='Finished Products', states={'done': [('readonly', True)]}, copy=False)
+    move_raw_ids = fields.One2many('stock.move', 'raw_material_production_id', string='Raw Materials', states={'done': [('readonly', True)], 'cancel': [('readonly', True)]}, copy=False)
+    move_finished_ids = fields.One2many('stock.move', 'production_id', string='Finished Products', states={'done': [('readonly', True)], 'cancel': [('readonly', True)]}, copy=False)
     work_order_ids = fields.One2many('mrp.production.work.order', 'production_id', string='Work Orders', readonly=True, oldname='workcenter_lines', copy=False)
 
     nb_orders = fields.Integer('# Work Orders', compute='_compute_nb_orders')
@@ -496,17 +496,17 @@ class MrpProductionWorkcenterLine(models.Model):
             if workorder.qty_produced >= workorder.qty:
                 workorder.is_produced = True
 
-    name = fields.Char(string='Work Order', required=True, states={'done': [('readonly', True)]})
-    workcenter_id = fields.Many2one('mrp.workcenter', string='Work Center', required=True, states={'done': [('readonly', True)]})
-    duration = fields.Float(string='Expected Duration', digits=(16, 2), help="Expected duration in minutes", states={'done': [('readonly', True)]})
-    sequence = fields.Integer(required=True, default=1, help="Gives the sequence order when displaying a list of work orders.")
-    production_id = fields.Many2one('mrp.production', string='Manufacturing Order', track_visibility='onchange', index=True, ondelete='cascade', required=True, states={'done': [('readonly', True)]})
+    name = fields.Char(string='Work Order', required=True, states={'done': [('readonly', True)], 'cancel': [('readonly', True)]})
+    workcenter_id = fields.Many2one('mrp.workcenter', string='Work Center', required=True, states={'done': [('readonly', True)], 'cancel': [('readonly', True)]})
+    duration = fields.Float(string='Expected Duration', digits=(16, 2), help="Expected duration in minutes", states={'done': [('readonly', True)], 'cancel': [('readonly', True)]})
+    sequence = fields.Integer(required=True, default=1, help="Gives the sequence order when displaying a list of work orders.", states={'done': [('readonly', True)], 'cancel': [('readonly', True)]})
+    production_id = fields.Many2one('mrp.production', string='Manufacturing Order', track_visibility='onchange', index=True, ondelete='cascade', required=True, states={'done': [('readonly', True)], 'cancel': [('readonly', True)]})
     state = fields.Selection([('pending', 'Pending'), ('ready', 'Ready'), ('progress', 'In Progress'), ('done', 'Finished'), ('cancel', 'Cancelled')], default='pending')
-    date_planned_start = fields.Datetime('Scheduled Date Start', states={'done': [('readonly', True)]})
-    date_planned_end = fields.Datetime('Scheduled Date Finished', states={'done': [('readonly', True)]})
+    date_planned_start = fields.Datetime('Scheduled Date Start', states={'done': [('readonly', True)], 'cancel': [('readonly', True)]})
+    date_planned_end = fields.Datetime('Scheduled Date Finished', states={'done': [('readonly', True)], 'cancel': [('readonly', True)]})
 
-    date_start = fields.Datetime('Effective Start Date')
-    date_finished = fields.Datetime('Effective End Date')
+    date_start = fields.Datetime('Effective Start Date', states={'done': [('readonly', True)], 'cancel': [('readonly', True)]})
+    date_finished = fields.Datetime('Effective End Date', states={'done': [('readonly', True)], 'cancel': [('readonly', True)]})
     delay = fields.Float('Real Duration', compute='_compute_delay', readonly=True, store=True, group_operator="avg")
     delay_unit = fields.Float('Duration Per Unit', compute='_compute_delay', readonly=True, store=True, group_operator="avg")
 
@@ -534,7 +534,7 @@ class MrpProductionWorkcenterLine(models.Model):
     show_state = fields.Boolean(compute='_get_current_state')
     inv_message = fields.Html(compute="_get_inventory_message")
     final_lot_id = fields.Many2one('stock.production.lot', 'Current Lot', domain="[('product_id', '=', product)]")
-    qty_producing = fields.Float('Qty Producing', default=1.0, states={'done': [('readonly', True)]})
+    qty_producing = fields.Float('Qty Producing', default=1.0, states={'done': [('readonly', True)], 'cancel': [('readonly', True)]})
     next_work_order_id = fields.Many2one('mrp.production.work.order', "Next Work Order")
     tracking = fields.Selection(related='product.tracking', readonly=True)
     is_produced = fields.Boolean(compute='_is_produced')
