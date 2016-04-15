@@ -16,4 +16,8 @@ class MrpWorkcenterBlockWizard(models.TransientModel):
         self.ensure_one()
         workcenter = self.env['mrp.workcenter'].browse(self.env.context.get('active_id'))
         workcenter.block(self.reason_id, self.description)
-        return {'type': 'ir.actions.act_window_close'}
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'reload',
+            'params': {'menu_id': self.env.ref('base.menu_mrp_root').id},
+        }

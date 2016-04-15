@@ -354,7 +354,9 @@
                                                 <t t-set="status" t-value="'Work orders is running'"/>
                                             </t>
                                             <div t-att-title="status">
-                                                <field name="working_state" widget="kanban_state_selection"/>
+                                                <a name="%(act_mrp_block_workcenter)d" type="action" class="oe_kanban_status " attrs="{'invisible': [('working_state','in',('blocked','done'))]}"/>
+                                                <a name="unblock" type="object" class=" oe_kanban_status oe_kanban_status_red" attrs="{'invisible': [('working_state','in',('normal','done'))]}"/>
+                                                <a name="%(act_mrp_block_workcenter)d" type="action" class=" oe_kanban_status oe_kanban_status_green" attrs="{'invisible': [('working_state','in',('normal','blocked'))]}"/>
                                             </div>
                                         </div> 
                                     </div>

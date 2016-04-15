@@ -83,6 +83,11 @@ class MrpWorkcenter(models.Model):
             times = self.env['mrp.workcenter.blocked.time'].search([('workcenter_id', '=', self.id), ('state', '=', 'running')])
             times.write({'state': 'done', 'date_end': fields.Datetime.now()})
         self.write({'blocked': False})
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'reload',
+            'params': {'menu_id': self.env.ref('base.menu_mrp_root').id},
+        }
 
 
     @api.depends('order_ids')
