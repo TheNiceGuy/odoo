@@ -731,7 +731,8 @@ class MrpProductionWorkcenterLine(models.Model):
             timed = datetime.now() - fields.Datetime.from_string(timeline.date_start)
             duration = timed.total_seconds() / 60.0
             timeline.write({'state': 'done',
-                            'duration': duration})
+                            'duration': duration,
+                            'date_end': datetime.now()})
 
     @api.multi
     def end_all(self):
@@ -742,7 +743,8 @@ class MrpProductionWorkcenterLine(models.Model):
                 timed = datetime.now() - fields.Datetime.from_string(timeline.date_start)
                 duration = timed.total_seconds() / 60.0
                 timeline.write({'state': 'done',
-                                'duration': duration})
+                                'duration': duration,
+                                'date_end': datetime.now()})
 
     @api.multi
     def button_pending(self):
@@ -784,6 +786,7 @@ class MrpProductionWorkcenterLineTime(models.Model):
     
     workorder_id = fields.Many2one('mrp.production.work.order', 'Work Order')
     date_start = fields.Datetime('Start Date')
+    date_end = fields.Datetime('End Date')
     duration = fields.Float('Duration')
     user_id = fields.Many2one('res.users', string="User")
     state = fields.Selection([('running', 'Running'), ('done', 'Done')], string="Status", default="running")

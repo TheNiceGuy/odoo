@@ -1391,7 +1391,9 @@
                             <field name="name"/>
                             <field name="workcenter_id" readonly="1"/>
                             <field name="production_id" readonly="1"/>
-                            <field name="delay" widget="float_time" attrs="{'invisible': [('show_state', '=', True)]}"/>
+                            <button style="pointer-events: none;margin-left: 350px;" class="oe_inline label label-default">
+                                <field name="delay" widget="mrp_time_counter"/>
+                            </button>
                         </group>
                     </group>
                 </page>
