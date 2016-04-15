@@ -299,7 +299,10 @@ class MrpProduction(models.Model):
 
     @api.multi
     def button_mark_done(self):
+        self.ensure_one()
         self.post_inventory()
+        moves_to_cancel = (self.move_raw_ids | self.move_finished_ids).filtered(lambda x: x.state not in ('done', 'cancel'))
+        moves_to_cancel.action_cancel()
         # self._costs_generate()
         write_res = self.write({'state': 'done', 'date_finished': fields.datetime.now()})
         self.env["procurement.order"].search([('production_id', 'in', self.ids)]).check()
