@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 
-from openerp.osv import osv, fields
+from odoo import fields, models
 
 
-class MailMessage(osv.Model):
+class MailMessage(models.Model):
+
     _inherit = 'mail.message'
 
-    _columns = {
-        'path': fields.char(
-            'Discussion Path', select=1,
-            help='Used to display messages in a paragraph-based chatter using a unique path;'),
-    }
+    path = fields.Char('Discussion Path', index=True,
+        help='Used to display messages in a paragraph-based chatter using a unique path;')

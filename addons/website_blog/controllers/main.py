@@ -46,6 +46,7 @@ class QueryURL(object):
 
 
 class WebsiteBlog(http.Controller):
+
     _blog_post_per_page = 20
     _post_comment_per_page = 10
 
@@ -77,17 +78,15 @@ class WebsiteBlog(http.Controller):
         '/blog/page/<int:page>',
     ], type='http', auth="public", website=True)
     def blogs(self, page=1, **post):
-        cr, uid, context = request.cr, request.uid, request.context
-        blog_obj = request.registry['blog.post']
-        total = blog_obj.search(cr, uid, [], count=True, context=context)
+        BlogPost = request.env['blog.post']
+        total = BlogPost.search_count([])
         pager = request.website.pager(
             url='/blog',
             total=total,
             page=page,
             step=self._blog_post_per_page,
         )
-        post_ids = blog_obj.search(cr, uid, [], offset=(page-1)*self._blog_post_per_page, limit=self._blog_post_per_page, context=context)
-        posts = blog_obj.browse(cr, uid, post_ids, context=context)
+        posts = BlogPost.search([], offset=pager['offset'], limit=self._blog_post_per_page)
         blog_url = QueryURL('', ['blog', 'tag'])
         return request.website.render("website_blog.latest_blogs", {
             'posts': posts,
@@ -118,17 +117,12 @@ class WebsiteBlog(http.Controller):
         """
         date_begin, date_end = opt.get('date_begin'), opt.get('date_end')
 
-        cr, uid, context = request.cr, request.uid, request.context
-        blog_post_obj = request.registry['blog.post']
-
-        blog_obj = request.registry['blog.blog']
-        blog_ids = blog_obj.search(cr, uid, [], order="create_date asc", context=context)
-        blogs = blog_obj.browse(cr, uid, blog_ids, context=context)
+        BlogPost = request.env['blog.post']
+        Blog = request.env['blog.blog']
 
         # build the domain for blog post to display
         domain = []
-        # retrocompatibility to accept tag as slug
-        active_tag_ids = tag and map(int, [unslug(t)[1] for t in tag.split(',')]) or []
+        active_tag_ids = [int(unslug(t)[1]) for t in tag.split(',')] if tag else []  # retrocompatibility to accept tag as slug
         if active_tag_ids:
             domain += [('tag_ids', 'in', active_tag_ids)]
         if blog:
@@ -136,33 +130,31 @@ class WebsiteBlog(http.Controller):
         if date_begin and date_end:
             domain += [("create_date", ">=", date_begin), ("create_date", "<=", date_end)]
 
+        # pager
         blog_url = QueryURL('', ['blog', 'tag'], blog=blog, tag=tag, date_begin=date_begin, date_end=date_end)
-
-        blog_post_ids = blog_post_obj.search(cr, uid, domain, order="create_date desc", context=context)
-        blog_posts = blog_post_obj.browse(cr, uid, blog_post_ids, context=context)
-
+        blog_post_count = BlogPost.search_count(domain)
         pager = request.website.pager(
             url=blog_url(),
-            total=len(blog_posts),
+            total=blog_post_count,
             page=page,
             step=self._blog_post_per_page,
         )
-        pager_begin = (page - 1) * self._blog_post_per_page
-        pager_end = page * self._blog_post_per_page
-        blog_posts = blog_posts[pager_begin:pager_end]
 
+        # get blogs, posts and tags
+        blogs = Blog.search([], order="create_date asc")
+        blog_posts = BlogPost.search(domain, offset=pager['offset'], limit=pager['step'], order="create_date desc")
         all_tags = blog.all_tags()[blog.id]
 
         # function to create the string list of tag ids, and toggle a given one.
         # used in the 'Tags Cloud' template.
         def tags_list(tag_ids, current_tag):
-            tag_ids = list(tag_ids) # required to avoid using the same list
+            tag_ids = list(tag_ids)  # required to avoid using the same list
             if current_tag in tag_ids:
                 tag_ids.remove(current_tag)
             else:
                 tag_ids.append(current_tag)
-            tag_ids = request.registry['blog.tag'].browse(cr, uid, tag_ids, context=context).exists()
-            return ','.join(map(slug, tag_ids))
+            tag_ids = request.env['blog.tag'].browse(tag_ids).exists()
+            return ','.join([slug(tag_id) for tag_id in tag_ids])
 
         values = {
             'blog': blog,
@@ -170,7 +162,7 @@ class WebsiteBlog(http.Controller):
             'main_object': blog,
             'tags': all_tags,
             'active_tag_ids': active_tag_ids,
-            'tags_list' : tags_list,
+            'tags_list': tags_list,
             'blog_posts': blog_posts,
             'pager': pager,
             'nav_list': self.nav_list(blog),
@@ -182,15 +174,15 @@ class WebsiteBlog(http.Controller):
 
     @http.route(['/blog/<model("blog.blog"):blog>/feed'], type='http', auth="public")
     def blog_feed(self, blog, limit='15'):
-        v = {}
-        v['blog'] = blog
-        v['base_url'] = request.env['ir.config_parameter'].get_param('web.base.url')
-        v['posts'] = request.env['blog.post'].search([('blog_id','=', blog.id)], limit=min(int(limit), 50))
-        r = request.render("website_blog.blog_feed", v, headers=[('Content-Type', 'application/atom+xml')])
-        return r
+        values = {
+            'blog': blog,
+            'base_url': request.env['ir.config_parameter'].get_param('web.base.url'),
+            'posts': request.env['blog.post'].search([('blog_id', '=', blog.id)], limit=min(int(limit), 50))
+        }
+        return request.render("website_blog.blog_feed", values, headers=[('Content-Type', 'application/atom+xml')])
 
     @http.route([
-            '''/blog/<model("blog.blog"):blog>/post/<model("blog.post", "[('blog_id','=',blog[0])]"):blog_post>''',
+            '''/blog/<model("blog.blog"):blog>/post/<model("blog.post", "[('blog_id','=', blog[0])]"):blog_post>''',
     ], type='http', auth="public", website=True)
     def blog_post(self, blog, blog_post, tag_id=None, page=1, enable_editor=None, **post):
         """ Prepare all values to display the blog.
@@ -206,15 +198,13 @@ class WebsiteBlog(http.Controller):
          - 'nav_list': a dict [year][month] for archives navigation
          - 'next_post': next blog post, to direct the user towards the next interesting post
         """
-        cr, uid, context = request.cr, request.uid, request.context
-        tag_obj = request.registry['blog.tag']
-        blog_post_obj = request.registry['blog.post']
+        Tag = request.env['blog.tag']
+        BlogPost = request.env['blog.post']
         date_begin, date_end = post.get('date_begin'), post.get('date_end')
 
-        pager_url = "/blogpost/%s" % blog_post.id
-
+        # comment pager
         pager = request.website.pager(
-            url=pager_url,
+            url="/blogpost/%s" % blog_post.id,
             total=len(blog_post.website_message_ids),
             page=page,
             step=self._post_comment_per_page,
@@ -226,22 +216,28 @@ class WebsiteBlog(http.Controller):
 
         tag = None
         if tag_id:
-            tag = request.registry['blog.tag'].browse(request.cr, request.uid, int(tag_id), context=request.context)
+            tag = Tag.browse(int(tag_id))
         blog_url = QueryURL('', ['blog', 'tag'], blog=blog_post.blog_id, tag=tag, date_begin=date_begin, date_end=date_end)
 
         if not blog_post.blog_id.id == blog.id:
             return request.redirect("/blog/%s/post/%s" % (slug(blog_post.blog_id), slug(blog_post)))
 
-        tags = tag_obj.browse(cr, uid, tag_obj.search(cr, uid, [], context=context), context=context)
+        tags = Tag.search([])
+
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # NOTE JEM / MIGRATION STOP HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         # Find next Post
-        all_post_ids = blog_post_obj.search(cr, uid, [('blog_id', '=', blog.id)], context=context)
+        posts = BlogPost.search([('blog_id', '=', blog.id)])
+        current_index = posts.index(blog_post)
+
+        all_post_ids = BlogPost.search([('blog_id', '=', blog.id)])
         # should always return at least the current post
         current_blog_post_index = all_post_ids.index(blog_post.id)
         next_post_id = all_post_ids[0 if current_blog_post_index == len(all_post_ids) - 1 \
                             else current_blog_post_index + 1]
-        next_post = next_post_id and blog_post_obj.browse(cr, uid, next_post_id, context=context) or False
-
+        next_post = next_post_id and BlogPost.browse(cr, uid, next_post_id, context=context) or False
         values = {
             'tags': tags,
             'tag': tag,
