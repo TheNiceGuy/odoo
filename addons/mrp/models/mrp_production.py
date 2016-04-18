@@ -59,10 +59,12 @@ class MrpProduction(models.Model):
                 continue
             if order.bom_id.ready_to_produce == 'all_available':
                 assigned_list = [x.state in ('assigned','done','cancel') for x in order.move_raw_ids]
+                order.availability = all(assigned_list) and 'assigned' or 'waiting'
             else:
                 # TODO: improve this check
+                partial_list = [x.partially_available and x.state in ('waiting', 'confirmed', 'assigned') for x in order.move_raw_ids]
                 assigned_list = [x.state in ('assigned','done','cancel') for x in order.move_raw_ids]
-            order.availability = all(assigned_list) and 'assigned' or 'waiting'
+                order.availability = (all(assigned_list) and 'assigned') or (any(partial_list) and 'partially_available') or 'waiting'
 
     @api.multi
     @api.depends('work_order_ids')
@@ -114,7 +116,7 @@ class MrpProduction(models.Model):
 
     state = fields.Selection([('confirmed', 'Confirmed'), ('planned', 'Planned'), ('progress', 'In Progress'), ('done', 'Done'), ('cancel', 'Cancelled')], 'State', default='confirmed', copy=False)
 
-    availability = fields.Selection([('assigned', 'Available'), ('partially_available', 'Partially available'), ('none', 'None'), ('waiting', 'Waiting')], compute='_compute_availability', store=True, default="none")
+    availability = fields.Selection([('assigned', 'Available'), ('partially_available', 'Partially Available'), ('none', 'None'), ('waiting', 'Waiting')], compute='_compute_availability', store=True, default="none")
 
     post_visible = fields.Boolean('Inventory Post Visible', compute='_compute_post_visible', help='Technical field to check when we can post')
 
@@ -425,6 +427,16 @@ class MrpProduction(models.Model):
             move_to_assign = production.move_raw_ids.filtered(lambda x: x.state in ('confirmed', 'waiting', 'assigned'))
             move_to_assign.action_assign()
         return True
+
+    @api.multi
+    def do_unreserve(self):
+        for production in self:
+            production.move_raw_ids.do_unreserve()
+
+    @api.multi
+    def button_unreserve(self):
+        self.ensure_one()
+        self.do_unreserve()
 
     @api.multi
     def button_scrap(self):
