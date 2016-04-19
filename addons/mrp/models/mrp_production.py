@@ -778,6 +778,8 @@ class MrpProductionWorkcenterLine(models.Model):
 
     @api.multi
     def button_done(self):
+        if any([x.state in ('done', 'cancel') for x in self]):
+            raise UserError(_('A Manufacturing Order is already done or cancelled!'))
         self.end_all()
         self.write({'state': 'done',
                     'date_finished': datetime.now()})

@@ -68,7 +68,7 @@ class TestWorkOrderProcess(TestMrpUsers):
         # Process all workorder and check it state.
         # ----------------------------------------------------------
 
-        workorders = production_table.workorder_ids.sorted(lambda x: x.sequence)
+        workorders = production_table.workorder_ids
         self.assertEqual(workorders[0].state, 'ready', "First workorder state should be ready.")
         self.assertEqual(workorders[1].state, 'pending', "Workorder state should be pending.")
         self.assertEqual(workorders[2].state, 'pending', "Workorder state should be pending.")
