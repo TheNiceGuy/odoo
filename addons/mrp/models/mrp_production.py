@@ -698,7 +698,7 @@ class MrpProductionWorkcenterLine(models.Model):
 
     def _get_current_state(self):
         for order in self:
-            if order.time_ids.filtered(lambda x : (x.user_id.id == self.env.user.id) and (x.date_end is False) and (x.loss_type in ('productive', 'performance'))):
+            if order.time_ids.filtered(lambda x : (x.user_id.id == self.env.user.id) and (not x.date_end) and (x.loss_type in ('productive', 'performance'))):
                 order.show_state = True
             else:
                 order.show_state = False
@@ -739,21 +739,17 @@ class MrpProductionWorkcenterLine(models.Model):
 
     @api.multi
     def end_previous(self, doall=False):
-        print 'End Previous', doall
         timeline_obj = self.env['mrp.workcenter.productivity']
         domain = [('workorder_id', 'in', self.mapped('id')), ('date_end', '=', False)]
         if not doall:
             domain.append(('user_id', '=', self.env.user.id))
         for timeline in timeline_obj.search(domain, limit=doall and None or 1):
-            wc = timeline.workorder_id
+            wo = timeline.workorder_id
             if timeline.loss_type <> 'productive':
-                print 'not productive'
                 timeline.write({'date_end': fields.Datetime.now()})
             else:
-                maxdate = fields.Datetime.from_string(timeline.date_start) + relativedelta(minutes=wc.duration - wc.delay)
+                maxdate = fields.Datetime.from_string(timeline.date_start) + relativedelta(minutes=wo.duration - wo.delay)
                 enddate = datetime.now()
-                print 'productive start', fields.Datetime.from_string(timeline.date_start), 'max', maxdate, 'real', enddate
-                print 'duration', wc.duration, 'delay', wc.delay
                 if maxdate > enddate:
                     timeline.write({'date_end': enddate})
                 else:
