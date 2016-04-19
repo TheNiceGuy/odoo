@@ -51,7 +51,7 @@ class MrpProduction(models.Model):
         return location
 
     @api.multi
-    @api.depends('move_raw_ids.state', 'work_order_ids.move_raw_ids')
+    @api.depends('move_raw_ids.state', 'workorder_ids.move_raw_ids')
     def _compute_availability(self):
         for order in self:
             if not order.move_raw_ids:
@@ -67,11 +67,11 @@ class MrpProduction(models.Model):
                 order.availability = (all(assigned_list) and 'assigned') or (any(partial_list) and 'partially_available') or 'waiting'
 
     @api.multi
-    @api.depends('work_order_ids')
+    @api.depends('workorder_ids')
     def _compute_nb_orders(self):
         for mo in self:
-            mo.nb_orders = len(mo.work_order_ids)
-            mo.nb_done = len(mo.work_order_ids.filtered(lambda x: x.state=='done'))
+            mo.nb_orders = len(mo.workorder_ids)
+            mo.nb_done = len(mo.workorder_ids.filtered(lambda x: x.state=='done'))
 
     @api.multi
     @api.depends('move_raw_ids.quantity_done', 'move_finished_ids.quantity_done')
@@ -109,7 +109,7 @@ class MrpProduction(models.Model):
     move_prod_id = fields.Many2one('stock.move', string='Product Move', readonly=True, copy=False)
     move_raw_ids = fields.One2many('stock.move', 'raw_material_production_id', string='Raw Materials', states={'done': [('readonly', True)], 'cancel': [('readonly', True)]}, copy=False)
     move_finished_ids = fields.One2many('stock.move', 'production_id', string='Finished Products', states={'done': [('readonly', True)], 'cancel': [('readonly', True)]}, copy=False)
-    work_order_ids = fields.One2many('mrp.production.work.order', 'production_id', string='Work Orders', readonly=True, oldname='workcenter_lines', copy=False)
+    workorder_ids = fields.One2many('mrp.production.work.order', 'production_id', string='Work Orders', readonly=True, oldname='workcenter_lines', copy=False)
 
     nb_orders = fields.Integer('# Work Orders', compute='_compute_nb_orders')
     nb_done = fields.Integer('# Done Work Orders', compute='_compute_nb_orders')
@@ -163,15 +163,14 @@ class MrpProduction(models.Model):
         else:
             quantity = self.product_qty - sum(self.move_finished_ids.mapped('quantity_done'))
             quantity = quantity if (quantity > 0) else 0
-        for operation in bom.routing_id.work_order_ids:
+        for operation in bom.routing_id.workorder_ids:
             workcenter = operation.workcenter_id
             cycle_number = math.ceil(qty / bom.product_qty / workcenter.capacity) #TODO: float_round UP
             duration =  workcenter.time_start + workcenter.time_stop + cycle_number * operation.time_cycle * 100.0 / workcenter.time_efficiency
-            workorder_id = self.work_order_ids.create({
+            workorder_id = self.workorder_ids.create({
                 'name': operation.name,
                 'production_id': self.id,
                 'workcenter_id': operation.workcenter_id.id,
-                'sequence': operation.sequence,
                 'operation_id': operation.id,
                 'duration': duration,
                 'state': state,
@@ -181,7 +180,7 @@ class MrpProduction(models.Model):
             old = workorder_id
             tocheck = [workorder_id.operation_id.id]
             # Latest workorder receive all move not assigned to an operation
-            if operation == bom.routing_id.work_order_ids[-1]:
+            if operation == bom.routing_id.workorder_ids[-1]:
                 tocheck.append(False)
 
             # Add raw materials for this operation
@@ -246,7 +245,7 @@ class MrpProduction(models.Model):
         """
         ProcurementOrder = self.env['procurement.order']
         for production in self:
-            if any(workorder.state == 'running' for workorder in production.work_order_ids):
+            if any(workorder.state == 'running' for workorder in production.workorder_ids):
                 raise UserError(_('You can not cancel production order, Workorder still running.'))
             else:
                 finish_moves = production.move_finished_ids.filtered(lambda x : x.state not in ('done', 'cancel'))
@@ -469,7 +468,6 @@ class MrpProduction(models.Model):
 class MrpProductionWorkcenterLine(models.Model):
     _name = 'mrp.production.work.order'
     _description = 'Work Order'
-    _order = 'sequence'
     _inherit = ['mail.thread']
 
     @api.multi
@@ -508,7 +506,6 @@ class MrpProductionWorkcenterLine(models.Model):
     name = fields.Char(string='Work Order', required=True, states={'done': [('readonly', True)], 'cancel': [('readonly', True)]})
     workcenter_id = fields.Many2one('mrp.workcenter', string='Work Center', required=True, states={'done': [('readonly', True)], 'cancel': [('readonly', True)]})
     duration = fields.Float(string='Expected Duration', digits=(16, 2), help="Expected duration in minutes", states={'done': [('readonly', True)], 'cancel': [('readonly', True)]})
-    sequence = fields.Integer(required=True, default=1, help="Gives the sequence order when displaying a list of work orders.", states={'done': [('readonly', True)], 'cancel': [('readonly', True)]})
     production_id = fields.Many2one('mrp.production', string='Manufacturing Order', track_visibility='onchange', index=True, ondelete='cascade', required=True, states={'done': [('readonly', True)], 'cancel': [('readonly', True)]})
     state = fields.Selection([('pending', 'Pending'), ('ready', 'Ready'), ('progress', 'In Progress'), ('done', 'Finished'), ('cancel', 'Cancelled')], default='pending')
     date_planned_start = fields.Datetime('Scheduled Date Start', states={'done': [('readonly', True)], 'cancel': [('readonly', True)]})
@@ -737,7 +734,7 @@ class MrpProductionWorkcenterLine(models.Model):
         self.ensure_one()
         self.end_all()
         self.write({'state': 'done', 'date_finished': fields.Datetime.now()})
-        if not self.production_id.work_order_ids.filtered(lambda x: x.state not in ('done','cancel')):
+        if not self.production_id.workorder_ids.filtered(lambda x: x.state not in ('done','cancel')):
             self.production_id.button_mark_done()
 
     @api.multi
