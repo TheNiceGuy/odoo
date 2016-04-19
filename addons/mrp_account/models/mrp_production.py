@@ -18,7 +18,7 @@ class MrpProduction(models.Model):
         if self.workorder_ids:
             duration = 0
             for work_order in self.workorder_ids:
-                time_lines = work_order.time_ids.filtered(lambda x: x.state == 'done' and not x.used)
+                time_lines = work_order.time_ids.filtered(lambda x: x.date_end and not x.used)
                 duration += sum(time_lines.mapped('duration'))
                 time_lines.write({'used': True})
                 work_center_cost += (duration / 60) * work_order.workcenter_id.costs_hour
