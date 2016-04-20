@@ -77,7 +77,7 @@ class MrpWorkcenter(models.Model):
             last = self.env['mrp.workcenter.productivity'].search([('workcenter_id','=',workcenter.id)], limit=1)
             if (not last) or (last[0].date_end):
                 workcenter.working_state = 'normal'
-            elif last[0].loss_type=='productive':
+            elif last[0].loss_type in ('productive', 'performance'):
                 workcenter.working_state = 'done'
             else:
                 workcenter.working_state = 'blocked'

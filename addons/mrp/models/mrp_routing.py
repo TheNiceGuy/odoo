@@ -72,4 +72,3 @@ class MrpRoutingWorkcenter(models.Model):
                 operation.time_cycle = delay / qty
             else:
                 operation.time_cycle = operation.time_cycle_manual
-
