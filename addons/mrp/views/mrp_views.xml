@@ -1390,11 +1390,12 @@
                 <button name="%(act_mrp_block_workcenter)d" type="action" string="Block" class="btn-danger" attrs="{'invisible': ['|', ('state', 'in', ('done', 'pending', 'ready')), ('show_state', '=', False)]}"/>
                 <button name="button_unblock" type="object" string="Unblock" class="btn-danger" attrs="{'invisible': [('working_state', '!=', 'blocked')]}"/>
                 <button name="button_start" type="object" string="Continue Production" class="btn-warning" attrs="{'invisible': ['|', '|', ('working_state', '=', 'blocked'), ('show_state', '=', True), ('state', 'in', ('done', 'pending', 'ready'))]}"></button>
-                <button name="button_start" type="object" string="Continue Production" attrs="{'invisible': ['|', ('working_state', '=', 'blocked'), ('state', '!=', 'done')]}"/>
+                <button name="button_start" type="object" string="Continue Production" attrs="{'invisible': ['|', '|', ('production_state', '=', 'done'), ('working_state', '=', 'blocked'), ('state', '!=', 'done')]}"/>
                 <button name="button_scrap" type="object" string="Scrap" attrs="{'invisible': [('state', 'in', ('confirmed', 'cancel'))]}"/>
                 <field name="state" widget="statusbar" statusbar_visible="pending,ready,progress,done"/>
                 <field name="show_state" invisible="1"/>
                 <field name="working_state" invisible="1"/>
+                <field name="production_state" invisible="1"/>
             </header>
             <sheet>
                 <div class="oe_button_box" name="button_box"/>

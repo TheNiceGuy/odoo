@@ -305,6 +305,9 @@ class MrpProduction(models.Model):
     @api.multi
     def button_mark_done(self):
         self.ensure_one()
+        for wo in self.workorder_ids:
+            if wo.time_ids.filtered(lambda x: (not x.date_end) and (x.loss_type in ('productive', 'performance'))):
+                raise UserError(_('Work order %s is still running') % wo.name)
         self.post_inventory()
         moves_to_cancel = (self.move_raw_ids | self.move_finished_ids).filtered(lambda x: x.state not in ('done', 'cancel'))
         moves_to_cancel.action_cancel()
@@ -316,9 +319,14 @@ class MrpProduction(models.Model):
     @api.multi
     def _get_produced_qty(self):
         for production in self:
-            done_moves = production.move_finished_ids.filtered(lambda x: x.state!='cancel' and x.product_id.id == production.product_id.id)
+            done_moves = production.move_finished_ids.filtered(lambda x: x.state != 'cancel' and x.product_id.id == production.product_id.id)
             qty_produced = sum(done_moves.mapped('quantity_done'))
-            production.check_to_done = done_moves and (qty_produced >= production.product_qty) and (production.state not in ('done', 'cancel'))
+            wo_done = True
+            for wo in production.workorder_ids:
+                if any([((not x.date_end) and (x.loss_type in ('productive', 'performance'))) for x in wo.time_ids]):
+                    wo_done = False
+                    break
+            production.check_to_done = done_moves and (qty_produced >= production.product_qty) and (production.state not in ('done', 'cancel')) and wo_done
             production.qty_produced = qty_produced
         return True
 
@@ -695,7 +703,6 @@ class MrpProductionWorkcenterLine(models.Model):
                                 movelot.quantity = movelot.quantity - qty_todo
                                 qty_todo = 0
 
-
     def _get_current_state(self):
         for order in self:
             if order.time_ids.filtered(lambda x : (x.user_id.id == self.env.user.id) and (not x.date_end) and (x.loss_type in ('productive', 'performance'))):
@@ -735,7 +742,7 @@ class MrpProductionWorkcenterLine(models.Model):
         self.end_all()
         self.write({'state': 'done', 'date_finished': fields.Datetime.now()})
         if not self.production_id.workorder_ids.filtered(lambda x: x.state not in ('done','cancel')):
-            self.production_id.button_mark_done()
+            self.production_id.post_inventory() # User should put it to done manually
 
     @api.multi
     def end_previous(self, doall=False):
