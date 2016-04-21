@@ -5,7 +5,7 @@
     'name' : 'Resource',
     'version' : '1.1',
     'category' : 'Hidden/Dependency',
-    'website' : 'http://www.openerp.com',
+    'website' : 'https://www.odoo.com',
     'description': """
 Module for resource management.
 ===============================
@@ -25,6 +25,4 @@ associated to every resource. It also manages the leaves of every resource.
         'test/resource.yml',
         'test/duplicate_resource.yml',
     ],
-    'installable': True,
-    'auto_install': False,
 }
