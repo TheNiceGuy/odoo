@@ -245,26 +245,30 @@ class MrpProduction(models.Model):
         """
         ProcurementOrder = self.env['procurement.order']
         for production in self:
-            if any(workorder.state == 'running' for workorder in production.workorder_ids):
-                raise UserError(_('You can not cancel production order, Workorder still running.'))
-            else:
-                finish_moves = production.move_finished_ids.filtered(lambda x : x.state not in ('done', 'cancel'))
-                if finish_moves:
-                    finish_moves.action_cancel()
-                procs = ProcurementOrder.search([('move_dest_id', 'in', finish_moves.ids)])
-                if procs:
-                    procs.cancel()
-                raw_moves = production.move_raw_ids.filtered(lambda x: x.state not in ('done','cancel'))
-                for move in raw_moves:
-                    if move.quantity_done:
-                        raise UserError(_("Already consumed material %s , So you can not cancel production."%(move.product_id.name)))
-                raw_moves.action_cancel()
-                self.write({'state': 'cancel'})
-                # Put relatfinish_to_canceled procurements in exception
-                procs = ProcurementOrder.search([('production_id', 'in', self.ids)])
-                if procs:
-                    procs.message_post(body=_('Manufacturing order cancelled.'))
-                    procs.write({'state': 'exception'})
+            if any(x.state == 'progress' for x in production.workorder_ids):
+                raise UserError(_('You can not cancel production order, a work order is still in progress.'))
+            # Cancel open work orders
+            production.workorder_ids.filtered(lambda x: x.state != 'cancel').action_cancel()
+            # Cancel confirmed moves
+            finish_moves = production.move_finished_ids.filtered(lambda x : x.state not in ('done', 'cancel'))
+            raw_moves = production.move_raw_ids.filtered(lambda x: x.state not in ('done','cancel'))
+            if (not finish_moves) and (not raw_moves):
+                raise UserError(_('No need to cancel as all moves are done'))
+            if finish_moves:
+                finish_moves.action_cancel()
+            procs = ProcurementOrder.search([('move_dest_id', 'in', finish_moves.ids)])
+            if procs:
+                procs.cancel()
+            for move in raw_moves:
+                if move.quantity_done:
+                    raise UserError(_("Already consumed material %s , So you can not cancel production."%(move.product_id.name)))
+            raw_moves.action_cancel()
+            self.write({'state': 'cancel'})
+            # Put relatfinish_to_canceled procurements in exception
+            procs = ProcurementOrder.search([('production_id', 'in', self.ids)])
+            if procs:
+                procs.message_post(body=_('Manufacturing order cancelled.'))
+                procs.write({'state': 'exception'})
         return True
 
     @api.multi
@@ -511,6 +515,13 @@ class MrpProductionWorkcenterLine(models.Model):
             if workorder.qty_produced >= workorder.qty:
                 workorder.is_produced = True
 
+    def _get_current_state(self):
+        for order in self:
+            if order.time_ids.filtered(lambda x : (x.user_id.id == self.env.user.id) and (not x.date_end) and (x.loss_type in ('productive', 'performance'))):
+                order.show_state = True
+            else:
+                order.show_state = False
+
     name = fields.Char(string='Work Order', required=True, states={'done': [('readonly', True)], 'cancel': [('readonly', True)]})
     workcenter_id = fields.Many2one('mrp.workcenter', string='Work Center', required=True, states={'done': [('readonly', True)], 'cancel': [('readonly', True)]})
     duration = fields.Float(string='Expected Duration', digits=(16, 2), help="Expected duration in minutes", states={'done': [('readonly', True)], 'cancel': [('readonly', True)]})
@@ -703,13 +714,6 @@ class MrpProductionWorkcenterLine(models.Model):
                                 movelot.quantity = movelot.quantity - qty_todo
                                 qty_todo = 0
 
-    def _get_current_state(self):
-        for order in self:
-            if order.time_ids.filtered(lambda x : (x.user_id.id == self.env.user.id) and (not x.date_end) and (x.loss_type in ('productive', 'performance'))):
-                order.show_state = True
-            else:
-                order.show_state = False
-
     @api.multi
     def button_start(self):
         timeline = self.env['mrp.workcenter.productivity']
@@ -780,7 +784,7 @@ class MrpProductionWorkcenterLine(models.Model):
             order.workcenter_id.unblock()
 
     @api.multi
-    def button_cancel(self):
+    def action_cancel(self):
         self.write({'state': 'cancel'})
 
     @api.multi
