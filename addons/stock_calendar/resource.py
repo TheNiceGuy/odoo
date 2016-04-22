@@ -1,5 +1,6 @@
 import datetime
 
+from openerp import api
 from openerp.osv import fields, osv
 from openerp.tools import DEFAULT_SERVER_DATETIME_FORMAT, DEFAULT_SERVER_DATE_FORMAT
 
@@ -29,6 +30,7 @@ class resource_calendar(osv.osv):
         }
 
     # Keep as it takes into account times
+    @api.cr_uid_ids_context
     def get_leave_intervals(self, cr, uid, id, resource_id=None,
                             start_datetime=None, end_datetime=None,
                             context=None):
