@@ -490,7 +490,6 @@ class MrpProductionWorkcenterLine(models.Model):
     def _compute_delay(self):
         for workorder in self:
             duration = sum(workorder.time_ids.mapped('duration'))
-            print 'ICI', duration, workorder.time_ids.mapped('duration')
             workorder.delay = duration
             workorder.delay_unit = round(duration / max(workorder.qty_produced, 1), 2)
             if duration:
