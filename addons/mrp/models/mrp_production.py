@@ -445,7 +445,7 @@ class MrpProduction(models.Model):
     @api.multi
     def do_unreserve(self):
         for production in self:
-            production.move_raw_ids.do_unreserve()
+            production.move_raw_ids.filtered(lambda x: x.state not in ('done', 'cancel')).do_unreserve()
 
     @api.multi
     def button_unreserve(self):

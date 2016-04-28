@@ -72,14 +72,14 @@ class MrpProductProduce(models.TransientModel):
     def do_produce(self):
         # Nothing to do for lots since values are created using default data (stock.move.lots)
         moves = self.production_id.move_raw_ids
+        quantity = self.product_qty
         for move in moves.filtered(lambda x: x.product_id.tracking == 'none' and x.state not in ('done', 'cancel')):
-            quantity = self.product_qty
             if move.unit_factor:
                 move.quantity_done_store += quantity * move.unit_factor
         moves = self.production_id.move_finished_ids.filtered(lambda x: x.product_id.tracking == 'none' and x.state not in ('done', 'cancel'))
         for move in moves:
             if move.product_id.id == self.production_id.product_id.id:
-                move.quantity_done_store += self.product_qty
+                move.quantity_done_store += quantity
             elif move.unit_factor:
                 move.quantity_done_store += quantity * move.unit_factor
         self.check_finished_move_lots()
