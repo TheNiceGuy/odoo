@@ -16,12 +16,13 @@ class MrpProductProduce(models.TransientModel):
         if self._context and self._context.get('active_id'):
             production = self.env['mrp.production'].browse(self._context['active_id'])
             #serial_raw = production.move_raw_ids.filtered(lambda x: x.product_id.tracking == 'serial')
-            serial_finished = production.move_finished_ids.filtered(lambda x: x.product_id.tracking == 'serial')
+            main_product_moves = production.move_finished_ids.filtered(lambda x: x.product_id.id == production.product_id.id)
+            serial_finished = (production.product_id.tracking == 'serial')
             serial = bool(serial_finished)
             if serial_finished:
                 quantity = 1.0
             else:
-                quantity = production.product_qty - sum(production.move_finished_ids.mapped('quantity_done'))
+                quantity = production.product_qty - sum(main_product_moves.mapped('quantity_done'))
                 quantity = quantity if (quantity > 0) else 0
             lines = []
             existing_lines = []
