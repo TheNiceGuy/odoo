@@ -951,19 +951,24 @@ class MrpUnbuild(models.Model):
                 raise UserError(_('Should have a lot for the finished product'))
             self.env['stock.move.lots'].create({'move_id': move.id,
                                                 'lot_id': self.lot_id.id,
-                                                'quantity_done': move.product_qty,
-                                                'quantity': move.product_qty})
+                                                'quantity_done': move.product_uom_qty,
+                                                'quantity': move.product_uom_qty})
         self.consume_line_id.move_validate()
-        
+        original_quants = self.env['stock.quant']
+        for quant in self.consume_line_id.quant_ids:
+            original_quants |= quant.consumed_quant_ids
         for produce_move in self.produce_line_ids:
             if produce_move.has_tracking != 'none':
-                pass
+                original = original_quants.filtered(lambda x: x.product_id.id == produce_move.product_id.id)
+                self.env['stock.move.lots'].create({'move_id': produce_move.id,
+                                                    'lot_id': original.lot_id.id,
+                                                    'quantity_done': produce_move.product_uom_qty,
+                                                    'quantity': produce_move.product_uom_qty,})
         self.produce_line_ids.move_validate()
         produced_quant_ids = self.env['stock.quant']
         for move in self.produce_line_ids:
             produced_quant_ids |= move.quant_ids
         self.consume_line_id.quant_ids.write({'produced_quant_ids': [(6, 0, produced_quant_ids)]})
-        
         # TODO : Need to assign quants which consumed at build product.
         #self.quant_move_rel()
         self.write({'state': 'done'})
