@@ -946,7 +946,18 @@ class MrpUnbuild(models.Model):
             quants = self.env['stock.quant'].quants_get_preferred_domain(qty, move, domain=domain, preferred_domain_list=[], lot_id=self.lot_id.id)
         self.env['stock.quant'].quants_reserve(quants, move)
 #        self.consume_line_id.action_done()
+        if move.has_tracking != 'none':
+            if not self.lot_id.id:
+                raise UserError(_('Should have a lot for the finished product'))
+            self.env['stock.move.lots'].create({'move_id': move.id,
+                                                'lot_id': self.lot_id.id,
+                                                'quantity_done': move.product_qty,
+                                                'quantity': move.product_qty})
         self.consume_line_id.move_validate()
+        
+        for produce_move in self.produce_line_ids:
+            if produce_move.has_tracking != 'none':
+                pass
         self.produce_line_ids.move_validate()
         produced_quant_ids = self.env['stock.quant']
         for move in self.produce_line_ids:
