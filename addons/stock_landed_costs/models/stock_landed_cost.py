@@ -5,7 +5,7 @@ from openerp import SUPERUSER_ID
 
 from odoo import api, fields, models, tools, _
 from odoo.addons import decimal_precision as dp
-from odoo.addons.stock_landed_costs import product
+from odoo.addons.stock_landed_costs.models import product
 from odoo.exceptions import UserError
 
 
