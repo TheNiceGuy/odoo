@@ -51,7 +51,6 @@ class MrpRoutingWorkcenter(models.Model):
     time_cycle_manual = fields.Float(string='Manual Duration', default=60, help="Time in minutes")
     time_cycle = fields.Float(string='Duration', compute="_get_time_cycle")
     wo_count = fields.Integer(string="# of Work Orders", compute="_wo_count")
-
     batch = fields.Selection([
             ('no',  'Once all products are processed'),
             ('yes', 'Once a minimum number of products is processed')

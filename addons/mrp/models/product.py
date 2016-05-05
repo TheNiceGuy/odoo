@@ -64,4 +64,3 @@ class ProductCategory(models.Model):
     _inherit = "product.category"
 
     procurement_time_frame = fields.Integer("Procurement Grouping Period (days)", help="Time Frame in which the procurements will be grouped together when triggering a new document (PO, MO)")
-

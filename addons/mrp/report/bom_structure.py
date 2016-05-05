@@ -34,7 +34,6 @@ class bom_structure(report_sxw.rml_parse):
             return result
 
         children = _get_rec(object,level)
-
         return children
 
 

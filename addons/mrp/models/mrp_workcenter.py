@@ -148,4 +148,3 @@ class MrpWorkcenterProductivity(models.Model):
     date_start = fields.Datetime('Start Date', default=fields.Datetime.now())
     date_end = fields.Datetime('End Date')
     duration = fields.Float('Duration', compute='_compute_duration', store=True)
-

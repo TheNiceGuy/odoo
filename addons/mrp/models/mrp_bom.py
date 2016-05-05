@@ -34,12 +34,9 @@ class MrpBom(models.Model):
     product_qty = fields.Float(string='Quantity', required=True, default=1.0, digits=dp.get_precision('Product Unit of Measure'))
     product_uom_id = fields.Many2one('product.uom', default=_get_uom_id, string='Unit of Measure', required=True, help="Unit of Measure (Unit of Measure) is the unit of measurement for the inventory control", oldname='product_uom')
     sequence = fields.Integer(string='Sequence', help="Gives The sequence order when displaying a list of bills of material.")
-    routing_id = fields.Many2one('mrp.routing', string='Routing', help="The list of operations (list of work centers) to produce the finished product. "
-                                 "The routing is mainly used to compute work center costs during operations and to plan future loads on work centers based on production planning.")
     ready_to_produce = fields.Selection([('all_available', 'All components available'), ('asap', 'The components of 1st operation')], string='Ready when are available', required=True, default='asap',)
     picking_type_id = fields.Many2one('stock.picking.type', string='Picking Type', domain=[('code', '=', 'mrp_operation')], help="When a procurement has a ‘produce’ route with a picking type set, it will try to create a Manufacturing Order for that product using a BOM of the same picking type. That allows to define pull rules for products with different routing (different BOMs)")
     company_id = fields.Many2one('res.company', string='Company', required=True, default=lambda self: self.env['res.company']._company_default_get('mrp.bom'))
-    operation_id = fields.Many2one('mrp.routing.workcenter', string='Produced at Operation')
 
 
     @api.model
@@ -73,7 +70,6 @@ class MrpBom(models.Model):
                 'product_id': bom_line.product_id.id,
                 'product_uom_qty': quantity,
                 'product_uom_id': bom_line.product_uom_id.id,
-                'operation_id': bom_line.operation_id.id,
             })
 
 
@@ -83,7 +79,6 @@ class MrpBom(models.Model):
         ProductUom = self.env['product.uom']
         if not original_quantity:
             original_quantity = quantity
-        if method_wo and self.routing_id: method_wo(self, quantity)
         done = done or []
         for bom_line in self.bom_line_ids:
             if bom_line._skip_bom_line(product):
@@ -97,7 +92,7 @@ class MrpBom(models.Model):
                 if method: method(bom_line, qty, original_quantity=original_quantity)
             else:
                 done.append(self.product_tmpl_id.id)
-                # We need to convert to units/UoM of chosen BoM 
+                # We need to convert to units/UoM of chosen BoM
                 qty2 = self.env['product.uom']._compute_qty(bom_line.product_uom_id.id, quantity * bom_line.product_qty / self.product_qty, bom.product_uom_id.id)
                 bom.explode(bom_line.product_id, qty2, original_quantity=original_quantity, method=method, method_wo=method_wo, done=done, result=kw)
         return True
@@ -154,7 +149,7 @@ class MrpBomLine(models.Model):
         for bom_line in self:
             child_bom = self.env['mrp.bom']._bom_find(
                 product_tmpl=bom_line.product_id.product_tmpl_id,
-                product=bom_line.product_id, 
+                product=bom_line.product_id,
                 picking_type=bom_line.bom_id.picking_type_id)
             if child_bom:
                 bom_line.write({'child_line_ids': (6, 0, [bom.id for bom in child_bom.bom_line_ids])})
@@ -166,14 +161,13 @@ class MrpBomLine(models.Model):
     product_uom_id = fields.Many2one('product.uom', string='Product Unit of Measure', required=True, default=_get_uom_id,
                                      help="Unit of Measure (Unit of Measure) is the unit of measurement for the inventory control", oldname='product_uom')
     sequence = fields.Integer(default=1, help="Gives the sequence order when displaying.")
-    routing_id = fields.Many2one('mrp.routing', string='Routing',
-                                 related="bom_id.routing_id", store=True, 
-                                 help="The list of operations (list of work centers) to produce the finished product. The routing is mainly used to compute work center costs during operations and to plan future loads on work centers based on production planning.")
+
     bom_id = fields.Many2one('mrp.bom', string='Parent BoM', ondelete='cascade', index=True, required=True)
     attribute_value_ids = fields.Many2many('product.attribute.value', string='Variants', help="BOM Product Variants needed form apply this line.")
-    operation_id = fields.Many2one('mrp.routing.workcenter', string='Consumed in Operation', help="The operation where the components are consumed, or the finished products created.")
     child_line_ids = fields.One2many('mrp.bom.line', compute='_get_child_bom_lines', string='BOM lines of the referred bom')
     has_attachments = fields.Boolean(compute="_compute_has_attachments")
+
+
 
     _sql_constraints = [
         ('bom_qty_zero', 'CHECK (product_qty>0)', 'All product quantities must be greater than 0.\n'
@@ -190,7 +184,7 @@ class MrpBomLine(models.Model):
                 '&', ('res_model', '=', 'product.template'), ('res_id', '=', line.product_id.product_tmpl_id.id)]
             attach = self.env['ir.attachment'].search(domain, limit=1)
             if attach:
-                line.has_attachments = True 
+                line.has_attachments = True
             else:
                 line.has_attachments = False
 

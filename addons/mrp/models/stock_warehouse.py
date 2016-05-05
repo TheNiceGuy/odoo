@@ -39,7 +39,7 @@ class StockWarehouse(models.Model):
             manufacture_pull_vals = warehouse._get_manufacture_pull_rule()
             self.manufacture_pull_id = self.env['procurement.rule'].create(manufacture_pull_vals)
         return res
-    
+        
     def _create_manufacturing_picking_type(self):
         picking_type_obj = self.env['stock.picking.type']
         seq_obj = self.env['ir.sequence']

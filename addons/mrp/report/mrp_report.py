@@ -3,35 +3,6 @@
 
 from openerp import fields, models
 
-
-class report_workcenter_load(models.Model):
-    _name="report.workcenter.load"
-    _description="Work Center Load"
-    _auto = False
-    _log_access = False
-
-    name = fields.Char('Week', required=True)
-    workcenter_id = fields.Many2one('mrp.workcenter', 'Work Center', required=True)
-    duration = fields.Float('Duration')
-
-    def init(self, cr):
-        cr.execute("""
-            create or replace view report_workcenter_load as (
-                SELECT
-                    min(wl.id) as id,
-                    to_char(p.date_planned,'YYYY:mm:dd') as name,
-                    SUM(wl.duration) AS duration,
-                    wl.workcenter_id as workcenter_id
-                FROM
-                    mrp_production_work_order wl
-                    LEFT JOIN mrp_production p
-                        ON p.id = wl.production_id
-                GROUP BY
-                    wl.workcenter_id,
-                    to_char(p.date_planned,'YYYY:mm:dd')
-            )""")
-
-
 class report_mrp_inout(models.Model):
     _name="report.mrp.inout"
     _description="Stock value variation"
