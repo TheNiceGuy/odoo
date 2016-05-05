@@ -21,7 +21,6 @@ class StockMoveLots(models.Model):
                 movelot.plus_visible = (movelot.quantity == 0.0) or (movelot.quantity_done < movelot.quantity)
 
     move_id = fields.Many2one('stock.move', string='Move')
-    workorder_id = fields.Many2one('mrp.production.work.order', string='Work Order')
     production_id = fields.Many2one('mrp.production')
     lot_id = fields.Many2one('stock.production.lot', string='Lot', domain="[('product_id', '=', product_id)]")
     lot_produced_id = fields.Many2one('stock.production.lot', string='Finished Lot')
@@ -52,9 +51,8 @@ class StockMove(models.Model):
     raw_material_production_id = fields.Many2one('mrp.production', string='Production Order for raw materials')
     unbuild_id = fields.Many2one('mrp.unbuild', "Unbuild Order")
     raw_material_unbuild_id = fields.Many2one('mrp.unbuild', "Consume material at unbuild")
-    operation_id = fields.Many2one('mrp.routing.workcenter', string="Operation To Consume")
-    workorder_id = fields.Many2one('mrp.production.work.order', string="Work Order To Consume")
     has_tracking = fields.Selection(related='product_id.tracking', string='Product with Tracking')
+    workorder_id = fields.Many2one('mrp.production.work.order', string='Work Order')
     # Quantities to process, in normalized UoMs
     quantity_available = fields.Float('Quantity Available', compute="_qty_available", digits_compute=dp.get_precision('Product Unit of Measure'))
     quantity_done_store = fields.Float('Quantity', digits_compute=dp.get_precision('Product Unit of Measure'))
@@ -114,7 +112,7 @@ class StockMove(models.Model):
                     vals = {
                         'move_id': move.id,
                         'product_id': move.product_id.id,
-                        'workorder_id': move.workorder_id.id,
+                        #'workorder_id': move.workorder_id.id,
                         'production_id': move.raw_material_production_id.id,
                         'quantity': quantity,
                         'lot_id': key,

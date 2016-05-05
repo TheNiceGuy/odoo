@@ -25,7 +25,7 @@
                         </div>
                     </div>
 
-                    <div class="row mt32 mb32">
+                    <div class="row mt32 mb32" name="mrp_report_ref">
                         <div class="col-xs-3">
                             <strong>Scheduled Date:</strong><br/>
                             <span t-field="o.date_planned"/>
@@ -43,7 +43,7 @@
                             <span t-esc="'sale_name' in o._columns.keys() and o.sale_name"/>
                         </div>
                     </div>
-
+<!-- 
                     <div t-if="o.workorder_ids">
                         <strong>Work Orders</strong>
                         <table class="table table-condensed">
@@ -58,7 +58,7 @@
                                 <td class="text-center"><span t-field="line2.duration"/></td>
                             </tr>
                         </table>
-                    </div>
+                    </div> -->
 
                     <h3 t-if="o.move_raw_ids">Bill Of Material</h3>
 
