@@ -52,7 +52,6 @@ class StockMove(models.Model):
     unbuild_id = fields.Many2one('mrp.unbuild', "Unbuild Order")
     raw_material_unbuild_id = fields.Many2one('mrp.unbuild', "Consume material at unbuild")
     has_tracking = fields.Selection(related='product_id.tracking', string='Product with Tracking')
-    workorder_id = fields.Many2one('mrp.production.work.order', string='Work Order')
     # Quantities to process, in normalized UoMs
     quantity_available = fields.Float('Quantity Available', compute="_qty_available", digits_compute=dp.get_precision('Product Unit of Measure'))
     quantity_done_store = fields.Float('Quantity', digits_compute=dp.get_precision('Product Unit of Measure'))
@@ -80,6 +79,15 @@ class StockMove(models.Model):
     def check_move_lots(self):
         moves_todo = self.filtered(lambda x: (x.raw_material_production_id or x.raw_material_unbuild_id) and x.state not in ('done', 'cancel') )
         return moves_todo.create_lots()
+
+    def prepare_lots_vals(self, move, key, quantity):
+        return {
+            'move_id': move.id,
+            'product_id': move.product_id.id,
+            'production_id': move.raw_material_production_id.id,
+            'quantity': quantity,
+            'lot_id': key,
+        }
 
 
     @api.multi
@@ -109,14 +117,7 @@ class StockMove(models.Model):
                     else:
                         old_move_lot[key][0].quantity = quantity
                 else:
-                    vals = {
-                        'move_id': move.id,
-                        'product_id': move.product_id.id,
-                        #'workorder_id': move.workorder_id.id,
-                        'production_id': move.raw_material_production_id.id,
-                        'quantity': quantity,
-                        'lot_id': key,
-                    }
+                    vals = self.prepare_lots_vals(move, key, quantity)
                     lots.create(vals)
         return True
 
