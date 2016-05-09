@@ -282,10 +282,8 @@
                                 <field name="product_uom" readonly="1" class="oe_inline" groups="product.group_uom"/>
                             </div>
                             <field name="is_done" invisible="1"/>
-                            <!-- <field name="workorder_id" invisible="1"/> -->
                         </group>
                     </group>
-                    <!-- context="{'default_workorder_id': workorder_id}" -->
                     <field name="move_lot_ids" attrs="{'readonly': [('is_done', '=', True)]}">
                         <tree editable="bottom" decoration-success="quantity==quantity_done" decoration-danger="(quantity &gt; 0) and (quantity_done&gt;quantity)">
                             <field name="lot_id" domain="[('product_id', '=', parent.product_id)]"/>
@@ -294,7 +292,6 @@
                             <button name="do_minus" type="object" icon="fa-minus-square" attrs="{'invisible': [('quantity_done', '&lt;=', 0.99)]}" invisible="not context.get('show_reserved') or context.get('state_done')"/>
                             <button name="do_plus" type="object" icon="fa-plus-square" attrs="{'invisible': [('plus_visible', '=', False)]}" invisible="not context.get('show_reserved') or context.get('state_done')"/>
                             <field name="plus_visible" invisible="1"/>
-                            <!-- <field name="workorder_id" invisible="1"/> -->
                         </tree>
                     </field>
                     <footer class="oe_edit_only">
