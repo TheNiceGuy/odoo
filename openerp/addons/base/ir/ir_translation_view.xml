@@ -61,6 +61,7 @@
                     <field name="lang"/>
                     <field name="type"/>
                     <field name="state"/>
+                    <field name="description"/>
                 </tree>
             </field>
         </record>
@@ -69,6 +70,7 @@
             <field name="model">ir.translation</field>
             <field name="arch" type="xml">
                 <tree string="Translations" editable="top" create="false">
+                    <field name="description"/>
                     <field name="lang" readonly="1"/>
                     <field name="source"/>
                     <field name="value"/>

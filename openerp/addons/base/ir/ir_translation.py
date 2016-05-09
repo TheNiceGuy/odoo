@@ -184,6 +184,8 @@ class IrTranslation(models.Model):
                              string="Status", default='to_translate',
                              help="Automatically set to let administators find new terms that might need to be translated")
 
+    description = fields.Char(compute='_compute_description', store=True, help="A description understandable by humans of what is stored in this translation line")
+
     # aka gettext extracted-comments - we use them to flag openerp-web translation
     # cfr: http://www.gnu.org/savannah-checkouts/gnu/gettext/manual/html_node/PO-Files.html
     comments = fields.Text(string='Translation comments', index=True)
@@ -192,6 +194,30 @@ class IrTranslation(models.Model):
         ('lang_fkey_res_lang', 'FOREIGN KEY(lang) REFERENCES res_lang(code)',
          'Language code of translation item must be among known languages'),
     ]
+
+    @api.one
+    @api.depends('name', 'type', 'res_id')
+    def _compute_description(self):
+        if ',' not in self.name:
+            self.description = ''
+            return
+        model, resource = self.name.split(',')
+        if self.type in ['constraint', 'sql_constraint']:
+            desc = _("%s: constraint") % model
+        elif self.type == 'selection':
+            field = self.env['ir.model.fields'].search([('model', '=', model), ('name', '=', resource)])
+            if field:
+                desc = _("%s: %s selection value") % (model, field.display_name)
+            else:
+                desc = ''
+        elif self.type == 'model' and model == 'ir.ui.view' and resource == 'arch_db':
+            view_model = self.env['ir.ui.view'].browse(self.res_id).model
+            desc = _("%s: label") % view_model
+        elif self.type == 'model':
+            desc = _("%s: object") % view_model
+        else:
+            desc = ''
+        self.description = desc
 
     @api.model
     def _get_languages(self):
