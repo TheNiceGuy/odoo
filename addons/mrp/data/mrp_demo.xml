@@ -95,6 +95,72 @@
 
         <!-- Resource: mrp.bom -->
 
+        <record id="product.product_product_3_product_template" model="product.template">
+            <field name="route_ids" eval="[(6, 0, [ref('stock.route_warehouse0_mto'), ref('mrp.route_warehouse0_manufacture')])]"/>
+        </record>
+
+        <record id="mrp_bom_manufacture" model="mrp.bom">
+            <field name="product_tmpl_id" ref="product.product_product_3_product_template"/>
+            <field name="product_uom_id" ref="product.product_uom_unit"/>
+            <field name="sequence">1</field>
+        </record>
+
+        <record id="mrp_bom_manufacture_line_1" model="mrp.bom.line">
+            <field name="product_id" ref="product.product_product_12"/>
+            <field name="product_qty">1</field>
+            <field name="product_uom_id" ref="product.product_uom_unit"/>
+            <field name="sequence">5</field>
+            <field name="bom_id" ref="mrp_bom_manufacture"/>
+        </record>
+
+        <record id="mrp_bom_manufacture_line_2" model="mrp.bom.line">
+            <field name="product_id" ref="product.product_product_13"/>
+            <field name="product_qty">1</field>
+            <field name="product_uom_id" ref="product.product_uom_unit"/>
+            <field name="sequence">5</field>
+            <field name="bom_id" ref="mrp_bom_manufacture"/>
+        </record>
+
+        <record id="mrp_bom_manufacture_line_3" model="mrp.bom.line">
+            <field name="product_id" ref="product.product_product_16"/>
+            <field name="product_qty">1</field>
+            <field name="product_uom_id" ref="product.product_uom_unit"/>
+            <field name="sequence">5</field>
+            <field name="bom_id" ref="mrp_bom_manufacture"/>
+        </record>
+
+        <record id="mrp_bom_manufacture_line_4" model="mrp.bom.line">
+            <field name="product_id" ref="product.product_product_17"/>
+            <field name="product_qty">1</field>
+            <field name="product_uom_id" ref="product.product_uom_unit"/>
+            <field name="sequence">5</field>
+            <field name="bom_id" ref="mrp_bom_manufacture"/>
+        </record>
+
+        <record id="mrp_bom_manufacture_line_5" model="mrp.bom.line">
+            <field name="product_id" ref="product.product_product_20"/>
+            <field name="product_qty">1</field>
+            <field name="product_uom_id" ref="product.product_uom_unit"/>
+            <field name="sequence">5</field>
+            <field name="bom_id" ref="mrp_bom_manufacture"/>
+        </record>
+
+        <record id="mrp_bom_manufacture_line_6" model="mrp.bom.line">
+            <field name="product_id" ref="product.product_product_22"/>
+            <field name="product_qty">1</field>
+            <field name="product_uom_id" ref="product.product_uom_unit"/>
+            <field name="sequence">5</field>
+            <field name="bom_id" ref="mrp_bom_manufacture"/>
+        </record>
+
+        <record id="mrp_bom_manufacture_line_7" model="mrp.bom.line">
+            <field name="product_id" ref="product.product_product_24"/>
+            <field name="product_qty">1</field>
+            <field name="product_uom_id" ref="product.product_uom_unit"/>
+            <field name="sequence">5</field>
+            <field name="bom_id" ref="mrp_bom_manufacture"/>
+        </record>
+
         <record id="mrp_bom_3" model="mrp.bom">
             <field name="product_tmpl_id" ref="product_product_19_product_template"/>
             <field name="product_uom_id" ref="product.product_uom_unit"/>
