@@ -162,7 +162,6 @@ class MrpProduction(models.Model):
             self.bom_id = bom_point.id
             return {'domain': {'product_uom_id': [('category_id', '=', self.product_id.uom_id.category_id.id)]}}
 
-
     @api.multi
     def action_cancel(self):
         """ Cancels the production order and related stock moves.
@@ -170,25 +169,26 @@ class MrpProduction(models.Model):
         """
         ProcurementOrder = self.env['procurement.order']
         # Cancel confirmed moves
-        finish_moves = production.move_finished_ids.filtered(lambda x : x.state not in ('done', 'cancel'))
-        raw_moves = production.move_raw_ids.filtered(lambda x: x.state not in ('done','cancel'))
-        if (not finish_moves) and (not raw_moves):
-            raise UserError(_('No need to cancel as all moves are done'))
-        if finish_moves:
-            finish_moves.action_cancel()
-        procs = ProcurementOrder.search([('move_dest_id', 'in', finish_moves.ids)])
-        if procs:
-            procs.cancel()
-        for move in raw_moves:
-            if move.quantity_done:
-                raise UserError(_("Already consumed material %s , So you can not cancel production."%(move.product_id.name)))
-        raw_moves.action_cancel()
-        self.write({'state': 'cancel'})
-        # Put relatfinish_to_canceled procurements in exception
-        procs = ProcurementOrder.search([('production_id', 'in', self.ids)])
-        if procs:
-            procs.message_post(body=_('Manufacturing order cancelled.'))
-            procs.write({'state': 'exception'})
+        for production in self:
+            finish_moves = production.move_finished_ids.filtered(lambda x: x.state not in ('done', 'cancel'))
+            raw_moves = production.move_raw_ids.filtered(lambda x: x.state not in ('done', 'cancel'))
+            if (not finish_moves) and (not raw_moves):
+                raise UserError(_('No need to cancel as all moves are done'))
+            if finish_moves:
+                finish_moves.action_cancel()
+            procs = ProcurementOrder.search([('move_dest_id', 'in', finish_moves.ids)])
+            if procs:
+                procs.cancel()
+            for move in raw_moves:
+                if move.quantity_done:
+                    raise UserError(_("Already consumed material %s , So you can not cancel production." % (move.product_id.name)))
+            raw_moves.action_cancel()
+            self.write({'state': 'cancel'})
+            # Put relatfinish_to_canceled procurements in exception
+            procs = ProcurementOrder.search([('production_id', 'in', self.ids)])
+            if procs:
+                procs.message_post(body=_('Manufacturing order cancelled.'))
+                procs.write({'state': 'exception'})
         return True
 
     @api.multi
@@ -315,7 +315,9 @@ class MrpProduction(models.Model):
     def _generate_move(self, bom_line, quantity, **kw):
         self.ensure_one()
         data = self._generate_move_data(bom_line, quantity, result=kw)
-        return self.env['stock.move'].create(data)
+        if data:
+            return self.env['stock.move'].create(data)
+        return data
 
     @api.multi
     def _adjust_procure_method(self):
