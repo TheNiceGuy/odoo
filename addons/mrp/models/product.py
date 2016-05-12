@@ -28,11 +28,8 @@ class ProductTemplate(models.Model):
     def action_view_mos(self):
         products = self._get_products()
         result = self._get_act_window_dict('mrp.act_product_mrp_production')
-        if len(self) == 1 and len(products) == 1:
-            result['context'] = "{'default_product_id': " + str(products[0]) + ", 'search_default_product_id': " + str(products[0]) + "}"
-        else:
-            result['domain'] = "[('product_id','in',[" + ','.join(map(str, products)) + "])]"
-            result['context'] = "{}"
+        result['domain'] = "[('product_id','in',[" + ','.join(map(str, products)) + "])]"
+        result['context'] = "{'default_product_id': " + str(products[0]) + "}"
         return result
 
 
