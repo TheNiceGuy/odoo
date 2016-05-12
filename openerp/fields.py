@@ -979,9 +979,9 @@ class Field(object):
 
         for model_name, bypath in bymodel.iteritems():
             for path, fields in bypath.iteritems():
-                if path and any(field.store for field in fields):
+                if path and any(field.compute and field.store for field in fields):
                     # process stored fields
-                    stored = set(field for field in fields if field.store)
+                    stored = set(field for field in fields if field.compute and field.store)
                     fields = set(fields) - stored
                     if path == 'id':
                         target = records
@@ -1827,6 +1827,15 @@ class _RelationalMulti(_Relational):
             # filter values to keep the accessible records only
             for record in records:
                 record[self.name] = record[self.name].filtered(accessible)
+
+    def setup_triggers(self, env):
+        super(_RelationalMulti, self).setup_triggers(env)
+        # also invalidate self when fields appearing in the domain are modified
+        if isinstance(self.domain, list):
+            comodel = env[self.comodel_name]
+            for arg in self.domain:
+                if isinstance(arg, (tuple, list)) and isinstance(arg[0], basestring):
+                    self._setup_dependency([self.name], comodel, arg[0].split('.'))
 
 
 class One2many(_RelationalMulti):
