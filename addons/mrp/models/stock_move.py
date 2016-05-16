@@ -9,6 +9,7 @@ import openerp.addons.decimal_precision as dp
 import time
 from openerp.tools import DEFAULT_SERVER_DATETIME_FORMAT
 
+
 class StockMoveLots(models.Model):
     _name = 'stock.move.lots'
     _description = "Quantities to Process by lots"
@@ -182,13 +183,18 @@ class StockMove(models.Model):
             preferred_domain_list = [preferred_domain] + [fallback_domain] + [fallback_domain2]
             if move.has_tracking == 'none':
                 quants = quant_obj.quants_get_preferred_domain(move.product_qty, move, domain=main_domain, preferred_domain_list=preferred_domain_list)
-                self.env['stock.quant'].quants_move(quants, move, move.location_dest_id)
+                quant_obj.quants_move(quants, move, move.location_dest_id)
             else:
                 for movelot in move.move_lot_ids:
+                    new_quants = self.env['stock.quant']
                     if float_compare(movelot.quantity_done, 0, precision_rounding=rounding) > 0:
                         qty = uom_obj._compute_qty(move.product_uom.id, movelot.quantity_done, move.product_id.uom_id.id)
                         quants = quant_obj.quants_get_preferred_domain(qty, move, lot_id=movelot.lot_id.id, domain=main_domain, preferred_domain_list=preferred_domain_list)
-                        self.env['stock.quant'].quants_move(quants, move, move.location_dest_id, lot_id = movelot.lot_id.id)
+                        for quant, qty in quants:
+                            if quant:
+                                new_quants |= quant
+                        new_quants.write({'produced_lot_id': movelot.lot_produced_id.id})
+                        quant_obj.quants_move(quants, move, move.location_dest_id, lot_id = movelot.lot_id.id)
             quant_obj.quants_unreserve(move)
             move.write({'state': 'done', 'date': time.strftime(DEFAULT_SERVER_DATETIME_FORMAT)})
             #Next move in production order
@@ -297,6 +303,7 @@ class StockQuant(models.Model):
 
     consumed_quant_ids = fields.Many2many('stock.quant', 'stock_quant_consume_rel', 'produce_quant_id', 'consume_quant_id')
     produced_quant_ids = fields.Many2many('stock.quant', 'stock_quant_consume_rel', 'consume_quant_id', 'produce_quant_id')
+    produced_lot_id = fields.Many2one('stock.production.lot')
 
 
 class StockProductionLot(models.Model):

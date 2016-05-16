@@ -296,8 +296,7 @@ class MrpProduction(models.Model):
                 for move_raw in moves_to_do:
                     if (move.has_tracking != 'none') and (move_raw.has_tracking != 'none'):
                         for lot in lot_quants:
-                            lots = move_raw.move_lot_ids.filtered(lambda x: x.lot_produced_id.id == lot).mapped('lot_id')
-                            raw_lot_quants[lot] |= move_raw.quant_ids.filtered(lambda x: (x.lot_id in lots) and (x.qty > 0.0))
+                            raw_lot_quants[lot] |= move_raw.quant_ids.filtered(lambda x : (x.produced_lot_id.id == lot) and (x.qty > 0.0))
                     else:
                         quants |= move_raw.quant_ids.filtered(lambda x: x.qty > 0.0)
                 if move.has_tracking != 'none':
