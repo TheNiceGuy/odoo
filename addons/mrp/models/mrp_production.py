@@ -84,29 +84,22 @@ class MrpProduction(models.Model):
     product_tmpl_id = fields.Many2one('product.template', string='Product Template', related='product_id.product_tmpl_id')
     product_qty = fields.Float(string='Quantity to Produce', digits=dp.get_precision('Product Unit of Measure'), required=True, readonly=True, states={'confirmed': [('readonly', False)]}, default=1.0)
     product_uom_id = fields.Many2one('product.uom', string='Product Unit of Measure', required=True, readonly=True, states={'confirmed': [('readonly', False)]}, oldname='product_uom')
-
     picking_type_id = fields.Many2one('stock.picking.type', 'Picking Type', default=_default_picking_type, required=True)
     location_src_id = fields.Many2one('stock.location', string='Raw Materials Location', default=_location_src_default,
                                       readonly=True, states={'confirmed': [('readonly', False)]})
     location_dest_id = fields.Many2one('stock.location', string='Finished Products Location', default=_location_dest_default,
                                        readonly=True, states={'confirmed': [('readonly', False)]})
     date_planned = fields.Datetime(string='Expected Date', required=True, index=True, readonly=True, states={'confirmed': [('readonly', False)]}, copy=False, default=fields.Datetime.now)
-
     date_start = fields.Datetime(string='Start Date', readonly=True, copy=False)
     date_finished = fields.Datetime(string='End Date', readonly=True, copy=False)
-
     bom_id = fields.Many2one('mrp.bom', string='Bill of Material', readonly=True, states={'confirmed': [('readonly', False)]})
     # FP Note: what's the goal of this field? -> It is like the destination move of the production move
     move_prod_id = fields.Many2one('stock.move', string='Product Move', readonly=True, copy=False)
     move_raw_ids = fields.One2many('stock.move', 'raw_material_production_id', string='Raw Materials', states={'done': [('readonly', True)], 'cancel': [('readonly', True)]}, copy=False)
     move_finished_ids = fields.One2many('stock.move', 'production_id', string='Finished Products', states={'done': [('readonly', True)], 'cancel': [('readonly', True)]}, copy=False)
-
     state = fields.Selection([('confirmed', 'Confirmed'), ('planned', 'Planned'), ('progress', 'In Progress'), ('done', 'Done'), ('cancel', 'Cancelled')], 'State', default='confirmed', copy=False)
-
     availability = fields.Selection([('assigned', 'Available'), ('partially_available', 'Partially Available'), ('none', 'None'), ('waiting', 'Waiting')], compute='_compute_availability', store=True, default="none")
-
     post_visible = fields.Boolean('Inventory Post Visible', compute='_compute_post_visible', help='Technical field to check when we can post')
-
     user_id = fields.Many2one('res.users', string='Responsible', default=lambda self: self.env.user)
     company_id = fields.Many2one('res.company', string='Company', required=True, default=lambda self: self.env['res.company']._company_default_get('mrp.production'))
     check_to_done = fields.Boolean(compute="_get_produced_qty", string="Check Produced Qty")

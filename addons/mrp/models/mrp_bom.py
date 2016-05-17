@@ -161,7 +161,6 @@ class MrpBomLine(models.Model):
     product_uom_id = fields.Many2one('product.uom', string='Product Unit of Measure', required=True, default=_get_uom_id,
                                      help="Unit of Measure (Unit of Measure) is the unit of measurement for the inventory control", oldname='product_uom')
     sequence = fields.Integer(default=1, help="Gives the sequence order when displaying.")
-
     bom_id = fields.Many2one('mrp.bom', string='Parent BoM', ondelete='cascade', index=True, required=True)
     attribute_value_ids = fields.Many2many('product.attribute.value', string='Variants', help="BOM Product Variants needed form apply this line.")
     child_line_ids = fields.One2many('mrp.bom.line', compute='_get_child_bom_lines', string='BOM lines of the referred bom')
