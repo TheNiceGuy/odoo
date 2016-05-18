@@ -935,7 +935,6 @@ class MrpUnbuild(models.Model):
         self.ensure_one()
         self._make_unbuild_consume_line()
         self._generate_moves()
-        import pdb; pdb.set_trace()
         #Search quants that passed production order
         move = self.consume_line_id
         domain = [('qty', '>', 0)]
