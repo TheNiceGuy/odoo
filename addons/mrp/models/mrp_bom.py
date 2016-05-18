@@ -154,7 +154,7 @@ class MrpBom(models.Model):
             raise UserError(_('You can not delete a Bill of Material with running manufacturing orders.\nPlease close or cancel it first.'))
         return super(MrpBom, self).unlink()
 
-    @api.onchange('product_tmpl_id', 'product_qty')
+    @api.onchange('product_tmpl_id')
     def onchange_product_tmpl_id(self):
         # TDE CLEANME: product_qty is not a dependency
         if self.product_tmpl_id:
