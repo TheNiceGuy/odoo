@@ -552,8 +552,6 @@ class MrpProductionMessage(models.Model):
 
     name = fields.Text(compute='_get_note_first_line', store=True)
     message = fields.Html(required=True)
-    picking_type_id = fields.Many2one('stock.picking.type', string="Alert on Operation", required=True)
-    code = fields.Selection(related='picking_type_id.code', store=True)
     product_id = fields.Many2one('product.product', string="Product")
     bom_id = fields.Many2one('mrp.bom', 'Bill of Material', domain="[('product_id', '=', product_id)]")
     workcenter_id = fields.Many2one('mrp.workcenter', string='Work Center')
