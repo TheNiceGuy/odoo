@@ -81,7 +81,7 @@ class MrpRoutingWorkcenter(models.Model):
     @api.multi
     def _wo_count(self):
         # TDE CLEANME
-        result = self.env['mrp.production.work.order'].read_group([('operation_id', 'in', self.mapped('id')),('state','=','done')], ['operation_id'], ['operation_id'])
+        result = self.env['mrp.production.work.order'].read_group([('operation_id', 'in', self.ids),('state','=','done')], ['operation_id'], ['operation_id'])
         mapped_data = dict([(op['operation_id'][0], op['operation_id_count']) for op in result])
         for operation in self:
             operation.wo_count = mapped_data.get(operation.id, 0)
