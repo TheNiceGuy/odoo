@@ -17,8 +17,7 @@ class MrpBom(models.Model):
     _name = 'mrp.bom'
     _description = 'Bill of Material'
     _inherit = ['mail.thread']
-    # TDE FIXME: _rec_name
-    _name_rec = 'product_tmpl_id'
+    _rec_name = 'product_tmpl_id'
     _order = "sequence"
 
     def _get_default_product_uom_id(self):
