@@ -40,6 +40,30 @@
     }
 }
 
+.o_homepage_editor_welcome_message {
+    font-family: Roboto, @font-family-sans-serif;
+
+    > .row {
+        .o-flex-display();
+        .o-align-items(center);
+
+        > div {
+            .o-flex(0, 0, auto);
+        }
+    }
+
+    .o_tooltip_container {
+        .o-flex-display();
+        .o-align-items(center);
+
+        > .o_tooltip {
+            position: static;
+            display: inline-block;
+            margin: 0 8px 8px;
+        }
+    }
+}
+
 .o_editable {
     &:not(:empty), &[data-oe-type] {
         &:not([data-oe-model="ir.ui.view"]):not([data-oe-type="html"]):hover {
@@ -68,25 +92,6 @@
             color: #aaa;
         }
     }
-    &.oe_structure.oe_empty, &[data-oe-type=html] {
-        &:empty,
-        > .oe_drop_zone.oe_insert:only-child,
-        > p:empty:only-child {
-            position: relative;
-            &:before {
-                display: block;
-                font-family: FontAwesome;
-                content: "\f061";
-                color: @odoo-brand-primary;
-                font-size: 30px;
-
-                position: absolute;
-                z-index: 1031;
-                .o-animation(dragAndDrop, 1s, linear, 0s, infinite, alternate);
-            }
-            &:focus:before { display: none; }
-        }
-    }
 }
 .editor_enable [data-oe-readonly]:hover {
     cursor: default;
@@ -111,9 +116,6 @@
 
 [data-oe-type=html].oe_no_empty:empty {
     height: 16px!important;
-    &:before {
-        content: ''!important;
-    }
 }
 
 // EDITOR BAR
