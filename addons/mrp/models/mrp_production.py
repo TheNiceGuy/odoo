@@ -891,7 +891,6 @@ class MrpUnbuild(models.Model):
             'product_id': self.product_id.id,
             'product_uom': self.product_uom_id.id,
             'product_uom_qty': self.product_qty,
-            'restrict_lot_id': self.lot_id.id,
             'location_id': self.location_id.id,
             'location_dest_id': self.product_id.property_stock_production.id,
             'raw_material_unbuild_id': self.id,
@@ -935,8 +934,10 @@ class MrpUnbuild(models.Model):
         self.ensure_one()
         self._make_unbuild_consume_line()
         self._generate_moves()
+        import pdb; pdb.set_trace()
         #Search quants that passed production order
         move = self.consume_line_id
+        domain = [('qty', '>', 0)]
         if self.mo_id:
             main_finished_moves = self.mo_id.move_finished_ids.filtered(lambda x: x.product_id.id == self.mo_id.product_id.id)
             domain = [('qty', '>', 0), ('history_ids', 'in', [x.id for x in main_finished_moves])]
@@ -964,13 +965,13 @@ class MrpUnbuild(models.Model):
                                                     'lot_id': original.lot_id.id,
                                                     'quantity_done': produce_move.product_uom_qty,
                                                     'quantity': produce_move.product_uom_qty,})
+            else:
+                produce_move.quantity_done = produce_move.product_uom_qty
         self.produce_line_ids.move_validate()
         produced_quant_ids = self.env['stock.quant']
         for move in self.produce_line_ids:
             produced_quant_ids |= move.quant_ids
         self.consume_line_id.quant_ids.write({'produced_quant_ids': [(6, 0, produced_quant_ids)]})
-        # TODO : Need to assign quants which consumed at build product.
-        #self.quant_move_rel()
         self.write({'state': 'done'})
 
 
