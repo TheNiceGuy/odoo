@@ -2158,14 +2158,12 @@
                     <sheet>
                         <group>
                             <group>
-                                <field name="picking_type_id" widget="selection"/>
                                 <field name="product_id" required="True"/>
                                 <field name="valid_until"/>
-                                <field name="code" invisible="True"/>
                             </group>
                             <group>
-                                <field name="bom_id" attrs="{'invisible': [('code', '!=', 'mrp_operation')]}"/>
-                                <field name="workcenter_id" attrs="{'invisible': [('code', '!=', 'mrp_operation')]}"/>
+                                <field name="bom_id"/>
+                                <field name="workcenter_id"/>
                             </group>
                         </group>
                         <field name="message" widget="html" editor_height="450px"/>
@@ -2181,7 +2179,6 @@
                 <tree>
                     <field name="valid_until" string="Validity Date"/>
                     <field name="create_uid" string="Author"/>
-                    <field name="picking_type_id" string="Operation"/>
                     <field name="product_id"/>
                     <field name="name" string="Message"/>
                 </tree>
@@ -2193,12 +2190,8 @@
             <field name="model">inventory.message</field>
             <field name="arch" type="xml">
                 <search string="Search">
-                    <field name="picking_type_id"/>
                     <filter string="Active Messages" name="active_message" domain="[('valid_until','&gt;=', current_date)]"/>
                     <filter string="My Messages" name="my_messages" domain="[('create_uid', '=', uid)]"/>
-                    <group expand='0' string='Group by...'>
-                        <filter string='Picking Type' name="picktype" context="{'group_by': 'picking_type_id'}"/>
-                    </group>
                </search>
            </field>
         </record>

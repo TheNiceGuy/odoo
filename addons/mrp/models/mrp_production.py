@@ -497,13 +497,11 @@ class MrpProductionWorkcenterLine(models.Model):
             else:
                 workorder.delay_percent = 0
 
-    @api.depends('production_id', 'workcenter_id', 'production_id.bom_id', 'production_id.picking_type_id')
+    @api.depends('production_id', 'workcenter_id', 'production_id.bom_id')
     def _get_inventory_message(self):
         InventoryMessage = self.env['inventory.message']
         for workorder in self:
-            domain = [
-                ('picking_type_id', '=', workorder.production_id.picking_type_id.id), '|',
-                ('bom_id', '=', workorder.production_id.bom_id.id), '|',
+            domain = ['|', ('bom_id', '=', workorder.production_id.bom_id.id), '|',
                 ('workcenter_id', '=', workorder.workcenter_id.id),
                 ('routing_id', '=', workorder.operation_id.routing_id.id),
                 ('valid_until', '>=', fields.Date.today())
@@ -1032,8 +1030,6 @@ class InventoryMessage(models.Model):
 
     name = fields.Text(compute='_get_note_first_line', store=True)
     message = fields.Html(required=True)
-    picking_type_id = fields.Many2one('stock.picking.type', string="Alert on Operation", required=True)
-    code = fields.Selection(related='picking_type_id.code', store=True)
     product_id = fields.Many2one('product.product', string="Product")
     bom_id = fields.Many2one('mrp.bom', 'Bill of Material', domain="[('product_id', '=', product_id)]")
     workcenter_id = fields.Many2one('mrp.workcenter', string='Work Center')
