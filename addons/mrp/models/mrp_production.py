@@ -38,22 +38,21 @@ class MrpProduction(models.Model):
 
     @api.model
     def _get_default_location_src_id(self):
+        location_id = False
         if self._context.get('default_picking_type_id'):
-            location = self.env['stock.picking.type'].browse(self.env.context['default_picking_type_id']).default_location_src_id.id
-        location = self.env.ref('stock.stock_location_stock', raise_if_not_found=False)
-        if location:
-            try:
-                location.check_access_rule('read')
-                return location.id
-            except AccessError:
-                pass
-        return False
+            location_id = self.env['stock.picking.type'].browse(self.env.context['default_picking_type_id']).default_location_src_id.id
+        if not location_id:
+            location_id = self.env.ref('stock.stock_location_stock', raise_if_not_found=False).id
+        return location_id
 
     @api.model
     def _get_default_location_dest_id(self):
+        location_id = False
         if self._context.get('default_picking_type_id'):
-            location = self.env['stock.picking.type'].browse(self.env.context['default_picking_type_id']).default_location_dest_id.id
-        return self._get_default_location_src_id()
+            location_id = self.env['stock.picking.type'].browse(self.env.context['default_picking_type_id']).default_location_dest_id.id
+        if not location_id:
+            location_id = self.env.ref('stock.stock_location_stock', raise_if_not_found=False).id
+        return location_id
 
     @api.multi
     @api.depends('move_raw_ids.state', 'workorder_ids.move_raw_ids')
