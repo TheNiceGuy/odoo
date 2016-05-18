@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-from openerp import api, fields, models, _
-from openerp.exceptions import UserError
 from dateutil import relativedelta
 import datetime
+
+from odoo import api, exceptions, fields, models, _
 
 # ----------------------------------------------------------
 # Work Centers
@@ -104,7 +104,7 @@ class MrpWorkcenter(models.Model):
     def unblock(self):
         self.ensure_one()
         if self.working_state != 'blocked':
-            raise UserError(_("It has been unblocked already. "))
+            raise exceptions.UserError(_("It has been unblocked already. "))
         times = self.env['mrp.workcenter.productivity'].search([('workcenter_id', '=', self.id), ('date_end', '=', False)])
         times.write({'date_end': fields.Datetime.now()})
         return {'type': 'ir.actions.client', 'tag': 'reload'}
