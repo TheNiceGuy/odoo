@@ -51,7 +51,6 @@ class StockMove(models.Model):
     production_id = fields.Many2one('mrp.production', string='Production Order for finished products')
     raw_material_production_id = fields.Many2one('mrp.production', string='Production Order for raw materials')
     unbuild_id = fields.Many2one('mrp.unbuild', "Unbuild Order")
-    raw_material_unbuild_id = fields.Many2one('mrp.unbuild', "Consume material at unbuild")
     operation_id = fields.Many2one('mrp.routing.workcenter', string="Operation To Consume")
     workorder_id = fields.Many2one('mrp.production.work.order', string="Work Order To Consume")
     has_tracking = fields.Selection(related='product_id.tracking', string='Product with Tracking')
@@ -80,7 +79,7 @@ class StockMove(models.Model):
 
     @api.multi
     def check_move_lots(self):
-        moves_todo = self.filtered(lambda x: (x.raw_material_production_id or x.raw_material_unbuild_id) and x.state not in ('done', 'cancel') )
+        moves_todo = self.filtered(lambda x: (x.raw_material_production_id or x.id == self.consume_line_id.id) and x.state not in ('done', 'cancel') )
         return moves_todo.create_lots()
 
 

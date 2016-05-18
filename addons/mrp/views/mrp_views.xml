@@ -1144,6 +1144,7 @@
                     <filter string="Planned" name="planned" domain="[('state','=','planned')]"/>
                     <filter string="In Progress" name="inprogress" domain="[('state','=','progress')]"
                         help="Manufacturing Orders which are currently in production."/>
+                    <filter string="Done" name="inprogress" domain="[('state','=','done')]"/>
                     <separator/>
                     <filter string="Late" domain="['&amp;', ('date_planned','&lt;', current_date), ('state', 'in', ('draft', 'confirmed', 'ready'))]"
                         name="late" help="Production started late"/>
@@ -1952,7 +1953,7 @@
             <field name="res_model">stock.move</field>
             <field name="view_type">form</field>
             <field name="view_mode">tree,form</field>
-            <field name="domain">['|', ('unbuild_id', '=', active_id), ('raw_material_unbuild_id', '=', active_id)]</field>
+            <field name="domain">[('unbuild_id', '=', active_id)]</field>
         </record>
 
         <record id="mrp_unbuild_form_view" model="ir.ui.view">

@@ -893,10 +893,11 @@ class MrpUnbuild(models.Model):
             'product_uom_qty': self.product_qty,
             'location_id': self.location_id.id,
             'location_dest_id': self.product_id.property_stock_production.id,
-            'raw_material_unbuild_id': self.id,
             'origin': self.name
         }
-        rec = self.env['stock.move'].create(data).action_confirm()
+        rec = self.env['stock.move'].create(data)
+        rec.action_confirm()
+        self.consume_line_id = rec.id
         return rec
 
     @api.multi
@@ -954,15 +955,17 @@ class MrpUnbuild(models.Model):
                                                 'lot_id': self.lot_id.id,
                                                 'quantity_done': move.product_uom_qty,
                                                 'quantity': move.product_uom_qty})
-        self.consume_line_id.move_validate()
+        else:
+            move.quantity_done = move.product_uom_qty
+        move.move_validate()
         original_quants = self.env['stock.quant']
-        for quant in self.consume_line_id.quant_ids:
+        for quant in move.quant_ids:
             original_quants |= quant.consumed_quant_ids
         for produce_move in self.produce_line_ids:
             if produce_move.has_tracking != 'none':
                 original = original_quants.filtered(lambda x: x.product_id.id == produce_move.product_id.id)
                 self.env['stock.move.lots'].create({'move_id': produce_move.id,
-                                                    'lot_id': original.lot_id.id,
+                                                    'lot_id': original and original[0].lot_id.id or False,
                                                     'quantity_done': produce_move.product_uom_qty,
                                                     'quantity': produce_move.product_uom_qty,})
             else:
@@ -971,13 +974,13 @@ class MrpUnbuild(models.Model):
         produced_quant_ids = self.env['stock.quant']
         for move in self.produce_line_ids:
             produced_quant_ids |= move.quant_ids
-        self.consume_line_id.quant_ids.write({'produced_quant_ids': [(6, 0, produced_quant_ids)]})
+        self.consume_line_id.quant_ids.write({'produced_quant_ids': [(6, 0, produced_quant_ids.ids)]})
         self.write({'state': 'done'})
 
 
     @api.multi
     def button_open_move(self):
-        stock_moves = self.env['stock.move'].search(['|', ('unbuild_id', '=', self.id), ('raw_material_unbuild_id', '=', self.id)])
+        stock_moves = self.env['stock.move'].search(['|', ('unbuild_id', '=', self.id), ('id', '=', self.consume_line_id.id)])
         return {
             'name': _('Stock Moves'),
             'view_type': 'form',
@@ -995,27 +998,6 @@ class MrpUnbuild(models.Model):
         for quant in self.consume_line_id.reserved_quant_ids:
             quants = quants | quant.consumed_quant_ids
         return quants
-
-    
-    #TODO: need quants defined here
-    @api.multi
-    def quant_move_rel(self):
-        self.ensure_one()
-        todo_moves = self.env['stock.move']
-        consumed_quants = self._get_consumed_quants()
-        if consumed_quants:
-            for move in self.produce_line_ids:
-                res = []
-                quants = consumed_quants.filtered(lambda x: x.product_id == move.product_id)
-                if quants:
-                    for quant in quants:
-                        res += [(quant, quant.qty)]
-                    self.env['stock.quant'].quants_move(res, move, move.location_dest_id)
-                else:
-                    todo_moves = todo_moves | move
-        assigned_moves = self.produce_line_ids - todo_moves
-        assigned_moves.write({'state': 'done'})
-        todo_moves.action_done()
 
 
 class InventoryMessage(models.Model):
