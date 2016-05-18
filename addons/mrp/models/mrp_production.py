@@ -541,10 +541,10 @@ class MrpProduction(models.Model):
             return action
 
 
-class InventoryMessage(models.Model):
+class MrpProductionMessage(models.Model):
     # TDE CLEANME: to rename
-    _name = "inventory.message"
-    _description = "Inventory Message"
+    _name = "mrp.production.message"
+    _description = "Production Message"
 
     @api.model
     def _default_valid_until(self):
@@ -562,8 +562,8 @@ class InventoryMessage(models.Model):
 
     @api.depends('message')
     def _get_note_first_line(self):
-        for invmessage in self:
-            invmessage.name = (invmessage.message and html2plaintext(invmessage.message) or "").strip().replace('*', '').split("\n")[0]
+        for message in self:
+            message.name = (message.message and html2plaintext(message.message) or "").strip().replace('*', '').split("\n")[0]
 
     @api.onchange('product_id')
     def onchange_product_id(self):
