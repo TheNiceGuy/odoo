@@ -7,6 +7,13 @@ from odoo import api, fields, models
 class ProductTemplate(models.Model):
     _inherit = "product.template"
 
+    bom_ids = fields.One2many('mrp.bom', 'product_tmpl_id', 'Bill of Materials')
+    bom_count = fields.Integer('# Bill of Material', compute='_bom_orders_count')
+    mo_count = fields.Integer('# Manufacturing Orders', compute='_bom_orders_count_mo')
+    produce_delay = fields.Float(
+        'Manufacturing Lead Time', default=0.0,
+        help="Average delay in days to produce this product. In the case of multi-level BOM, the manufacturing lead times of the components will be added.")
+
     @api.multi
     def _bom_orders_count(self):
         read_group_res = self.env['mrp.bom'].read_group([('product_tmpl_id', 'in', self.ids)], ['product_tmpl_id'], ['product_tmpl_id'])
@@ -17,13 +24,6 @@ class ProductTemplate(models.Model):
     @api.one
     def _bom_orders_count_mo(self):
         self.mo_count = sum(self.mapped('product_variant_ids').mapped('mo_count'))
-
-    bom_ids = fields.One2many('mrp.bom', 'product_tmpl_id','Bill of Materials')
-    bom_count = fields.Integer(compute='_bom_orders_count', string='# Bill of Material')
-    mo_count = fields.Integer(compute='_bom_orders_count_mo', string='# Manufacturing Orders')
-    produce_delay = fields.Float(
-        'Manufacturing Lead Time', default=0.0,
-        help="Average delay in days to produce this product. In the case of multi-level BOM, the manufacturing lead times of the components will be added.")
 
     @api.multi
     def action_view_mos(self):
@@ -41,14 +41,14 @@ class ProductTemplate(models.Model):
 class ProductProduct(models.Model):
     _inherit = "product.product"
 
+    mo_count = fields.Integer('# Manufacturing Orders', compute='_bom_orders_count')
+
     @api.multi
     def _bom_orders_count(self):
         read_group_res = self.env['mrp.production'].read_group([('product_id', 'in', self.ids)], ['product_id'], ['product_id'])
         mapped_data = dict([(data['product_id'][0], data['product_id_count']) for data in read_group_res])
         for product in self:
             product.mo_count = mapped_data.get(product.id, 0)
-
-    mo_count = fields.Integer(compute='_bom_orders_count', string='# Manufacturing Orders')
 
     @api.multi
     def action_view_bom(self):
@@ -63,9 +63,10 @@ class ProductProduct(models.Model):
         return action
 
 
-# in procurement module  # TDE CLEANME ? what ?
 class ProductCategory(models.Model):
     _inherit = "product.category"
 
-    procurement_time_frame = fields.Integer("Procurement Grouping Period (days)", help="Time Frame in which the procurements will be grouped together when triggering a new document (PO, MO)")
-
+    # TDE FIXME: fields never used, even in entreprise
+    procurement_time_frame = fields.Integer(
+        "Procurement Grouping Period (days)",
+        help="Time Frame in which the procurements will be grouped together when triggering a new document (PO, MO)")

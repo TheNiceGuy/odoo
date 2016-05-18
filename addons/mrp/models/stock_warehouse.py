@@ -3,9 +3,6 @@
 
 from odoo import api, exceptions, fields, models, _
 
-from openerp.exceptions import UserError
-from openerp.tools import float_compare
-
 
 class StockWarehouse(models.Model):
     _inherit = 'stock.warehouse'
