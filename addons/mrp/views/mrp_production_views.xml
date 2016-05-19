@@ -307,7 +307,7 @@
                             </div>
                         </button>
                         <button name="%(action_mrp_production_moves)d" type="action" string="Inventory Moves" class="oe_stat_button" icon="fa-arrows-v" attrs="{'invisible': [('state', 'not in', ('progress', 'done'))]}"/>
-                        <button class="oe_stat_button" name="button_scrapped_moves" string="Scrapped Moves" type="object" icon="fa-arrows-v" attrs="{'invisible': [('has_scrap_move', '=', False)]}"/>
+                        <button class="oe_stat_button" name="action_see_move_scrap" string="Scraps" type="object" icon="fa-arrows-v" attrs="{'invisible': [('has_scrap_move', '=', False)]}"/>
                         <field name="workorder_ids" invisible="1"/>
                     </div>
                     <div class="oe_title">
