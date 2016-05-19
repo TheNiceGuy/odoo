@@ -331,33 +331,52 @@ class StockScrap(models.Model):
     _inherit = 'stock.scrap'
 
     production_id = fields.Many2one('mrp.production', 'Manufacturing Order', states={'done': [('readonly', True)]})
+    workorder_id = fields.Many2one('mrp.production.work.order', states={'done': [('readonly', True)]}) #Not necessarily to restrict quants, more informative
 
-    @api.multi
-    def do_scrap(self):
+    def _prepare_move(self):
         self.ensure_one()
-        StockMove = self.env['stock.move']
-        production_id = False
-        picking_id = False
-        origin = ''
-        if self.env.context.get('active_model') == 'mrp.production':
-            production_id = self.env.context.get('active_id')
-            origin = self.env['mrp.production'].browse(self.env.context.get('active_id')).name
-        if self.env.context.get('active_model') == 'stock.picking':
-            picking_id = self.env.context.get('active_id')
-            origin = self.env['stock.picking'].browse(self.env.context.get('active_id')).name
-        default_val = {
-            'name': self.name,
-            'origin': origin,
-            'product_id': self.product_id.id,
-            'product_uom': self.product_uom_id.id,
-            'product_uom_qty': self.scrap_qty,
-            'location_id': self.location_id.id,
-            'scrapped': True,
-            'location_dest_id': self.scrap_location_id.id,
-            'production_id': production_id,
-            'picking_id': picking_id,
-        }
-        move = StockMove.create(default_val)
-        new_move = move.action_scrap(self.scrap_qty, self.scrap_location_id.id)
-        self.write({'move_id': move.id, 'state': 'done'})
-        return True
+        vals = super(StockScrap, self)._prepare_move()
+        if self.production_id:
+            if self.product_id in self.production_id.move_finished_ids.mapped('product_id').ids:
+                vals['production_id'] = self.production_id.id
+            else:
+                vals['raw_material_production_id'] = self.production_id.id
+        return vals
+
+    def _get_preferred_domain(self):
+        if self.production_id:
+            if self.product_id in self.production_id.move_raw_ids.mapped('product_id'):
+                preferred_domain = [('reservation_id', 'in', self.production_id.move_raw_ids.ids)]
+                preferred_domain2 = [('reservation_id', '=', False)]
+                preferred_domain3 = ['&', ('reservation_id', 'not in', self.production_id.move_raw_ids.ids), ('reservation_id', '!=', False)]
+                preferred_domain_list = [preferred_domain, preferred_domain2, preferred_domain3]
+            elif self.product_id in self.production_id.move_finished_ids.mapped('product_id'):
+                preferred_domain = [('history_ids', 'in', self.production_id.move_finished_ids.ids)]
+                preferred_domain2 = [('history_ids', 'not in', self.production_id.move_finished_ids.ids)]
+                preferred_domain_list = [preferred_domain, preferred_domain2]
+        else:
+            preferred_domain_list = super(StockScrap, self)._get_preferred_domain()
+        return preferred_domain_list
+
+    @api.model
+    def default_get(self, fields):
+        rec = super(StockScrap, self).default_get(fields)
+        context = dict(self._context or {})
+        if context.get('active_model') == 'mrp.production':
+            if context.get('active_id'):
+                production = self.env['mrp.production'].browse(context['active_id'])
+                rec.update({
+                            'production_id': production.id,
+                            'origin': production.name,
+                            'location_id': production.location_src_id.id,
+                            })
+        elif context.get('active_model') == 'mrp.production.work.order':
+            if context.get('active_id'):
+                workorder = self.env['mrp.production'].browse(context['active_id'])
+                rec.update({
+                            'production_id': workorder.production_id.id,
+                            'workorder_id': workorder.id,
+                            'origin': workorder.production_id.name,
+                            'location_id': workorder.production_id.location_src_id.id,
+                            })
+        return rec
