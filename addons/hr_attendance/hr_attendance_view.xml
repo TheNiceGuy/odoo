@@ -10,9 +10,8 @@
                     <sheet>
                     <group>
                         <field name="employee_id"/>
-                        <field name="name"/>
-                        <field name="action"/>
-                        <field name="action_desc"/>
+                        <field name="check_in"/>
+                        <field name="check_out"/>
                     </group>
                     </sheet>
                 </form>
@@ -24,9 +23,8 @@
             <field name="model">hr.attendance</field>
             <field name="arch" type="xml">
                 <tree string="Employee attendances">
-                    <field name="name"/>
-                    <field name="action"/>
-                    <field name="action_desc"/>
+                    <field name="check_in"/>
+                    <field name="check_out"/>
                 </tree>
             </field>
         </record>
@@ -38,8 +36,8 @@
             <field name="arch" type="xml">
                 <tree string="Employee attendances">
                     <field name="employee_id"/>
-                    <field name="name"/>
-                    <field name="action"/>
+                    <field name="check_in"/>
+                    <field name="check_out"/>
                 </tree>
             </field>
         </record>
@@ -49,18 +47,18 @@
             <field name="model">hr.attendance</field>
             <field name="arch" type="xml">
                 <search string="Hr Attendance Search">
-                    <field name="name" string="Attendance"/>
-                    <field name="action"/>
+                    <field name="check_in" string="Attendance"/>
+                    <field name="check_out"/>
                     <field name="department_id"/>
-                    <filter string="Today" name="today" domain="[('name','&gt;=',datetime.datetime.now().replace(hour=0, minute=0, second=0)),('name','&lt;=',datetime.datetime.now().replace(hour=23, minute=59, second=59))]" />
-                    <filter string="Current Month" domain="[('name','&gt;=', datetime.datetime.now().strftime('%Y-%m-01'))]" />
+                    <filter string="Today" name="today" domain="[('check_in','&gt;=',datetime.datetime.now().replace(hour=0, minute=0, second=0)),('check_in','&lt;=',datetime.datetime.now().replace(hour=23, minute=59, second=59))]" />
+                    <filter string="Current Month" domain="[('check_in','&gt;=', datetime.datetime.now().strftime('%Y-%m-01'))]" />
                     <separator/>
                     <filter string="My Attendance" domain="[('employee_id.user_id.id', '=', uid)]" />
                     <field name="employee_id"/>
                     <group expand="0" string="Group By">
                         <filter name="employee" string="Employee" context="{'group_by':'employee_id'}"/>
                         <separator/>
-                        <filter name="groupby_name" string="Month" context="{'group_by':'name'}"/>
+                        <filter name="groupby_name" string="Month" context="{'group_by':'check_in'}"/>
                     </group>
                 </search>
             </field>
@@ -72,7 +70,7 @@
             <field name="arch" type="xml">
                 <pivot string="Attendance">
                     <field name="employee_id" type="row"/>
-                    <field name="name" type="col"/>
+                    <field name="check_in" type="col"/>
                     <field name="worked_hours" type="measure"/>
                 </pivot>
             </field>
@@ -84,7 +82,7 @@
             <field name="arch" type="xml">
                 <graph string="Attendance">
                     <field name="employee_id"/>
-                    <field name="name"/>
+                    <field name="check_in"/>
                     <field name="worked_hours" type="measure"/>
                 </graph>
             </field>
@@ -120,14 +118,16 @@
             <field name="view_id"></field>  <!-- force empty -->
         </record>
 
-        <menuitem id="menu_hr_attendance_root" name="Attendances" sequence="90" groups="base.group_hr_attendance" web_icon="hr_attendance,static/description/icon.png"/>
+        <!-- <menuitem id="timesheet_menu_root" name="Timesheets" sequence="55" groups="base.group_user,base.group_hr_user,base.group_hr_manager" web_icon="hr_attendance,static/description/icon_timesheet.png"/>
+        <menuitem id="menu_hr_time_tracking" name="Time Tracking" parent="timesheet_menu_root" sequence="5" /> -->
+        <menuitem id="menu_hr_attendance_root" name="Attendances" sequence="90" groups="base.group_hr_attendance" web_icon="hr_attendance,static/description/icon.png"/> <!-- sequence superflu avec odoo 9 ??? -->
 
         <menuitem action="open_view_attendance" id="menu_open_view_attendance" parent="menu_hr_attendance_root" sequence="20" groups="base.group_hr_attendance"/>
 
         <menuitem name="Reports" parent="menu_hr_attendance_root" sequence="99"
             id="menu_hr_attendance_report" action="action_hr_attendance_graph"/>
 
-        <record id="edit_attendance_reason" model="ir.ui.view">
+        <!-- <record id="edit_attendance_reason" model="ir.ui.view">
             <field name="name">hr.action.reason.form</field>
             <field name="model">hr.action.reason</field>
             <field name="arch" type="xml">
@@ -160,7 +160,6 @@
             <field name="view_id" ref="view_attendance_reason"/>
         </record>
 
-        <menuitem name="Configuration" parent="menu_hr_attendance_root" id="menu_hr_attendance_config" sequence="100" groups="base.group_hr_attendance" action="open_view_attendance_reason"/>
-
+        <menuitem name="Configuration" parent="menu_hr_attendance_root" id="menu_hr_attendance_config" sequence="100" groups="base.group_configuration,base.group_hr_attendance" action="open_view_attendance_reason"/> -->
     </data>
 </openerp>
