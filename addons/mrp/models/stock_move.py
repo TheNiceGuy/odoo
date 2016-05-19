@@ -362,21 +362,19 @@ class StockScrap(models.Model):
     def default_get(self, fields):
         rec = super(StockScrap, self).default_get(fields)
         context = dict(self._context or {})
-        if context.get('active_model') == 'mrp.production':
-            if context.get('active_id'):
-                production = self.env['mrp.production'].browse(context['active_id'])
-                rec.update({
-                            'production_id': production.id,
-                            'origin': production.name,
-                            'location_id': production.location_src_id.id,
-                            })
-        elif context.get('active_model') == 'mrp.production.work.order':
-            if context.get('active_id'):
-                workorder = self.env['mrp.production'].browse(context['active_id'])
-                rec.update({
-                            'production_id': workorder.production_id.id,
-                            'workorder_id': workorder.id,
-                            'origin': workorder.production_id.name,
-                            'location_id': workorder.production_id.location_src_id.id,
-                            })
+        if context.get('active_model') == 'mrp.production' and context.get('active_id'):
+            production = self.env['mrp.production'].browse(context['active_id'])
+            rec.update({
+                        'production_id': production.id,
+                        'origin': production.name,
+                        'location_id': production.location_src_id.id,
+                        })
+        elif context.get('active_model') == 'mrp.production.work.order' and context.get('active_id'):
+            workorder = self.env['mrp.production.work.order'].browse(context['active_id'])
+            rec.update({
+                        'production_id': workorder.production_id.id,
+                        'workorder_id': workorder.id,
+                        'origin': workorder.production_id.name,
+                        'location_id': workorder.production_id.location_src_id.id,
+                        })
         return rec

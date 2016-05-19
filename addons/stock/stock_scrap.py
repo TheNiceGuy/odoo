@@ -89,9 +89,10 @@ class StockScrap(models.Model):
         domain = [('qty', '>', 0), ('location_id', '=', self.location_id.id), ('lot_id', '=', self.lot_id.id), 
                   ('package_id', '=', self.package_id.id)]
         preferred_domain_list = self._get_preferred_domain()
-        quants = self.env['stock.quant'].quants_get_preferred_domain(move, domain=domain, preferred_domain_list=preferred_domain_list)
-        if any([not x[1] for x in quants]):
-            raise UserError(_('You can only scrap what is in the system. '))
+        #TODO: UoM conversion
+        quants = self.env['stock.quant'].quants_get_preferred_domain(self.scrap_qty, move, domain=domain, preferred_domain_list=preferred_domain_list)
+        if any([not x[0] for x in quants]):
+            raise UserError(_('You can only scrap something that is in stock in the system. '))
         self.env['stock.quant'].quants_reserve(quants, move)
         move.action_done()
         self.write({'move_id': move.id, 'state': 'done'})
