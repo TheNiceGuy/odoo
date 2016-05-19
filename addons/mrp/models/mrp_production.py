@@ -522,19 +522,44 @@ class MrpProduction(models.Model):
             'res_model': 'stock.scrap',
             'view_id': self.env.ref('stock.stock_scrap_form_view2').id,
             'type': 'ir.actions.act_window',
-            'context': {'product_ids': (self.move_raw_ids.filtered(lambda x: x.state not in ('done', 'cancel')) | self.move_finished_ids.filtered(lambda x: x.state == 'done')).mapped('product_id').ids},
+            'context': {'default_production_id': self.id,
+                        'product_ids': (self.move_raw_ids.filtered(lambda x: x.state not in ('done', 'cancel')) | self.move_finished_ids.filtered(lambda x: x.state == 'done')).mapped('product_id').ids,
+                        },
             'target': 'new',
         }
 
     @api.multi
-    def button_scrapped_moves(self):
+    def action_see_move_scrap(self):
         self.ensure_one()
-        action_rec = self.env.ref('stock.action_move_form2')
-        scrap_moves = self.env['stock.move'].search([('production_id', '=', self.id), ('scrapped', '=', True), ('state', '=', 'done')])
-        if action_rec:
-            action = action_rec.read([])[0]
-            action['domain'] = [('id', 'in', scrap_moves.ids)]
-            action_context = eval(action['context'])
-            action_context['scrap_move'] = True
-            action['context'] = str(action_context)
-            return action
+        action = self.env.ref('stock.action_stock_scrap').read()[0]
+        scraps = self.env['stock.scrap'].search([('production_id', '=', self.id)])
+        action['domain'] = [('id', 'in', scraps.ids)]
+        return action
+
+
+class MrpProductionMessage(models.Model):
+    # TDE CLEANME: to rename
+    _name = "mrp.production.message"
+    _description = "Production Message"
+
+    @api.model
+    def _default_valid_until(self):
+        return datetime.today() + relativedelta(days=7)
+
+    name = fields.Text(compute='_get_note_first_line', store=True)
+    message = fields.Html(required=True)
+    product_id = fields.Many2one('product.product', string="Product")
+    bom_id = fields.Many2one('mrp.bom', 'Bill of Material', domain="[('product_id', '=', product_id)]")
+    workcenter_id = fields.Many2one('mrp.workcenter', string='Work Center')
+    valid_until = fields.Date(default=_default_valid_until, required=True)
+    routing_id = fields.Many2one('mrp.routing', string='Routing')
+
+    @api.depends('message')
+    def _get_note_first_line(self):
+        for message in self:
+            message.name = (message.message and html2plaintext(message.message) or "").strip().replace('*', '').split("\n")[0]
+
+    @api.onchange('product_id')
+    def onchange_product_id(self):
+        if self.product_id:
+            self.bom_id = self.env['mrp.bom']._bom_find(product=self.product_id)
