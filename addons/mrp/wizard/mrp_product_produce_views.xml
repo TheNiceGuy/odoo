@@ -21,7 +21,7 @@
                         </group>
                     </group>
                     <group>
-                        <field name="consume_line_ids" attrs="{'invisible': [('consume_line_ids', '=', [])]}" nolabel="1" context="{'w_production': True, 'active_id': production_id}">
+                        <field name="consume_line_ids" attrs="{'invisible': [('consume_line_ids', '=', [])]}" nolabel="1" context="{'w_production': True, 'active_id': production_id, 'default_lot_id': lot_id}">
                             <tree editable="top" delete="0" create="0">
                                 <field name="product_id" readonly="1"/>
                                 <field name="quantity" readonly="1"/>
