@@ -36,7 +36,10 @@ The validation can be configured in the company:
         'hr_timesheet_sheet_view.xml',
         'hr_dashboard.xml',
     ],
-    'test':['../account/test/account_minimal_test.xml', 'test/test_hr_timesheet_sheet.yml'],
+    'test': [
+        # '../account/test/account_minimal_test.xml',
+        # 'test/test_hr_timesheet_sheet.yml'
+    ],
     'installable': True,
     'auto_install': False,
     'application': True,
