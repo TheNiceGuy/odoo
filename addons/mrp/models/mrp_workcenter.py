@@ -75,8 +75,8 @@ class MrpWorkcenter(models.Model):
         date = (datetime.datetime.now() - relativedelta.relativedelta(months=1)).strftime('%Y-%m-%d %H:%M:%S')
         domain = [
             ('date_start', '>=', date),
-            ('workcenter_id', 'in', self.mapped('id')),
-            ('date_end', '!= ', False)
+            ('workcenter_id', 'in', self.ids),
+            ('date_end', '!=', False)
         ]
 
         wcs_block = prod_obj.read_group(domain+[('loss_type', '!=', 'productive')], ['duration', 'workcenter_id'], ['workcenter_id'], lazy=False)
