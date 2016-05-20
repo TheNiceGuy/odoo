@@ -115,13 +115,11 @@ class MrpProductionWorkcenterLine(models.Model):
             else:
                 order.show_state = False
 
-    @api.depends('production_id', 'workcenter_id', 'production_id.bom_id', 'production_id.picking_type_id')
+    @api.depends('production_id', 'workcenter_id', 'production_id.bom_id')
     def _compute_production_messages(self):
         ProductionMessage = self.env['mrp.production.message']
         for workorder in self:
-            domain = [
-                ('picking_type_id', '=', workorder.production_id.picking_type_id.id), '|',
-                ('bom_id', '=', workorder.production_id.bom_id.id), '|',
+            domain = ['|', ('bom_id', '=', workorder.production_id.bom_id.id), '|',
                 ('workcenter_id', '=', workorder.workcenter_id.id),
                 ('routing_id', '=', workorder.operation_id.routing_id.id),
                 ('valid_until', '>=', fields.Date.today())
@@ -186,7 +184,7 @@ class MrpProductionWorkcenterLine(models.Model):
         if self.move_raw_ids:
             moves = self.move_raw_ids.filtered(lambda x: (x.state not in ('done', 'cancel')) and (x.product_id.tracking != 'none') and (x.product_id.id != self.product.id))
             for move in moves:
-                # TDE FIXME: well, > 0.00001... is this a joke :) ?
+                # TDE FIXME: well, > 0.00001... is this a joke :) ? use float_compare
                 qty = self.qty_producing / move.bom_line_id.bom_id.product_qty * move.bom_line_id.product_qty
                 if move.product_id.tracking=='serial':
                     while qty > 0.000001:
