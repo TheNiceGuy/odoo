@@ -28,7 +28,8 @@ access_product_template_user,product.template user,product.model_product_templat
 access_product_uom_user,product.uom user,product.model_product_uom,mrp.group_mrp_user,1,0,0,0
 access_product_supplierinfo_user,product.supplierinfo user,product.model_product_supplierinfo,mrp.group_mrp_user,1,1,1,1
 access_res_partner,res.partner,base.model_res_partner,mrp.group_mrp_user,1,0,0,0
-access_workcenter_user,mrp.production.work.order.user,model_mrp_production_work_order,mrp.group_mrp_user,1,1,1,1
+access_mrp_workorder_mrp_user,mrp.workorder.user,model_mrp_workorder,mrp.group_mrp_user,1,1,1,1
+access_mrp_workorder_mrp_manager,mrp.workorder,model_mrp_workorder,mrp.group_mrp_manager,1,1,1,1
 access_resource_calendar_leaves_user,mrp.resource.calendar.leaves.user,resource.model_resource_calendar_leaves,mrp.group_mrp_user,1,1,1,1
 access_resource_calendar_leaves_manager,mrp.resource.calendar.leaves.manager,resource.model_resource_calendar_leaves,mrp.group_mrp_manager,1,0,0,0
 access_resource_calendar_attendance_mrp_user,mrp.resource.calendar.attendance.mrp.user,resource.model_resource_calendar_attendance,mrp.group_mrp_user,1,1,1,1
@@ -39,7 +40,6 @@ access_resource_resource_manager,resource.resource.manager,resource.model_resour
 access_product_supplierinfo_manager,product.supplierinfo user,product.model_product_supplierinfo,mrp.group_mrp_manager,1,0,0,0
 access_mrp_production_manager,mrp.production manager,model_mrp_production,mrp.group_mrp_manager,1,0,0,0
 access_procurement_manager,procurement.order,model_procurement_order,mrp.group_mrp_manager,1,0,0,0
-access_workcenter_manager,mrp.production.work.order,model_mrp_production_work_order,mrp.group_mrp_manager,1,0,0,0
 access_stock_move_mrp_manager,stock.move mrp_manager,stock.model_stock_move,mrp.group_mrp_manager,1,0,0,0
 access_stock_production_lot_user,stock.production.lot,stock.model_stock_production_lot,mrp.group_mrp_user,1,1,1,1
 access_stock_warehouse_orderpoint_user,stock.warehouse.orderpoint,stock.model_stock_warehouse_orderpoint,mrp.group_mrp_user,1,0,0,0

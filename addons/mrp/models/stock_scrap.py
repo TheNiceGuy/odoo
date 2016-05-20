@@ -9,7 +9,7 @@ class StockScrap(models.Model):
 
     production_id = fields.Many2one('mrp.production', 'Manufacturing Order', 
                                     states={'done': [('readonly', True)]})
-    workorder_id = fields.Many2one('mrp.production.work.order', 
+    workorder_id = fields.Many2one('mrp.workorder', 
                                    states={'done': [('readonly', True)]}) #Not to restrict/prefer quants, but informative
 
     def _prepare_move(self):
@@ -48,8 +48,8 @@ class StockScrap(models.Model):
                         'origin': production.name,
                         'location_id': production.location_src_id.id,
                         })
-        elif context.get('active_model') == 'mrp.production.work.order' and context.get('active_id'):
-            workorder = self.env['mrp.production.work.order'].browse(context['active_id'])
+        elif context.get('active_model') == 'mrp.workorder' and context.get('active_id'):
+            workorder = self.env['mrp.workorder'].browse(context['active_id'])
             rec.update({
                         'production_id': workorder.production_id.id,
                         'workorder_id': workorder.id,

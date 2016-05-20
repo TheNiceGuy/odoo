@@ -78,7 +78,7 @@ class MrpRoutingWorkcenter(models.Model):
     @api.multi
     def _get_time_cycle(self):
         # TDE CLEANME
-        results = self.env['mrp.production.work.order'].read_group([
+        results = self.env['mrp.workorder'].read_group([
             ('operation_id', 'in', self.ids),
             ('state', '=', 'done')], ['operation_id', 'delay', 'qty_produced'], ['operation_id'])
         totals = dict(map(lambda x: (x['operation_id'][0], (x['delay'], x['qty_produced'])), results))
@@ -95,7 +95,7 @@ class MrpRoutingWorkcenter(models.Model):
     @api.multi
     def _wo_count(self):
         # TDE CLEANME
-        result = self.env['mrp.production.work.order'].read_group([
+        result = self.env['mrp.workorder'].read_group([
             ('operation_id', 'in', self.ids),
             ('state', '=', 'done')], ['operation_id'], ['operation_id'])
         mapped_data = dict([(op['operation_id'][0], op['operation_id_count']) for op in result])

@@ -9,7 +9,7 @@ from odoo.exceptions import UserError
 
 
 class MrpProductionWorkcenterLine(models.Model):
-    _name = 'mrp.production.work.order'
+    _name = 'mrp.workorder'
     _description = 'Work Order'
     _inherit = ['mail.thread']
 
@@ -91,7 +91,7 @@ class MrpProductionWorkcenterLine(models.Model):
     production_messages = fields.Html(compute="_compute_production_messages")
     final_lot_id = fields.Many2one('stock.production.lot', 'Current Lot', domain="[('product_id', '=', product)]")
     qty_producing = fields.Float('Qty Producing', default=1.0, states={'done': [('readonly', True)], 'cancel': [('readonly', True)]})
-    next_work_order_id = fields.Many2one('mrp.production.work.order', "Next Work Order")
+    next_work_order_id = fields.Many2one('mrp.workorder', "Next Work Order")
     tracking = fields.Selection(related='product.tracking', readonly=True)
     is_produced = fields.Boolean(compute='_is_produced')
     working_state = fields.Selection(related='workcenter_id.working_state')

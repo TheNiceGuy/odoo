@@ -115,7 +115,7 @@ class MrpProduction(models.Model):
         'stock.move', 'production_id', 'Finished Products',
         copy=False, states={'done': [('readonly', True)], 'cancel': [('readonly', True)]})
     workorder_ids = fields.One2many(
-        'mrp.production.work.order', 'production_id', 'Work Orders',
+        'mrp.workorder', 'production_id', 'Work Orders',
         copy=False, oldname='workcenter_lines', readonly=True)  # TDE FIXME:; oldname, but comodel is different ?
     # TDE FIXME: naming
     nb_orders = fields.Integer('# Work Orders', compute='_compute_nb_orders')

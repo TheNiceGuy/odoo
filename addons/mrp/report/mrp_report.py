@@ -24,7 +24,7 @@ class WorkCenterLoad(models.Model):
                     SUM(wl.duration) AS duration,
                     wl.workcenter_id as workcenter_id
                 FROM
-                    mrp_production_work_order wl
+                    mrp_workorder wl
                     LEFT JOIN mrp_production p
                         ON p.id = wl.production_id
                 GROUP BY

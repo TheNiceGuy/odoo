@@ -31,7 +31,7 @@ class MrpWorkcenter(models.Model):
         'resource.resource', string='Resource',
         ondelete='cascade', required=True)
     order_ids = fields.One2many(
-        'mrp.production.work.order', 'workcenter_id', "Orders")
+        'mrp.workorder', 'workcenter_id', "Orders")
     routing_line_ids = fields.One2many(
         'mrp.routing.workcenter', 'workcenter_id', "Routing Lines")
     # TDE CHECKME: naming to be more coherent
@@ -51,7 +51,7 @@ class MrpWorkcenter(models.Model):
 
     @api.depends('order_ids')
     def _compute_orders(self):
-        WorkcenterLine = self.env['mrp.production.work.order']
+        WorkcenterLine = self.env['mrp.workorder']
         for workcenter in self:
             workcenter.nb_orders = WorkcenterLine.search_count([('workcenter_id', '=', workcenter.id), ('state', '!=', 'done')])  #('state', 'in', ['pending', 'startworking'])
             workcenter.count_ready_order = WorkcenterLine.search_count([('workcenter_id', '=', workcenter.id), ('state', '=', 'ready')])
@@ -92,7 +92,7 @@ class MrpWorkcenter(models.Model):
 
     @api.multi
     def _compute_perf(self):
-        prod_obj = self.env['mrp.production.work.order']
+        prod_obj = self.env['mrp.workorder']
         date = (datetime.datetime.now() - relativedelta.relativedelta(months=1)).strftime('%Y-%m-%d %H:%M:%S')
         domain = [
             ('date_start', '>=', date),
@@ -148,7 +148,7 @@ class MrpWorkcenterProductivity(models.Model):
         'mrp.workcenter', "Workcenter",
         required=True)
     workorder_id = fields.Many2one(
-        'mrp.production.work.order', 'Work Order')
+        'mrp.workorder', 'Work Order')
     user_id = fields.Many2one(
         'res.users', "User",
         default=lambda self: self.env.uid)

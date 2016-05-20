@@ -13,7 +13,7 @@ class StockMoveLots(models.Model):
     _description = "Quantities to Process by lots"
 
     move_id = fields.Many2one('stock.move', 'Move')
-    workorder_id = fields.Many2one('mrp.production.work.order', 'Work Order')
+    workorder_id = fields.Many2one('mrp.workorder', 'Work Order')
     production_id = fields.Many2one('mrp.production', 'Production Order')
     lot_id = fields.Many2one(
         'stock.production.lot', 'Lot',
@@ -61,7 +61,7 @@ class StockMove(models.Model):
     operation_id = fields.Many2one(
         'mrp.routing.workcenter', 'Operation To Consume')  # TDE FIXME: naming
     workorder_id = fields.Many2one(
-        'mrp.production.work.order', 'Work Order To Consume')
+        'mrp.workorder', 'Work Order To Consume')
     has_tracking = fields.Selection(related='product_id.tracking', string='Product with Tracking')  # TDE FIXME: naming ...
     # Quantities to process, in normalized UoMs
     quantity_available = fields.Float(

@@ -3,7 +3,7 @@
     <data>
         <record id="view_mrp_production_work_order_search" model="ir.ui.view">
             <field name="name">mrp.production.work.order.search</field>
-            <field name="model">mrp.production.work.order</field>
+            <field name="model">mrp.workorder</field>
             <field name="arch" type="xml">
                 <search>
                     <field name="workcenter_id"/>
@@ -24,7 +24,7 @@
         <record id="action_work_orders" model="ir.actions.act_window">
             <field name="name">Work Orders</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">mrp.production.work.order</field>
+            <field name="res_model">mrp.workorder</field>
             <field name="view_type">form</field>
             <field name="view_mode">tree,form,gantt,pivot,graph,calendar</field>
             <!--<field name="context">{'default_workcenter_id': }</field>-->
@@ -95,7 +95,7 @@
         <record id="mrp_workorder_delta_report" model="ir.actions.act_window">
             <field name="name">Work Orders Deviation</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">mrp.production.work.order</field>
+            <field name="res_model">mrp.workorder</field>
             <field name="view_type">form</field>
             <field name="view_mode">graph,pivot,tree,form,gantt,calendar</field>
             <field name="context">{'search_default_workcenter_id': active_id}</field>
@@ -242,7 +242,7 @@
         <record id="action_mrp_routing_time" model="ir.actions.act_window">
             <field name="name">Work Orders</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">mrp.production.work.order</field>
+            <field name="res_model">mrp.workorder</field>
             <field name="view_type">form</field>
             <field name="view_mode">graph,pivot,tree,form,gantt,calendar</field>
             <field name="context">{'search_default_done': True}</field>
@@ -260,7 +260,7 @@
         <record model="ir.actions.act_window" id="action_mrp_workorder_production_specific">
             <field name="name">Work Orders</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">mrp.production.work.order</field>
+            <field name="res_model">mrp.workorder</field>
             <field name="view_type">form</field>
             <field name="view_mode">tree,form,gantt,calendar,pivot,graph</field>
             <field name="domain">[('production_id', '=', active_id)]</field>
@@ -583,7 +583,7 @@
 
     <record model="ir.ui.view" id="mrp_production_workcenter_tree_view_inherit">
         <field name="name">mrp.production.work.order.tree</field>
-        <field name="model">mrp.production.work.order</field>
+        <field name="model">mrp.workorder</field>
         <field name="arch" type="xml">
             <tree string="Work Orders" delete="0" create="0" decoration-success="date_planned_start&gt;=current_date and state == 'ready'" decoration-muted="state in ('done','cancel')" decoration-danger="date_planned_start&lt;current_date and state in ('ready')">
                 <field name="name"/>
@@ -600,7 +600,7 @@
 
     <record model="ir.ui.view" id="mrp_production_workcenter_form_view_inherit">
         <field name="name">mrp.production.work.order.form</field>
-        <field name="model">mrp.production.work.order</field>
+        <field name="model">mrp.workorder</field>
         <field name="arch" type="xml">
             <form string="Production Workcenter" delete="0" create="0">
             <header>
@@ -742,7 +742,7 @@
 
     <record id="view_mrp_production_workcenter_form_view_filter" model="ir.ui.view">
         <field name="name">mrp.production.work.order.select</field>
-        <field name="model">mrp.production.work.order</field>
+        <field name="model">mrp.workorder</field>
         <field name="arch" type="xml">
             <search string="Search Work Orders">
                 <field name="name" string="Work Orders"/>
@@ -770,7 +770,7 @@
 
     <record id="workcenter_line_calendar" model="ir.ui.view">
         <field name="name">mrp.production.work.order.calendar</field>
-        <field name="model">mrp.production.work.order</field>
+        <field name="model">mrp.workorder</field>
         <field name="arch" type="xml">
             <calendar color="workcenter_id" date_stop="date_planned_end" date_start="date_planned_start" string="Operations">
                 <field name="workcenter_id"/>
@@ -781,7 +781,7 @@
 
     <record id="workcenter_line_graph" model="ir.ui.view">
         <field name="name">mrp.production.work.order.graph</field>
-        <field name="model">mrp.production.work.order</field>
+        <field name="model">mrp.workorder</field>
         <field name="arch" type="xml">
             <graph string="Operations">
                 <field name="production_id"/>
@@ -792,7 +792,7 @@
 
     <record id="workcenter_line_pivot" model="ir.ui.view">
         <field name="name">mrp.production.work.order.pivot</field>
-        <field name="model">mrp.production.work.order</field>
+        <field name="model">mrp.workorder</field>
         <field name="arch" type="xml">
             <pivot string="Operations">
                 <field name="date_start"/>
@@ -806,7 +806,7 @@
 
     <record id="workcenter_line_gantt_production" model="ir.ui.view">
         <field name="name">mrp.production.work.order.gantt.production</field>
-        <field name="model">mrp.production.work.order</field>
+        <field name="model">mrp.workorder</field>
         <field name="arch" type="xml">
             <gantt date_stop="date_planned_end" date_start="date_planned_start" string="Operations" default_group_by="production_id">
             </gantt>
@@ -815,7 +815,7 @@
 
     <record id="workcenter_line_gantt_workcenter" model="ir.ui.view">
         <field name="name">mrp.production.work.order.gantt.workcenter</field>
-        <field name="model">mrp.production.work.order</field>
+        <field name="model">mrp.workorder</field>
         <field name="arch" type="xml">
             <gantt date_stop="date_planned_end" date_start="date_planned_start" string="Operations" default_group_by="workcenter_id">
             </gantt>
@@ -824,7 +824,7 @@
 
     <record model="ir.ui.view" id="workcenter_line_kanban">
         <field name="name">mrp.production.work.order.kanban</field>
-        <field name="model">mrp.production.work.order</field>
+        <field name="model">mrp.workorder</field>
         <field name="arch" type="xml">
             <kanban class="o_kanban_small_column" create="0">
                 <field name="name"/>
@@ -863,7 +863,7 @@
     <record model="ir.actions.act_window" id="action_mrp_workorder_workcenter">
         <field name="name">Work Orders</field>
         <field name="type">ir.actions.act_window</field>
-        <field name="res_model">mrp.production.work.order</field>
+        <field name="res_model">mrp.workorder</field>
         <field name="view_type">form</field>
         <field name="view_mode">gantt,tree,form,calendar,pivot,graph</field>
         <field name="search_view_id" ref="view_mrp_production_workcenter_form_view_filter"/>
@@ -885,7 +885,7 @@
     <record model="ir.actions.act_window" id="action_mrp_workorder_production">
         <field name="name">Work Orders Planning</field>
         <field name="type">ir.actions.act_window</field>
-        <field name="res_model">mrp.production.work.order</field>
+        <field name="res_model">mrp.workorder</field>
         <field name="view_type">form</field>
         <field name="domain">[('production_state','not in',('done','cancel'))]</field>
         <field name="view_mode">gantt,tree,form,calendar,pivot,graph</field>
@@ -906,7 +906,7 @@
     <record model="ir.actions.act_window" id="mrp_workorder_todo">
         <field name="name">Work Orders</field>
         <field name="type">ir.actions.act_window</field>
-        <field name="res_model">mrp.production.work.order</field>
+        <field name="res_model">mrp.workorder</field>
         <field name="view_type">form</field>
         <field name="view_mode">kanban,tree,form,calendar,pivot,graph</field>
         <field name="search_view_id" ref="view_mrp_production_workcenter_form_view_filter"/>
