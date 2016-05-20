@@ -346,7 +346,7 @@ class Picking(models.Model):
     @api.one
     def _has_scrap_move(self):
         # TDE FIXME: better implementation
-        self.has_scrap_move = bool(self.pool['stock.move'].search_count([('picking_id', '=', self.id), ('scrapped', '=', True)]))
+        self.has_scrap_move = bool(self.env['stock.move'].search_count([('picking_id', '=', self.id), ('scrapped', '=', True)]))
 
     @api.one
     def _compute_quant_reserved_exist(self):
