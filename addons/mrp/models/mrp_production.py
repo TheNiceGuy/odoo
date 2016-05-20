@@ -242,7 +242,7 @@ class MrpProduction(models.Model):
         if not self.product_id:
             self.bom_id = False
         else:
-            bom = self.env['mrp.bom']._bom_find(product_id=self.product_id, picking_type=self.picking_type_id)
+            bom = self.env['mrp.bom']._bom_find(product=self.product_id, picking_type=self.picking_type_id)
             self.bom_id = bom.id
             self.product_uom_id = self.product_id.uom_id.id
             return {'domain': {'product_uom_id': [('category_id', '=', self.product_id.uom_id.category_id.id)]}}
