@@ -61,6 +61,8 @@ class StockScrap(models.Model):
             'location_id': self.location_id.id,
             'scrapped': True,
             'location_dest_id': self.scrap_location_id.id,
+            'restrict_lot_id': self.lot_id.id,
+            'restrict_partner_id': self.owner_id.id,
             'picking_id': self.picking_id.id,}
         return vals
 
@@ -76,7 +78,7 @@ class StockScrap(models.Model):
             else:
                 preferred_domain = [('reservation_id', 'in', self.picking_id.move_lines.ids)]
                 preferred_domain2 = [('reservation_id', '=', False)]
-                preferred_domain3 = ['&', ('reservation_id', 'not in', self.picking_id.move_lines_ids), ('reservation_id', '!=', False)]
+                preferred_domain3 = ['&', ('reservation_id', 'not in', self.picking_id.move_lines.ids), ('reservation_id', '!=', False)]
                 preferred_domain_list = [preferred_domain, preferred_domain2, preferred_domain3]
         return preferred_domain_list
 
@@ -89,8 +91,7 @@ class StockScrap(models.Model):
         domain = [('qty', '>', 0), ('location_id', '=', self.location_id.id), ('lot_id', '=', self.lot_id.id), 
                   ('package_id', '=', self.package_id.id)]
         preferred_domain_list = self._get_preferred_domain()
-        #TODO: UoM conversion
-        quants = self.env['stock.quant'].quants_get_preferred_domain(self.scrap_qty, move, domain=domain, preferred_domain_list=preferred_domain_list)
+        quants = self.env['stock.quant'].quants_get_preferred_domain(move.product_qty, move, domain=domain, preferred_domain_list=preferred_domain_list)
         if any([not x[0] for x in quants]):
             raise UserError(_('You can only scrap something that is in stock in the system.  Maybe you forgot to enter something in the system or you need to correct with an Inventory Adjustment first'))
         self.env['stock.quant'].quants_reserve(quants, move)
