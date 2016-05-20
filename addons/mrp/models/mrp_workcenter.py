@@ -96,7 +96,7 @@ class MrpWorkcenter(models.Model):
         date = (datetime.datetime.now() - relativedelta.relativedelta(months=1)).strftime('%Y-%m-%d %H:%M:%S')
         domain = [
             ('date_start', '>=', date),
-            ('workcenter_id', 'in', self.mapped('id')),
+            ('workcenter_id', 'in', self.ids),
             ('state', '=', 'done')
         ]
         wo = prod_obj.read_group(domain, ['duration', 'workcenter_id', 'delay'], ['workcenter_id'], lazy=False)

@@ -325,7 +325,7 @@ class MrpProductionWorkcenterLine(models.Model):
     @api.multi
     def end_previous(self, doall=False):
         timeline_obj = self.env['mrp.workcenter.productivity']
-        domain = [('workorder_id', 'in', self.mapped('id')), ('date_end', '=', False)]
+        domain = [('workorder_id', 'in', self.ids), ('date_end', '=', False)]
         if not doall:
             domain.append(('user_id', '=', self.env.user.id))
         for timeline in timeline_obj.search(domain, limit=doall and None or 1):
