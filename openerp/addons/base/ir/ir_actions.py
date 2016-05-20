@@ -31,7 +31,6 @@ import pytz
 import openerp
 from openerp import SUPERUSER_ID
 from openerp import tools
-from openerp import workflow
 import openerp.api
 from openerp.osv import fields, osv
 from openerp.osv.orm import browse_record
@@ -39,7 +38,7 @@ import openerp.report.interface
 from openerp.report.report_sxw import report_sxw, report_rml
 from openerp.tools.safe_eval import safe_eval as eval
 from openerp.tools.translate import _
-import openerp.workflow
+from openerp.workflow import OldWorkflowService as workflow
 
 _logger = logging.getLogger(__name__)
 

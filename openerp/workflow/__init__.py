@@ -24,80 +24,96 @@ from openerp.workflow.service import WorkflowService
 # The new API is in openerp.workflow.workflow_service
 # OLD API of the Workflow
 
-def clear_cache(cr, uid):
-    WorkflowService.clear_cache(cr.dbname)
+# Deprecated, to be removed in master, now that you can call *_workflow() on any model
+class OldWorkflowService(object):
 
-def trg_write(uid, res_type, res_id, cr):
-    """
-    Reevaluates the specified workflow instance. Thus if any condition for
-    a transition have been changed in the backend, then running ``trg_write``
-    will move the workflow over that transition.
+    @staticmethod
+    def clear_cache(cr, uid):
+        WorkflowService.clear_cache(cr.dbname)
 
-    :param res_type: the model name
-    :param res_id: the model instance id the workflow belongs to
-    :param cr: a database cursor
-    """
-    return WorkflowService.new(cr, uid, res_type, res_id).write()
+    @staticmethod
+    def trg_write(uid, res_type, res_id, cr):
+        """
+        Reevaluates the specified workflow instance. Thus if any condition for
+        a transition have been changed in the backend, then running ``trg_write``
+        will move the workflow over that transition.
 
-def trg_trigger(uid, res_type, res_id, cr):
-    """
-    Activate a trigger.
+        :param res_type: the model name
+        :param res_id: the model instance id the workflow belongs to
+        :param cr: a database cursor
+        """
+        return WorkflowService.new(cr, uid, res_type, res_id).write()
 
-    If a workflow instance is waiting for a trigger from another model, then this
-    trigger can be activated if its conditions are met.
+    @staticmethod
+    def trg_trigger(uid, res_type, res_id, cr):
+        """
+        Activate a trigger.
 
-    :param res_type: the model name
-    :param res_id: the model instance id the workflow belongs to
-    :param cr: a database cursor
-    """
-    return WorkflowService.new(cr, uid, res_type, res_id).trigger()
+        If a workflow instance is waiting for a trigger from another model, then this
+        trigger can be activated if its conditions are met.
 
-def trg_delete(uid, res_type, res_id, cr):
-    """
-    Delete a workflow instance
+        :param res_type: the model name
+        :param res_id: the model instance id the workflow belongs to
+        :param cr: a database cursor
+        """
+        return WorkflowService.new(cr, uid, res_type, res_id).trigger()
 
-    :param res_type: the model name
-    :param res_id: the model instance id the workflow belongs to
-    :param cr: a database cursor
-    """
-    return WorkflowService.new(cr, uid, res_type, res_id).delete()
+    @staticmethod
+    def trg_delete(uid, res_type, res_id, cr):
+        """
+        Delete a workflow instance
 
-def trg_create(uid, res_type, res_id, cr):
-    """
-    Create a new workflow instance
+        :param res_type: the model name
+        :param res_id: the model instance id the workflow belongs to
+        :param cr: a database cursor
+        """
+        return WorkflowService.new(cr, uid, res_type, res_id).delete()
 
-    :param res_type: the model name
-    :param res_id: the model instance id to own the created worfklow instance
-    :param cr: a database cursor
-    """
-    return WorkflowService.new(cr, uid, res_type, res_id).create()
+    @staticmethod
+    def trg_create(uid, res_type, res_id, cr):
+        """
+        Create a new workflow instance
 
-def trg_validate(uid, res_type, res_id, signal, cr):
-    """
-    Fire a signal on a given workflow instance
+        :param res_type: the model name
+        :param res_id: the model instance id to own the created worfklow instance
+        :param cr: a database cursor
+        """
+        return WorkflowService.new(cr, uid, res_type, res_id).create()
 
-    :param res_type: the model name
-    :param res_id: the model instance id the workflow belongs to
-    :signal: the signal name to be fired
-    :param cr: a database cursor
-    """
-    assert isinstance(signal, basestring)
-    return WorkflowService.new(cr, uid, res_type, res_id).validate(signal)
+    @staticmethod
+    def trg_validate(uid, res_type, res_id, signal, cr):
+        """
+        Fire a signal on a given workflow instance
 
-def trg_redirect(uid, res_type, res_id, new_rid, cr):
-    """
-    Re-bind a workflow instance to another instance of the same model.
+        :param res_type: the model name
+        :param res_id: the model instance id the workflow belongs to
+        :signal: the signal name to be fired
+        :param cr: a database cursor
+        """
+        assert isinstance(signal, basestring)
+        return WorkflowService.new(cr, uid, res_type, res_id).validate(signal)
 
-    Make all workitems which are waiting for a (subflow) workflow instance
-    for the old resource point to the (first active) workflow instance for
-    the new resource.
+    @staticmethod
+    def trg_redirect(uid, res_type, res_id, new_rid, cr):
+        """
+        Re-bind a workflow instance to another instance of the same model.
 
-    :param res_type: the model name
-    :param res_id: the model instance id the workflow belongs to
-    :param new_rid: the model instance id to own the worfklow instance
-    :param cr: a database cursor
-    """
-    assert isinstance(new_rid, (long, int))
-    return WorkflowService.new(cr, uid, res_type, res_id).redirect(new_rid)
+        Make all workitems which are waiting for a (subflow) workflow instance
+        for the old resource point to the (first active) workflow instance for
+        the new resource.
+
+        :param res_type: the model name
+        :param res_id: the model instance id the workflow belongs to
+        :param new_rid: the model instance id to own the worfklow instance
+        :param cr: a database cursor
+        """
+        assert isinstance(new_rid, (long, int))
+        return WorkflowService.new(cr, uid, res_type, res_id).redirect(new_rid)
+
+# backwards compatibility when using old module directly
+clear_cache, trg_write, trg_trigger, trg_delete, trg_create, trg_validate, trg_redirect = \
+    (OldWorkflowService.clear_cache, OldWorkflowService.trg_write, OldWorkflowService.trg_trigger,
+     OldWorkflowService.trg_delete, OldWorkflowService.trg_create, OldWorkflowService.trg_validate,
+     OldWorkflowService.trg_redirect)
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
