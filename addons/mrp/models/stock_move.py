@@ -58,8 +58,6 @@ class StockMove(models.Model):
         'mrp.production', 'Production Order for raw materials')
     unbuild_id = fields.Many2one(
         'mrp.unbuild', 'Unbuild Order')
-    raw_material_unbuild_id = fields.Many2one(
-        'mrp.unbuild', 'Consume material at unbuild')
     operation_id = fields.Many2one(
         'mrp.routing.workcenter', 'Operation To Consume')  # TDE FIXME: naming
     workorder_id = fields.Many2one(
@@ -119,7 +117,7 @@ class StockMove(models.Model):
 
     @api.multi
     def check_move_lots(self):
-        moves_todo = self.filtered(lambda x: (x.raw_material_production_id or x.raw_material_unbuild_id) and x.state not in ('done', 'cancel'))
+        moves_todo = self.filtered(lambda x: x.raw_material_production_id and x.state not in ('done', 'cancel'))
         return moves_todo.create_lots()
 
     @api.multi

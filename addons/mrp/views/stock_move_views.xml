@@ -60,7 +60,7 @@
             <field name="res_model">stock.move</field>
             <field name="view_type">form</field>
             <field name="view_mode">tree,form</field>
-            <field name="domain">['|', ('unbuild_id', '=', active_id), ('raw_material_unbuild_id', '=', active_id)]</field>
+            <field name="domain">[('unbuild_id', '=', active_id)]</field>
         </record>
 
     <menuitem id="menu_mrp_scrap"
