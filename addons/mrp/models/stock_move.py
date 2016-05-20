@@ -186,7 +186,7 @@ class StockMove(models.Model):
             if float_compare(move.quantity_done, move.product_uom_qty, precision_rounding=rounding):
                 # Need to do some kind of conversion here
                 qty_split = uom_obj._compute_qty(move.product_uom.id, move.product_uom_qty - move.quantity_done, move.product_id.uom_id.id)
-                new_move = self.env['stock.move'].split(move, qty_split)
+                new_move = move.split(qty_split)
                 self.browse(new_move).quantity_done = 0.0
             # TODO: code for when quantity > move.product_qty (extra move or change qty?)
             main_domain = [('qty', '>', 0)]
