@@ -15,6 +15,7 @@ class ChangeProductionQty(models.TransientModel):
         'Product Qty',
         digits_compute=dp.get_precision('Product Unit of Measure'), required=True)
 
+    @api.model
     def default_get(self, fields):
         res = super(ChangeProductionQty, self).default_get(fields)
         if 'product_qty' in fields and not res.get('product_qty'):
