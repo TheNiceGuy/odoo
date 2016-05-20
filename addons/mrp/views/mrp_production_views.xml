@@ -493,6 +493,7 @@
                     <filter string="Planned" name="planned" domain="[('state','=','planned')]"/>
                     <filter string="In Progress" name="inprogress" domain="[('state','=','progress')]"
                         help="Manufacturing Orders which are currently in production."/>
+                    <filter string="Done" name="inprogress" domain="[('state','=','done')]"/>
                     <separator/>
                     <filter string="Late" domain="['&amp;', ('date_planned','&lt;', current_date), ('state', 'in', ('draft', 'confirmed', 'ready'))]"
                         name="late" help="Production started late"/>
