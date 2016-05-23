@@ -55,7 +55,8 @@ class MrpUnbuild(models.Model):
         'stock.location', 'Destination Location',
         default=_get_default_location_dest_id,
         required=True, states={'done': [('readonly', True)]})
-    consume_line_id = fields.Many2one('stock.move', readonly=True)  # TDE: some string / help ?
+    consume_line_ids = fields.One2many('stock.move', 
+        'consume_unbuild_id', readonly=True)  # TDE: some string / help 
     produce_line_ids = fields.One2many(
         'stock.move', 'unbuild_id',
         readonly=True)  # TDE: some string / help ?
@@ -85,10 +86,9 @@ class MrpUnbuild(models.Model):
     @api.multi
     def _generate_moves(self):
         for unbuild in self:
-            bom = unbuild._get_bom()
+            bom = unbuild.bom_id
             factor = self.env['product.uom']._compute_qty(unbuild.product_uom_id.id, unbuild.product_qty, bom.product_uom_id.id)
             bom.explode(unbuild.product_id, factor / bom.product_qty, method=self._generate_move)
-            unbuild.consume_line_id.action_confirm()
         return True
 
     @api.model
@@ -111,7 +111,7 @@ class MrpUnbuild(models.Model):
         }
         rec = self.env['stock.move'].create(data)
         rec.action_confirm()
-        self.consume_line_id = rec.id
+        self.consume_line_ids = rec
         return rec
 
     @api.multi
@@ -138,29 +138,30 @@ class MrpUnbuild(models.Model):
         self._make_unbuild_consume_line()
         self._generate_moves()
         #Search quants that passed production order
-        move = self.consume_line_id
+        consume_move = self.consume_line_ids[0]
         domain = [('qty', '>', 0)]
         if self.mo_id:
             main_finished_moves = self.mo_id.move_finished_ids.filtered(lambda x: x.product_id.id == self.mo_id.product_id.id)
             domain = [('qty', '>', 0), ('history_ids', 'in', [x.id for x in main_finished_moves])]
             qty = self.product_qty # Convert to qty on product UoM
-            quants = self.env['stock.quant'].quants_get_preferred_domain(qty, move, domain=domain, preferred_domain_list=[], lot_id=self.lot_id.id)
+            quants = self.env['stock.quant'].quants_get_preferred_domain(qty, consume_move, domain=domain, 
+                                                                         preferred_domain_list=[], lot_id=self.lot_id.id)
         else:
-            quants = self.env['stock.quant'].quants_get_preferred_domain(qty, move, domain=domain, preferred_domain_list=[], lot_id=self.lot_id.id)
-        self.env['stock.quant'].quants_reserve(quants, move)
-#        self.consume_line_id.action_done()
-        if move.has_tracking != 'none':
+            quants = self.env['stock.quant'].quants_get_preferred_domain(qty, consume_move, domain=domain, 
+                                                                         preferred_domain_list=[], lot_id=self.lot_id.id)
+        self.env['stock.quant'].quants_reserve(quants, consume_move)
+        if consume_move.has_tracking != 'none':
             if not self.lot_id.id:
                 raise UserError(_('Should have a lot for the finished product'))
-            self.env['stock.move.lots'].create({'move_id': move.id,
+            self.env['stock.move.lots'].create({'move_id': consume_move.id,
                                                 'lot_id': self.lot_id.id,
-                                                'quantity_done': move.product_uom_qty,
-                                                'quantity': move.product_uom_qty})
+                                                'quantity_done': consume_move.product_uom_qty,
+                                                'quantity': consume_move.product_uom_qty})
         else:
-            move.quantity_done = move.product_uom_qty
-        move.move_validate()
+            consume_move.quantity_done = consume_move.product_uom_qty
+        consume_move.move_validate()
         original_quants = self.env['stock.quant']
-        for quant in move.quant_ids:
+        for quant in consume_move.quant_ids:
             original_quants |= quant.consumed_quant_ids
         for produce_move in self.produce_line_ids:
             if produce_move.has_tracking != 'none':
@@ -174,14 +175,13 @@ class MrpUnbuild(models.Model):
         self.produce_line_ids.move_validate()
         produced_quant_ids = self.env['stock.quant']
         for move in self.produce_line_ids:
-            produced_quant_ids |= move.quant_ids
-        self.consume_line_id.quant_ids.write({'produced_quant_ids': [(6, 0, produced_quant_ids.ids)]})
+            produced_quant_ids |= move.quant_ids.filtered(lambda x: x.qty > 0)
+        self.consume_line_ids[0].quant_ids.write({'produced_quant_ids': [(6, 0, produced_quant_ids.ids)]})
         self.write({'state': 'done'})
-
 
     @api.multi
     def button_open_move(self):
-        stock_moves = self.env['stock.move'].search(['|', ('unbuild_id', '=', self.id), ('id', '=', self.consume_line_id.id)])
+        stock_moves = self.env['stock.move'].search(['|', ('unbuild_id', '=', self.id), ('consume_unbuild_id', '=', self.id)])
         return {
             'name': _('Stock Moves'),
             'view_type': 'form',
@@ -196,6 +196,6 @@ class MrpUnbuild(models.Model):
     def _get_consumed_quants(self):
         self.ensure_one()
         quants = self.env['stock.quant']
-        for quant in self.consume_line_id.reserved_quant_ids:
+        for quant in self.consume_line_ids[0].reserved_quant_ids:
             quants = quants | quant.consumed_quant_ids
         return quants
