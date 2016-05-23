@@ -1002,17 +1002,17 @@ class Picking(models.Model):
                 raise UserError(_('Please process some quantities to put in the pack first!'))
         return package
 
-    def button_scrap(self, cr, uid, ids, context=None):
-        picking = self.browse(cr, uid, ids, context=context)
-        view_id = self.pool['ir.model.data'].xmlid_to_res_id(cr, uid, 'stock.stock_scrap_form_view2')
+    @api.multi
+    def button_scrap(self):
+        self.ensure_one()
         return {
             'name': _('Scrap'),
             'view_type': 'form',
             'view_mode': 'form',
             'res_model': 'stock.scrap',
-            'view_id': view_id,
+            'view_id': self.env.ref('stock.stock_scrap_form_view2').id,
             'type': 'ir.actions.act_window',
-            'context': {'default_picking_id': ids[0], 'product_ids': picking.pack_operation_product_ids.mapped('product_id').ids},
+            'context': {'default_picking_id': self.id, 'product_ids': self.pack_operation_product_ids.mapped('product_id').ids},
             'target': 'new',
         }
 
