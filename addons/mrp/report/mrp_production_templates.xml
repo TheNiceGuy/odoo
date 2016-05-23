@@ -44,7 +44,7 @@
                         </div>
                     </div>
 
-                    <div t-if="o.workorder_ids">
+                    <!-- <div t-if="o.workorder_ids">
                         <strong>Work Orders</strong>
                         <table class="table table-condensed">
                             <tr>
@@ -58,7 +58,7 @@
                                 <td class="text-center"><span t-field="line2.duration"/></td>
                             </tr>
                         </table>
-                    </div>
+                    </div> -->
 
                     <h3 t-if="o.move_raw_ids">Bill Of Material</h3>
 

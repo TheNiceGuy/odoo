@@ -4,11 +4,11 @@
 import ir_attachment
 import mrp_config_settings
 import mrp_bom
-import mrp_routing
-import mrp_workcenter
+# import mrp_routing
+# import mrp_workcenter
 import mrp_production
 import mrp_unbuild
-import mrp_workorder
+# import mrp_workorder
 import procurement
 import product
 import res_company

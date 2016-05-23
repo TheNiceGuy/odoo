@@ -36,7 +36,7 @@
 
         <!-- Resource: mrp.workcenter -->
 
-        <record id="mrp_workcenter_0" model="mrp.workcenter">
+        <!-- <record id="mrp_workcenter_0" model="mrp.workcenter">
             <field name="name">Assembly Station 1</field>
             <field name="calendar_id" ref="resource.timesheet_group1"/>
             <field name="capacity">5</field>
@@ -59,13 +59,13 @@
         <record id="mrp_workcenter_2" model="mrp.workcenter">
             <field name="name">Assemble Station 2</field>
             <field name="calendar_id" ref="resource.timesheet_group1"/>
-        </record>
+        </record> -->
 
 
 
         <!-- Resource: mrp.routing -->
 
-        <record id="mrp_routing_0" model="mrp.routing">
+        <!-- <record id="mrp_routing_0" model="mrp.routing">
             <field name="name">Assembly Line 1</field>
         </record>
 
@@ -79,12 +79,12 @@
 
         <record id="mrp_routing_3" model="mrp.routing">
             <field name="name">Assemble Furniture</field>
-        </record>
+        </record> -->
 
 
         <!-- Resource: mrp.routing.workcenter -->
 
-        <record id="mrp_routing_workcenter_0" model="mrp.routing.workcenter">
+        <!-- <record id="mrp_routing_workcenter_0" model="mrp.routing.workcenter">
             <field name="routing_id" ref="mrp_routing_0"/>
             <field name="workcenter_id" ref="mrp_workcenter_0"/>
             <field name="name">Manual Assembly</field>
@@ -154,26 +154,9 @@
             <field name="sequence">20</field>
             <field name="name">Assembly</field>
             <field name="worksheet" type="base64" file="mrp/static/img/assebly-worksheet.jpg"/>
-        </record>
+        </record> -->
 
-        <!-- Resource: mrp.bom -->
-
-        <record id="mrp_bom_3" model="mrp.bom">
-            <field name="product_tmpl_id" ref="product_product_19_product_template"/>
-            <field name="product_uom_id" ref="product.product_uom_unit"/>
-            <field name="sequence">10</field>
-        </record>
-
-        <record id="mrp_bom_line_3" model="mrp.bom.line">
-            <field name="product_id" ref="product.product_product_17"/>
-            <field name="product_qty">1</field>
-            <field name="product_uom_id" ref="product.product_uom_unit"/>
-            <field name="sequence">5</field>
-            <field name="bom_id" ref="mrp_bom_3"/>
-        </record>
-
-
-        <record id="product.product_product_3_product_template" model="product.template">
+        <!-- <record id="product.product_product_3_product_template" model="product.template">
             <field name="route_ids" eval="[(6, 0, [ref('stock.route_warehouse0_mto'), ref('mrp.route_warehouse0_manufacture')])]"/>
         </record>
         <record id="mrp_bom_manufacture" model="mrp.bom">
@@ -237,7 +220,7 @@
             <field name="product_uom_id" ref="product.product_uom_unit"/>
             <field name="sequence">5</field>
             <field name="bom_id" ref="mrp_bom_manufacture"/>
-        </record>
+        </record> -->
 
         <record id="product_product_build_kit" model="product.product">
             <field name="name">Self Build Kit</field>
@@ -278,18 +261,18 @@
             <field name="bom_id" ref="mrp_bom_kit"/>
         </record>
 
-        <record id="mrp_production_1" model="mrp.production">
+        <!-- <record id="mrp_production_1" model="mrp.production">
             <field name="product_id" ref="product.product_product_3"/>
             <field name="product_uom_id" ref="product.product_uom_unit"/>
             <field name="product_qty">3</field>
             <field name="bom_id" ref="mrp_bom_manufacture"/>
-        </record>
+        </record> -->
 
-        <record id="mrp_production_2" model="mrp.production">
+        <!-- <record id="mrp_production_2" model="mrp.production">
             <field name="product_id" ref="mrp.product_product_19"/>
             <field name="product_uom_id" ref="product.product_uom_unit"/>
             <field name="bom_id" ref="mrp.mrp_bom_3"/>
-        </record>
+        </record> -->
 
         <record id="product_product_computer_desk" model="product.product">
             <field name="name">Computer Desk</field>
@@ -336,18 +319,18 @@
             <field name="default_code">FURN004</field>
         </record>
 
-        <record id="product_product_computer_desk_product_template" model="product.template">
+        <!-- <record id="product_product_computer_desk_product_template" model="product.template">
             <field name="route_ids" eval="[(6, 0, [ref('stock.route_warehouse0_mto'), ref('mrp.route_warehouse0_manufacture')])]"/>
-        </record>
+        </record> -->
 
-        <record id="mrp_bom_desk" model="mrp.bom">
+        <!-- <record id="mrp_bom_desk" model="mrp.bom">
             <field name="product_tmpl_id" ref="product_product_computer_desk_product_template"/>
             <field name="product_uom_id" ref="product.product_uom_unit"/>
             <field name="sequence">3</field>
             <field name="routing_id" ref="mrp_routing_3"/>
-        </record>
+        </record> -->
 
-        <record id="mrp_bom_desk_line_1" model="mrp.bom.line">
+        <!-- <record id="mrp_bom_desk_line_1" model="mrp.bom.line">
             <field name="product_id" ref="product_product_computer_desk_head"/>
             <field name="product_qty">1</field>
             <field name="product_uom_id" ref="product.product_uom_unit"/>
@@ -379,7 +362,7 @@
             <field name="product_uom_id" ref="product.product_uom_unit"/>
             <field name="product_qty">1</field>
             <field name="bom_id" ref="mrp_bom_desk"/>
-        </record>
+        </record> -->
 
         <!-- Manufacturing Order Demo With Lots-->
 
@@ -501,7 +484,7 @@
             <field name="bom_id" ref="mrp_bom_laptop_cust"/>
         </record>
 
-        <record id="mrp_bom_laptop_cust_rout" model="mrp.bom">
+        <!-- <record id="mrp_bom_laptop_cust_rout" model="mrp.bom">
             <field name="product_tmpl_id" ref="product.product_product_27_product_template"/>
             <field name="product_uom_id" ref="product.product_uom_unit"/>
             <field name="sequence">2</field>
@@ -520,7 +503,7 @@
             <field name="product_uom_id" ref="product.product_uom_unit"/>
             <field name="sequence">2</field>
             <field name="bom_id" ref="mrp_bom_laptop_cust_rout"/>
-        </record>
+        </record> -->
 
         <record id="mrp_production_laptop_cust" model="mrp.production">
             <field name="product_id" ref="product.product_product_27"/>
@@ -541,7 +524,7 @@
 
         <!-- OEE -->
 
-        <record id="mrp_workcenter_efficiency_0" model="mrp.workcenter.productivity">
+        <!-- <record id="mrp_workcenter_efficiency_0" model="mrp.workcenter.productivity">
             <field name="workcenter_id" ref="mrp_workcenter_0"/>
             <field name="loss_id" ref="block_reason7"/>
             <field name="date_start" eval="(datetime.now() - relativedelta(days=5)).strftime('%Y-%m-%d %H:%M:%S')"/>
@@ -580,7 +563,7 @@
             <field name="workcenter_id" ref="mrp_workcenter_1"/>
             <field name="loss_id" ref="block_reason1"/>
             <field name="date_start" eval="(datetime.now() - timedelta(hours=1)).strftime('%Y-%m-%d %H:%M:%S')"/>
-        </record>
+        </record> -->
 
 
 

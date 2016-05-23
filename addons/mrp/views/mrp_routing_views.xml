@@ -93,7 +93,6 @@
                         </group>
                         <notebook>
                             <page string="Work Center Operations">
-                                <field name="workorder_ids" string="Operation"/>
                             </page>
                             <page string="Notes">
                                 <field name="note"/>
