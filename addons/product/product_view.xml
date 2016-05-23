@@ -530,6 +530,7 @@
                 <tree string="Variant Values" editable="top">
                     <field name="sequence" widget="handle"/>
                     <field name="name"/>
+                    <field name="create_variant"/>
                 </tree>
             </field>
         </record>

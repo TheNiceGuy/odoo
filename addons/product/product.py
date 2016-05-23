@@ -268,6 +268,10 @@ class product_attribute(osv.osv):
         'value_ids': fields.one2many('product.attribute.value', 'attribute_id', 'Values', copy=True),
         'sequence': fields.integer('Sequence', help="Determine the display order"),
         'attribute_line_ids': fields.one2many('product.attribute.line', 'attribute_id', 'Lines'),
+        'create_variant': fields.boolean('Create Variants', help="Check this if you want to create multiple variants for this attribute."),
+    }
+    _defaults = {
+        'create_variant': True,
     }
 
 class product_attribute_value(osv.osv):
@@ -624,7 +628,7 @@ class product_template(osv.osv):
                     variant_alone.append(variant_id.value_ids[0])
                 temp_variants = []
                 for variant in all_variants:
-                    for value_id in variant_id.value_ids:
+                    for value_id in variant_id.value_ids.filtered('attribute_id.create_variant'):
                         temp_variants.append(sorted(variant + [int(value_id)]))
                 if temp_variants:
                     all_variants = temp_variants

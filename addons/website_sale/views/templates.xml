@@ -1151,7 +1151,10 @@
                               </a>
                           </td>
                           <td t-if="line.product_id.product_tmpl_id">
-                             <strong t-field="line.product_id.with_context(display_default_code=False).display_name"/>
+                              <div>
+                                  <strong t-field="line.product_id.with_context(display_default_code=False).display_name"/>
+                              </div>
+                              <div class="text-muted" t-esc="'\n'.join(line.name.splitlines()[1:])"/>
                           </td>
                           <td>
                              <div t-esc="line.product_uom_qty"/>
