@@ -45,17 +45,11 @@ class MrpBom(models.Model):
         default=_get_default_product_uom_id, oldname='product_uom', required=True,
         help="Unit of Measure (Unit of Measure) is the unit of measurement for the inventory control")
     sequence = fields.Integer('Sequence', help="Gives the sequence order when displaying a list of bills of material.")
-    routing_id = fields.Many2one(
-        'mrp.routing', 'Routing',
-        help="The list of operations (list of work centers) to produce the finished product. "
-             "The routing is mainly used to compute work center costs during operations and to "
-             "plan future loads on work centers based on production planning.")
     ready_to_produce = fields.Selection([
         ('all_available', 'All components available'),
         ('asap', 'The components of 1st operation')],
         string='Ready when are available',  # TDE FIXME: I am not able to renglish
         default='asap', required=True)
-    operation_id = fields.Many2one('mrp.routing.workcenter', 'Produced at Operation')
     picking_type_id = fields.Many2one(
         'stock.picking.type', 'Picking Type',
         domain=[('code', '=', 'mrp_operation')],
@@ -118,8 +112,6 @@ class MrpBom(models.Model):
         self.ensure_one()
         if not original_quantity:
             original_quantity = quantity
-        if method_wo and self.routing_id:
-            method_wo(self, quantity)
         done = done or []
         for bom_line in self.bom_line_ids:
             if bom_line._skip_bom_line(product):
@@ -162,21 +154,12 @@ class MrpBomLine(models.Model):
     sequence = fields.Integer(
         'Sequence', default=1,
         help="Gives the sequence order when displaying.")
-    routing_id = fields.Many2one(
-        'mrp.routing', 'Routing',
-        related='bom_id.routing_id', store=True,
-        help="The list of operations (list of work centers) to produce the finished product. The routing "
-             "is mainly used to compute work center costs during operations and to plan future loads on "
-             "work centers based on production planning.")
     bom_id = fields.Many2one(
         'mrp.bom', 'Parent BoM',
         index=True, ondelete='cascade', required=True)
     attribute_value_ids = fields.Many2many(
         'product.attribute.value', string='Variants',
         help="BOM Product Variants needed form apply this line.")
-    operation_id = fields.Many2one(
-        'mrp.routing.workcenter', 'Consumed in Operation',
-        help="The operation where the components are consumed, or the finished products created.")
     child_line_ids = fields.One2many(
         'mrp.bom.line', string="BOM lines of the referred bom",
         compute='_compute_child_line_ids')

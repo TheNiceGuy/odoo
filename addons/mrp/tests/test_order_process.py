@@ -39,7 +39,7 @@ class TestOrderProcess(common.TransactionCase):
             'location_src_id': self.env.ref('stock.stock_location_14').id,
             'location_dest_id': self.env.ref('stock.stock_location_output').id,
             'bom_id': self.env.ref('mrp.mrp_bom_kit').id,
-            'routing_id': self.env.ref('mrp.mrp_routing_1').id
+            # 'routing_id': self.env.ref('mrp.mrp_routing_1').id
         })
 
         # I compute the production order.
@@ -69,8 +69,8 @@ class TestOrderProcess(common.TransactionCase):
         self.assertEqual(move.location_id.id, source_location_id, "Source Location does not correspond.")
         self.assertEqual(move.location_dest_id.id, self.mrp_production_test1.location_dest_id.id, "Destination Location does not correspond.")
         routing_loc = None
-        if self.mrp_production_test1.bom_id.routing_id and self.mrp_production_test1.bom_id.routing_id.location_id:
-            routing_loc = self.mrp_production_test1.routing_id.location_id.id
+        # if self.mrp_production_test1.bom_id.routing_id and self.mrp_production_test1.bom_id.routing_id.location_id:
+        #     routing_loc = self.mrp_production_test1.routing_id.location_id.id
         date_planned = self.mrp_production_test1.date_planned
         for move_line in self.mrp_production_test1.move_raw_ids:
                 self.assertEqual(move_line.date, date_planned, "Planned date does not correspond in 'To consume line'.")
@@ -118,7 +118,7 @@ class TestOrderProcess(common.TransactionCase):
         self.env['procurement.order'].run_scheduler()
 
         # The production order is Waiting Goods, will force production which should set consume lines as available
-        self.mrp_production_test1.button_plan()
+        # self.mrp_production_test1.button_plan()
         # I check that production order in ready state after forcing production.
 
         #self.assertEqual(self.mrp_production_test1.availability, 'assigned', 'Production order availability should be set as available')
