@@ -19,7 +19,7 @@ class ProductTemplate(models.Model):
         read_group_res = self.env['mrp.bom'].read_group([('product_tmpl_id', 'in', self.ids)], ['product_tmpl_id'], ['product_tmpl_id'])
         mapped_data = dict([(data['product_tmpl_id'][0], data['product_tmpl_id_count']) for data in read_group_res])
         for product in self:
-            product.mo_count = mapped_data.get(product.id, 0)
+            product.bom_count = mapped_data.get(product.id, 0)
 
     @api.one
     def _bom_orders_count_mo(self):
