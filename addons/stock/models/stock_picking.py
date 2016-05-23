@@ -1016,13 +1016,10 @@ class Picking(models.Model):
             'target': 'new',
         }
 
-    def button_scrapped_moves(self, cr, uid, ids, context=None):
-        action_id = self.pool['ir.model.data'].xmlid_to_res_id(cr, uid, 'stock.action_move_form2')
-        scrap_moves = self.pool['stock.move'].search(cr, uid, [('picking_id', '=', ids[0]), ('scrapped', '=', True), ('state', '=', 'done')], context=context)
-        if action_id:
-            action = self.pool['ir.actions.act_window'].read(cr, uid, action_id, [], context=context)
-            action['domain'] = [('id', 'in', scrap_moves)]
-            action_context = eval(action['context'])
-            action_context['scrap_move'] = True
-            action['context'] = str(action_context)
-            return action
+    @api.multi
+    def action_see_move_scrap(self):
+        self.ensure_one()
+        action = self.env.ref('stock.action_stock_scrap').read()[0]
+        scraps = self.env['stock.scrap'].search([('picking_id', '=', self.id)])
+        action['domain'] = [('id', 'in', scraps.ids)]
+        return action
