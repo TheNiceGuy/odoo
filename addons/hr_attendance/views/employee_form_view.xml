@@ -15,6 +15,7 @@
                 </field>
                 <field name="user_id" position="after">
                     <field name="barcode" groups="base.group_hr_user"/>
+                    <field name="pin" groups="base.group_hr_user"/>
                 </field>
             </field>
         </record>

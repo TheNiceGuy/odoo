@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data noupdate="True">
+
+        <record id="attendance1" model="hr.attendance">
+            <field eval="time.strftime('%Y-%m-01 08:21')" name="check_in"/>
+            <field eval="time.strftime('%Y-%m-01 11:51')" name="check_out"/>
+            <field name="employee_id" ref="hr.employee_fp"/>
+        </record>
+
+        <record id="attendance2" model="hr.attendance">
+            <field eval="time.strftime('%Y-%m-02 12:47')" name="check_in"/>
+            <field eval="time.strftime('%Y-%m-02 19:53')" name="check_out"/>
+            <field name="employee_id" ref="hr.employee_fp"/>
+        </record>
+
+        <record id="attendance3" model="hr.attendance">
+            <field eval="time.strftime('%Y-%m-03 07:32')" name="check_in"/>
+            <field eval="time.strftime('%Y-%m-03 12:32')" name="check_out"/>
+            <field name="employee_id" ref="hr.employee_fp"/>
+        </record>
+
+        <record id="attendance4" model="hr.attendance">
+            <field eval="time.strftime('%Y-%m-04 14:01')" name="check_in"/>
+            <field eval="time.strftime('%Y-%m-04 17:21')" name="check_out"/>
+            <field name="employee_id" ref="hr.employee_fp"/>
+        </record>
+
+        <record id="attendance5" model="hr.attendance">
+            <field eval="time.strftime('%Y-%m-05 09:10')" name="check_in"/>
+            <field eval="time.strftime('%Y-%m-05 12:42')" name="check_out"/>
+            <field name="employee_id" ref="hr.employee_fp"/>
+        </record>
+
+        <record id="attendance6" model="hr.attendance">
+            <field eval="time.strftime('%Y-%m-06 13:10')" name="check_in"/>
+            <field eval="time.strftime('%Y-%m-06 18:34')" name="check_out"/>
+            <field name="employee_id" ref="hr.employee_fp"/>
+        </record>
+
+        <record id="attendance7" model="hr.attendance">
+            <field eval="time.strftime('%Y-%m-07 08:21')" name="check_in"/>
+            <field eval="time.strftime('%Y-%m-07 18:21')" name="check_out"/>
+            <field name="employee_id" ref="hr.employee_fp"/>
+        </record>
+
+        <record id="attendance8" model="hr.attendance">
+            <field eval="time.strftime('%Y-%m-08 08:21')" name="check_in"/>
+            <field eval="time.strftime('%Y-%m-08 12:54')" name="check_out"/>
+            <field name="employee_id" ref="hr.employee_fp"/>
+        </record>
+
+        <record id="attendance9" model="hr.attendance">
+            <field eval="time.strftime('%Y-%m-09 13:32')" name="check_in"/>
+            <field eval="time.strftime('%Y-%m-09 19:31')" name="check_out"/>
+            <field name="employee_id" ref="hr.employee_fp"/>
+        </record>
+
+        <record id="attendance10" model="hr.attendance">
+            <field eval="time.strftime('%Y-%m-10 07:10')" name="check_in"/>
+            <field eval="time.strftime('%Y-%m-10 12:34')" name="check_out"/>
+            <field name="employee_id" ref="hr.employee_fp"/>
+        </record>
+
+    </data>
+</openerp>

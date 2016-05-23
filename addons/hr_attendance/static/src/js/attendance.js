@@ -32,9 +32,9 @@ var AttendanceSlider = Widget.extend({
         });
         this.$el.tooltip({
             title: function() {
-                var last_text = formats.format_value(self.last_sign, {type: "datetime"});
+                var last_text = formats.format_value(self.last_check, {type: "datetime"});
                 var current_text = formats.format_value(new Date(), {type: "datetime"});
-                var duration = self.last_sign ? moment(self.last_sign).fromNow() : "none";
+                var duration = self.last_check ? moment(self.last_check).fromNow() : "none";
                 if (self.get("signed_in")) {
                     return _.str.sprintf(_t("Last sign in: %s,<br />%s.<br />Click to sign out."), last_text, duration);
                 } else {
@@ -50,7 +50,7 @@ var AttendanceSlider = Widget.extend({
         hr_employee.call('attendance_action_change', [
             [self.employee.id]
         ]).done(function (result) {
-            self.last_sign = new Date();
+            self.last_check = new Date();
             self.set({"signed_in": ! self.get("signed_in")});
         });
     },
@@ -61,7 +61,7 @@ var AttendanceSlider = Widget.extend({
         var employee = new data.DataSetSearch(self, 'hr.employee', self.session.user_context, [
             ['user_id', '=', self.session.uid]
         ]);
-        return employee.read_slice(['id', 'name', 'state', 'last_sign', 'attendance_access']).then(function (res) {
+        return employee.read_slice(['id', 'name', 'state', 'last_check', 'attendance_access']).then(function (res) {
             if (_.isEmpty(res) )
                 return;
             if (res[0].attendance_access === false){
@@ -69,7 +69,7 @@ var AttendanceSlider = Widget.extend({
             }
             self.do_show();
             self.employee = res[0];
-            self.last_sign = time.str_to_datetime(self.employee.last_sign);
+            self.last_check = time.str_to_datetime(self.employee.last_check);
             self.set({"signed_in": self.employee.state !== "absent"});
         });
     },
