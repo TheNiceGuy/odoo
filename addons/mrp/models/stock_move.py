@@ -58,6 +58,8 @@ class StockMove(models.Model):
         'mrp.production', 'Production Order for raw materials')
     unbuild_id = fields.Many2one(
         'mrp.unbuild', 'Unbuild Order')
+    consume_unbuild_id = fields.Many2one(
+        'mrp.unbuild', 'Consume Unbuild Order')
     operation_id = fields.Many2one(
         'mrp.routing.workcenter', 'Operation To Consume')  # TDE FIXME: naming
     workorder_id = fields.Many2one(
@@ -67,7 +69,7 @@ class StockMove(models.Model):
     quantity_available = fields.Float(
         'Quantity Available', compute="_qty_available",
         digits_compute=dp.get_precision('Product Unit of Measure'))
-    quantity_done_store = fields.Float('Quantity', digits_compute=dp.get_precision('Product Unit of Measure'))  # TDE: what ?
+    quantity_done_store = fields.Float('Quantity', digits=0)
     quantity_done = fields.Float(
         'Quantity', compute='_qty_done_compute', inverse='_qty_done_set',
         digits_compute=dp.get_precision('Product Unit of Measure'))
@@ -161,7 +163,7 @@ class StockMove(models.Model):
     @api.multi
     def move_validate(self):
         '''
-            Functions as an action_done (better to put this logic in action_done itself when possible)
+            Functions as an action_done (better to put this logic in action_done itself later on)
         '''
         quant_obj = self.env['stock.quant']
         moves_todo = self.env['stock.move']
@@ -186,7 +188,6 @@ class StockMove(models.Model):
                 qty_split = uom_obj._compute_qty(move.product_uom.id, move.product_uom_qty - move.quantity_done, move.product_id.uom_id.id)
                 new_move = move.split(qty_split)
                 self.browse(new_move).quantity_done = 0.0
-            # TODO: code for when quantity > move.product_qty (extra move or change qty?)
             main_domain = [('qty', '>', 0)]
             preferred_domain = [('reservation_id', '=', move.id)]
             fallback_domain = [('reservation_id', '=', False)]

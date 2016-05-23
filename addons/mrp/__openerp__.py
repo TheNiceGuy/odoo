@@ -61,6 +61,7 @@ Dashboard / Reports for MRP will include:
         'views/stock_warehouse_views.xml',
 
         'views/stock_picking_views.xml',
+        'views/mrp_unbuild_views.xml',
 
         'views/res_company_views.xml',
         'views/mrp_config_settings_views.xml',
