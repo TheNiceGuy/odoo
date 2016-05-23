@@ -73,7 +73,8 @@ addresses belonging to this country.\n\nYou can use the python-style string pate
 
     @api.multi
     def get_address_fields(self):
-        return {'country_id': re.findall(r'\((.+?)\)', country.address_format) for country in self}
+        self.ensure_one()
+        return re.findall(r'\((.+?)\)', self.address_format)
 
 
 class CountryGroup(models.Model):

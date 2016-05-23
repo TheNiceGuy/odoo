@@ -31,6 +31,8 @@ class website_form_model(models.Model):
         builders and are writable. By default no field is writable by the
         form builder.
         """
+
+        print self._all_inherited_model_ids()
         excluded = {
             field.name
             for field in self.env['ir.model.fields'].sudo().search([
@@ -38,6 +40,12 @@ class website_form_model(models.Model):
                 ('website_form_blacklisted', '=', True)
             ])
         }
+        print "excluded"
+        print excluded
+
+        print "authorized"
+        print self.get_authorized_fields().iteritems()
+
         return {
             k: v for k, v in self.get_authorized_fields().iteritems()
             if k not in excluded
@@ -49,7 +57,7 @@ class website_form_model(models.Model):
         fields_get = model.fields_get()
 
         for key, val in model._inherits.iteritems():
-            fields_get.pop(val,None)
+            fields_get.pop(val, None)
 
         # Unrequire fields with default values
         default_values = model.default_get(fields_get.keys())

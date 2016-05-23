@@ -6,9 +6,9 @@ import random
 from odoo import api, models, fields, tools, _
 from odoo.http import request
 from odoo.exceptions import UserError
-import odoo.addons.decimal_precision as dp
 
 _logger = logging.getLogger(__name__)
+
 
 class SaleOrder(models.Model):
     _inherit = "sale.order"
@@ -433,3 +433,4 @@ class ResPartner(models.Model):
     _inherit = 'res.partner'
 
     last_website_so_id = fields.Many2one('sale.order', string='Last Online Sale Order')
+    website_sale_company_name = fields.Char('Company Name (eCommerce)')
