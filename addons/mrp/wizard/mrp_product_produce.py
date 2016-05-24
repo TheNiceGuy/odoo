@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-from openerp import api, fields, models
-import openerp.addons.decimal_precision as dp
-from openerp.exceptions import UserError
-from openerp import api, fields, models, _
+from odoo import api, fields, models, _
+from odoo.addons import decimal_precision as dp
+from odoo.exceptions import UserError
 
 
 class MrpProductProduce(models.TransientModel):

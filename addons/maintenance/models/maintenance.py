@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from openerp import api, fields, models
-from openerp import _
-from openerp.exceptions import UserError
 from datetime import date, datetime, timedelta
-from openerp.tools.misc import DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_DATETIME_FORMAT
+
+from odoo import api, fields, models, _
+from odoo.exceptions import UserError
+from odoo.tools.misc import DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_DATETIME_FORMAT
 
 
 class MaintenanceStage(models.Model):
