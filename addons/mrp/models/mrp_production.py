@@ -219,8 +219,6 @@ class MrpProduction(models.Model):
 
     @api.model
     def create(self, values):
-        if values.get('product_id') and 'product_uom' not in values:
-            values['product_uom_id'] = self.env['product.product'].browse(values['product_id']).uom_id.id
         if not values.get('name', False):
             values['name'] = self.env['ir.sequence'].next_by_code('mrp.production') or 'New'
         if not values.get('procurement_group_id'):
