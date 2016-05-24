@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-from openerp import api, fields, models
+from openerp import api, fields, models, _
 
 
 class MrpRouting(models.Model):
@@ -15,7 +15,7 @@ class MrpRouting(models.Model):
         help="If the active field is set to False, it will allow you to hide the routing without removing it.")
     code = fields.Char(
         'Reference',
-        copy=False, default='New', readonly=True)
+        copy=False, default=lambda self: _('New'), readonly=True)
     note = fields.Text('Description')
     workorder_ids = fields.One2many(
         'mrp.routing.workcenter', 'routing_id', 'Work Center Usage',
