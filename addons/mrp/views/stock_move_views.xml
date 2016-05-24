@@ -30,7 +30,7 @@
                     </group>
                     <field name="move_lot_ids" attrs="{'readonly': [('is_done', '=', True)]}" context="{'default_workorder_id': workorder_id}">
                         <tree editable="bottom" decoration-success="quantity==quantity_done" decoration-danger="(quantity &gt; 0) and (quantity_done&gt;quantity)">
-                            <field name="lot_id" domain="[('product_id', '=', parent.product_id)]"/>
+                            <field name="lot_id" domain="[('product_id', '=', parent.product_id)]" context="{'default_product_id': parent.product_id}"/>
                             <field name="quantity" invisible="not context.get('show_reserved') or context.get('serial') or context.get('state_done')" readonly="1"/>
                             <field name="quantity_done" invisible="context.get('serial')"/>
                             <button name="do_minus" type="object" icon="fa-minus-square" attrs="{'invisible': [('quantity_done', '&lt;=', 0.99)]}" invisible="not context.get('show_reserved') or context.get('state_done')"/>
