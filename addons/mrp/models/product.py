@@ -53,7 +53,7 @@ class ProductProduct(models.Model):
     @api.multi
     def action_view_bom(self):
         action = self.env.ref('mrp.product_open_bom').read()[0]
-        template_ids = self.mapped('producdt_tmpl_id').ids
+        template_ids = self.mapped('product_tmpl_id').ids
         # bom specific to this variant or global to template
         action['context'] = {
             'default_product_tmpl_id': template_ids[0],
