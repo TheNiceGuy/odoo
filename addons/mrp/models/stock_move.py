@@ -67,10 +67,7 @@ class StockMove(models.Model):
     quantity_available = fields.Float(
         'Quantity Available', compute="_qty_available",
         digits_compute=dp.get_precision('Product Unit of Measure'))
-    quantity_done_store = fields.Float('Quantity', digits_compute=dp.get_precision('Product Unit of Measure'))  # TDE: what ?
-    quantity_done = fields.Float(
-        'Quantity', compute='_qty_done_compute', inverse='_qty_done_set',
-        digits_compute=dp.get_precision('Product Unit of Measure'))
+    quantity_done = fields.Float('Quantity', compute='_qty_done_compute', digits_compute=dp.get_precision('Product Unit of Measure'), store=True)
     move_lot_ids = fields.One2many('stock.move.lots', 'move_id', string='Lots')
     bom_line_id = fields.Many2one('mrp.bom.line', 'BoM Line')
     unit_factor = fields.Float('Unit Factor')
@@ -89,19 +86,11 @@ class StockMove(models.Model):
                 move.quantity_available = move.reserved_availability
 
     @api.multi
-    @api.depends('move_lot_ids', 'move_lot_ids.quantity_done', 'quantity_done_store')
+    @api.depends('move_lot_ids', 'move_lot_ids.quantity_done')
     def _qty_done_compute(self):
         for move in self:
             if move.has_tracking != 'none':
                 move.quantity_done = sum(move.move_lot_ids.mapped('quantity_done'))
-            else:
-                move.quantity_done = move.quantity_done_store
-
-    @api.multi
-    def _qty_done_set(self):
-        for move in self:
-            if move.has_tracking == 'none':
-                move.quantity_done_store = move.quantity_done
 
     @api.multi
     @api.depends('state')

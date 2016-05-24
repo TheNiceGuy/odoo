@@ -77,13 +77,13 @@ class MrpProductProduce(models.TransientModel):
         quantity = self.product_qty
         for move in moves.filtered(lambda x: x.product_id.tracking == 'none' and x.state not in ('done', 'cancel')):
             if move.unit_factor:
-                move.quantity_done_store += quantity * move.unit_factor
+                move.quantity_done += quantity * move.unit_factor
         moves = self.production_id.move_finished_ids.filtered(lambda x: x.product_id.tracking == 'none' and x.state not in ('done', 'cancel'))
         for move in moves:
             if move.product_id.id == self.production_id.product_id.id:
-                move.quantity_done_store += quantity
+                move.quantity_done += quantity
             elif move.unit_factor:
-                move.quantity_done_store += quantity * move.unit_factor
+                move.quantity_done += quantity * move.unit_factor
         self.check_finished_move_lots()
         return {'type': 'ir.actions.act_window_close'}
 
