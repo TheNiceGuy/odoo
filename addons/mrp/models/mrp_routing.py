@@ -32,7 +32,7 @@ class MrpRouting(models.Model):
     @api.model
     def create(self, vals):
         # TDE CLEANME: strange
-        if vals.get('code', 'New') == 'New':
+        if vals.get('code', 'New') == _('New'):
             vals['code'] = self.env['ir.sequence'].next_by_code('mrp.routing') or '/'
         return super(MrpRouting, self).create(vals)
 
