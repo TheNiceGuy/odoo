@@ -3,4 +3,4 @@
 
 import hr_timesheet_sheet
 import hr_department
-import wizard
+# import wizard
