@@ -35,7 +35,7 @@ class StockScrap(models.Model):
                 rec.update({
                             'picking_id': picking.id,
                             'origin': picking.name,
-                            'location_id': (picking.state == 'done') and picking.location_dest_id.id or picking.location_id.id,
+                            'location_id': (picking.state == 'done') and picking.location_dest_id.id,
                             })
         return rec
 
