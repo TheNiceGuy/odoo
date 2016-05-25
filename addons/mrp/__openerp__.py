@@ -47,14 +47,11 @@ Dashboard / Reports for MRP will include:
         'views/mrp_views_menus.xml',
 
         'views/stock_move_views.xml',
-
-
-        # 'views/mrp_property_views.xml',
+        'views/inventory_message_views.xml',
         'views/mrp_workcenter_views.xml',
 
         'views/mrp_production_views.xml',
         'views/mrp_routing_views.xml',
-
         'views/mrp_bom_views.xml',
         'views/procurement_views.xml',
         'views/product_views.xml',
