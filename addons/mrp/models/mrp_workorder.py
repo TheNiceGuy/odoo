@@ -117,7 +117,7 @@ class MrpProductionWorkcenterLine(models.Model):
 
     @api.depends('production_id', 'workcenter_id', 'production_id.bom_id')
     def _compute_production_messages(self):
-        ProductionMessage = self.env['mrp.production.message']
+        ProductionMessage = self.env['mrp.message']
         for workorder in self:
             domain = ['|', ('bom_id', '=', workorder.production_id.bom_id.id), '|',
                 ('workcenter_id', '=', workorder.workcenter_id.id),

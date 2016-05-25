@@ -4,6 +4,7 @@
 import ir_attachment
 import mrp_config_settings
 import mrp_bom
+import mrp_message
 import mrp_routing
 import mrp_workcenter
 import mrp_production
