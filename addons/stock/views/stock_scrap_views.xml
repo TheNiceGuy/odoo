@@ -47,11 +47,14 @@
                                 <label for="scrap_qty"/>
                                 <div class="o_row">
                                     <field name="scrap_qty"/>
-                                    <field name="product_uom_id"/>
+                                    <field name="product_uom_id" groups="stock.product_group_uom"/>
                                 </div>
                             </group>
                             <group>
-                                <field name="lot_id"/>
+                                <field name="lot_id" attrs="{'invisible': [('tracking', '=', 'none')]}" groups="stock.group_production_lot"/>
+                                <field name="tracking" invisible="1"/>
+                                <field name="package_id" groups="stock.group_tracking_lot"/>
+                                <field name="owner_id" groups="stock.group_tracking_owner"/>
                                 <field name="location_id" groups="stock.group_stock_multi_locations"/>
                                 <field name="scrap_location_id" groups="stock.group_stock_multi_locations"/>
                                 <field name="origin"/>
@@ -72,7 +75,7 @@
                     <field name="create_date" string="Create Date"/>
                     <field name="product_id"/>
                     <field name="scrap_qty"/>
-                    <field name="product_uom_id"/>
+                    <field name="product_uom_id" groups="stock.product_group_uom"/>
                     <field name="location_id" groups="stock.group_stock_multi_locations"/>
                     <field name="scrap_location_id" groups="stock.group_stock_multi_locations"/>
                     <field name="state"/>
@@ -107,13 +110,16 @@
                             <label for="scrap_qty"/>
                             <div class="o_row">
                                 <field name="scrap_qty"/>
-                                <field name="product_uom_id"/>
+                                <field name="product_uom_id" groups="stock.product_group_uom"/>
                             </div>
                         </group>
                         <group>
                             <field name="picking_id" attrs="{'invisible': [('picking_id', '=', False)]}"/>
-                            <field name="tracking" invisible="True"/>
-                            <field name="lot_id" attrs="{'invisible': [('tracking', '=', 'none')]}"/>
+                            <field name="tracking" invisible="1"/>
+                            <field name="lot_id" attrs="{'invisible': [('tracking', '=', 'none')]}" groups="stock.group_production_lot"/>
+                            <field name="package_id" groups="stock.group_tracking_lot"/>
+                            <field name="owner_id" groups="stock.group_tracking_owner"/>
+                            <field name="location_id" groups="stock.group_stock_multi_locations"/>
                             <field name="scrap_location_id" groups="stock.group_stock_multi_locations"/>
                         </group>
                     </group>
