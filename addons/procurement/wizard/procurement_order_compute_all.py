@@ -19,11 +19,11 @@ class ProcurementComputeAll(models.TransientModel):
             # As this function is in a new thread, i need to open a new cursor, because the old one may be closed
             new_cr = registry(self._cr.dbname).cursor()
             self = self.with_env(self.env(cr=new_cr))  # TDE FIXME
-            scheduler_cron_id = self.envl['ir.model.data'].sudso().get_object_reference('procurement', 'ir_cron_scheduler_action')[1]
+            scheduler_cron = self.sudo().env.ref('procurement.ir_cron_scheduler_action')
             # Avoid to run the scheduler multiple times in the same time
             try:
                 with tools.mute_logger('openerp.sql_db'):
-                    self._cr.execute("SELECT id FROM ir_cron WHERE id = %s FOR UPDATE NOWAIT", (scheduler_cron_id,))
+                    self._cr.execute("SELECT id FROM ir_cron WHERE id = %s FOR UPDATE NOWAIT", (scheduler_cron.id,))
             except Exception:
                 _logger.info('Attempt to run procurement scheduler aborted, as already running')
                 self._cr.rollback()
