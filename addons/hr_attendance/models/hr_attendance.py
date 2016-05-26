@@ -4,11 +4,11 @@
 import random
 from datetime import datetime
 
-from openerp import models, fields, api, exceptions, _
-from openerp.tools import DEFAULT_SERVER_DATETIME_FORMAT
+from odoo import models, fields, api, exceptions, _
+from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT
 
 
-class hr_attendance(models.Model):
+class HrAttendance(models.Model):
     _name = "hr.attendance"
     _description = "Attendance"
     _order = "check_in desc"
@@ -24,13 +24,25 @@ class hr_attendance(models.Model):
     def write(self, vals):
         import ipdb
         ipdb.set_trace()
-        return super(hr_attendance, self).write(vals)
+        return super(HrAttendance, self).write(vals)
 
-    employee_id = fields.Many2one('hr.employee', string="Employee", default=_default_employee, required=True, select=True)  # ondelete='cascade' ?
+    employee_id = fields.Many2one('hr.employee', string="Employee", default=_default_employee, required=True, ondelete='cascade', index=True)
     department_id = fields.Many2one('hr.department', string="Department", related="employee_id.department_id")
-    check_in = fields.Datetime(string="Check In", default=_default_check_in, required=True)  # default doesn't get updated ? how come ???
+    check_in = fields.Datetime(string="Check In", default=_default_check_in, required=True)
     check_out = fields.Datetime(string="Check Out")
     worked_hours = fields.Float(string='Worked Hours', compute='_get_worked_hours', store=True, readonly=True)
+
+    # TO DO
+    # @api.multi
+    # def name_get(self):
+    #     if not ids:
+    #         return []
+    #     if isinstance(ids, (long, int)):
+    #         ids = [ids]
+    #     # week number according to ISO 8601 Calendar
+    #     return [(r['id'], _('Week ')+str(datetime.strptime(r['date_from'], '%Y-%m-%d').isocalendar()[1])) \
+    #             for r in self.read(cr, uid, ids, ['date_from'],
+    #                 context=context, load='_classic_write')]
 
     @api.depends('check_in', 'check_out')
     def _get_worked_hours(self):
