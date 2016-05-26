@@ -118,11 +118,9 @@ class StockScrap(models.Model):
     @api.multi
     def button_stock_move(self):
         self.ensure_one()
-        action_rec = self.env.ref('stock.action_move_form2')
-        if action_rec:
-            action = action_rec.read([])[0]
-            action['domain'] = [('id', '=', self.move_id.id)]
-            return action
+        action = self.env.ref('stock.stock_move_action').read([])[0]
+        action['domain'] = [('id', '=', self.move_id.id)]
+        return action
 
     @api.multi
     def button_done(self):
