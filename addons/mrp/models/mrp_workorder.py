@@ -6,6 +6,7 @@ from dateutil.relativedelta import relativedelta
 
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
+from odoo.tools import float_compare
 
 
 class MrpProductionWorkcenterLine(models.Model):
@@ -184,10 +185,9 @@ class MrpProductionWorkcenterLine(models.Model):
         if self.move_raw_ids:
             moves = self.move_raw_ids.filtered(lambda x: (x.state not in ('done', 'cancel')) and (x.product_id.tracking != 'none') and (x.product_id.id != self.product.id))
             for move in moves:
-                # TDE FIXME: well, > 0.00001... is this a joke :) ? use float_compare
                 qty = self.qty_producing / move.bom_line_id.bom_id.product_qty * move.bom_line_id.product_qty
                 if move.product_id.tracking=='serial':
-                    while qty > 0.000001:
+                    while float_compare(qty, 0.0, precision_rounding=move.product_uom.rounding) > 0:
                         move_lot_obj.create({
                             'move_id': move.id,
                             'quantity': min(1,qty),
@@ -377,6 +377,6 @@ class MrpProductionWorkcenterLine(models.Model):
             'res_model': 'stock.scrap',
             'view_id': self.env.ref('stock.stock_scrap_form_view2').id,
             'type': 'ir.actions.act_window',
-            'context': {'product_ids': self.move_raw_ids.mapped('product_id').ids + [self.product.id]},
+            'context': {'product_ids': self.move_raw_ids.filtered(lambda x: x.state not in ('done', 'cancel')).mapped('product_id').ids + [self.product.id]},
             'target': 'new',
         }

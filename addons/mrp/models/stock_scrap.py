@@ -46,7 +46,7 @@ class StockScrap(models.Model):
             rec.update({
                         'production_id': production.id,
                         'origin': production.name,
-                        'location_id': production.location_src_id.id,
+                        'location_id': production.move_raw_ids.filtered(lambda x: x.state not in ('done', 'cancel')) and production.location_src_id.id or production.location_dest_id.id,
                         })
         elif context.get('active_model') == 'mrp.workorder' and context.get('active_id'):
             workorder = self.env['mrp.workorder'].browse(context['active_id'])

@@ -4,7 +4,7 @@
 from odoo import api, fields, models, _
 from odoo.addons import decimal_precision as dp
 from odoo.exceptions import UserError
-
+from odoo.tools import float_compare
 
 class MrpProductProduce(models.TransientModel):
     _name = "mrp.product.produce"
@@ -30,7 +30,7 @@ class MrpProductProduce(models.TransientModel):
                 if not move.move_lot_ids:
                     qty = quantity / move.bom_line_id.bom_id.product_qty * move.bom_line_id.product_qty
                     if move.product_id.tracking == 'serial':
-                        while qty > 0.000001:
+                        while float_compare(qty, 0.0, precision_rounding=move.product_uom.rounding) > 0:
                             lines.append({
                                 'move_id': move.id,
                                 'quantity': min(1,qty),
