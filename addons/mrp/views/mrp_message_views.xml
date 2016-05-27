@@ -70,5 +70,6 @@
     <menuitem id="mrp_message_menu"
           parent="menu_mrp_manufacturing"
           action="mrp_message_action_main"
-          sequence="26"/>
+          sequence="26"
+          groups="group_mrp_routings"/>
 </odoo>
