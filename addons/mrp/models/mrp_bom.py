@@ -52,13 +52,11 @@ class MrpBom(models.Model):
              "plan future loads on work centers based on production planning.")
     ready_to_produce = fields.Selection([
         ('all_available', 'All components available'),
-        ('asap', 'The components of 1st operation')],
-        string='Ready when are available',  # TDE FIXME: I am not able to renglish
+        ('asap', 'The components of 1st operation')], string='Manufacturing Readiness',
         default='asap', required=True)
-    operation_id = fields.Many2one('mrp.routing.workcenter', 'Produced at Operation')
+    operation_id = fields.Many2one('mrp.routing.workcenter', 'Produced at Operation')  # TDE: what is its use ?
     picking_type_id = fields.Many2one(
-        'stock.picking.type', 'Picking Type',
-        domain=[('code', '=', 'mrp_operation')],
+        'stock.picking.type', 'Picking Type', domain=[('code', '=', 'mrp_operation')],
         help="When a procurement has a ‘produce’ route with a picking type set, it will try to create "
              "a Manufacturing Order for that product using a BOM of the same picking type. That allows "
              "to define pull rules for products with different routing (different BOMs)")
