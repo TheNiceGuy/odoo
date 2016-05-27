@@ -37,6 +37,12 @@ class StockScrap(models.Model):
                             'origin': picking.name,
                             'location_id': (picking.state == 'done') and picking.location_dest_id.id,
                             })
+        elif not context.get('active_model'):
+            try:
+                location_id = self.env.ref('stock.stock_location_stock').id
+            except (ValueError):
+                location_id = False
+            rec.update({'location_id': location_id})
         return rec
 
     @api.model
@@ -88,7 +94,7 @@ class StockScrap(models.Model):
         StockMove = self.env['stock.move']
         vals = self._prepare_move()
         move = StockMove.create(vals)
-        domain = [('qty', '>', 0), ('location_id', '=', self.location_id.id), ('lot_id', '=', self.lot_id.id), 
+        domain = [('qty', '>', 0), ('lot_id', '=', self.lot_id.id), 
                   ('package_id', '=', self.package_id.id)]
         preferred_domain_list = self._get_preferred_domain()
         quants = self.env['stock.quant'].quants_get_preferred_domain(move.product_qty, move, domain=domain, preferred_domain_list=preferred_domain_list)
