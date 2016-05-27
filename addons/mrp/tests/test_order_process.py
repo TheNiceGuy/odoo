@@ -75,11 +75,9 @@ class TestOrderProcess(common.TransactionCase):
         for move_line in self.mrp_production_test1.move_raw_ids:
                 self.assertEqual(move_line.date, date_planned, "Planned date does not correspond in 'To consume line'.")
     # I consume raw materials and put one material in scrap location due to waste it.
-        scrap_location_ids = self.env['stock.location'].search([('scrap_location', '=', True)])
-        scrap_location_id = scrap_location_ids[0]
         for move in self.mrp_production_test1.move_raw_ids:
             if move.product_id.id == self.env.ref("product.product_product_6").id:
-                move.action_scrap(5.0, scrap_location_id)
+                self.env['stock.scrap'].with_context(active_model='mrp.production', active_id=self.mrp_production_test1.id).create({'product_id': move.product_id.id, 'scrap_qty': 5.0, 'product_uom_id': move.product_uom.id})
 
         # I check procurements have been generated for every consume line
 
