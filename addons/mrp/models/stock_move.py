@@ -225,6 +225,7 @@ class StockMove(models.Model):
             'show_reserved': show_reserved,
         })
         if ctx.get('w_production'):
+            ctx.update({'default_lot_id': ctx.get('lot_id')})
             action = self.env.ref('mrp.act_mrp_product_produce').read()[0]
             action['context'] = ctx
             return action
