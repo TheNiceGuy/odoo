@@ -42,7 +42,7 @@ class TestSaleMrpFlow(common.TransactionCase):
                 'uom_po_id': uom_id,
                 'route_ids': route_ids})
 
-        def create_bom_lines(bom_id, product_id, qty, uom_id, procure_method): #TODO: remove procure_method
+        def create_bom_lines(bom_id, product_id, qty, uom_id): #TODO: remove procure_method
             self.MrpBomLine.create({
                 'product_id': product_id,
                 'product_qty': qty,
@@ -95,17 +95,17 @@ class TestSaleMrpFlow(common.TransactionCase):
 
         # Bill of materials for Product A.
         bom_a = create_bom(product_a.product_tmpl_id.id, 2, self.uom_dozen.id, 'normal')
-        create_bom_lines(bom_a.id, product_b.id, 3, self.uom_unit.id, 'make_to_order')
-        create_bom_lines(bom_a.id, product_c.id, 300.5, self.uom_gm.id, 'make_to_stock')
-        create_bom_lines(bom_a.id, product_d.id, 4, self.uom_unit.id, 'make_to_order')
+        create_bom_lines(bom_a.id, product_b.id, 3, self.uom_unit.id)
+        create_bom_lines(bom_a.id, product_c.id, 300.5, self.uom_gm.id)
+        create_bom_lines(bom_a.id, product_d.id, 4, self.uom_unit.id)
 
         # Bill of materials for Product B.
         bom_b = create_bom(product_b.product_tmpl_id.id, 1, self.uom_unit.id, 'phantom')
-        create_bom_lines(bom_b.id, product_c.id, 0.400, self.uom_kg.id, 'make_to_stock')
+        create_bom_lines(bom_b.id, product_c.id, 0.400, self.uom_kg.id)
 
         # Bill of materials for Product D.
         bom_d = create_bom(product_d.product_tmpl_id.id, 1, self.uom_unit.id, 'normal')
-        create_bom_lines(bom_d.id, product_c.id, 1, self.uom_kg.id, 'make_to_stock')
+        create_bom_lines(bom_d.id, product_c.id, 1, self.uom_kg.id)
 
         # ----------------------------------------
         # Create sale order of 10 Dozen product A.
@@ -364,17 +364,15 @@ class TestSaleMrpFlow(common.TransactionCase):
         wiz_act = pick.do_new_transfer()
         wiz = self.env[wiz_act['res_model']].browse(wiz_act['res_id'])
         wiz.process()
-
-        self.assertEqual(self.so.invoice_status, 'no', 'Sale MRP: so invoice_status should be "no" after partial delivery of a kit')
+        self.assertEqual(self.so.invoice_status, 'to invoice', 'Sale MRP: so invoice_status should be "no" after partial delivery of a kit')
         del_qty = sum(sol.qty_delivered for sol in self.so.order_line)
-        self.assertEqual(del_qty, 0.0, 'Sale MRP: delivered quantity should be zero after partial delivery of a kit')
+        self.assertEqual(del_qty, 1, 'Sale MRP: delivered quantity should be zero after partial delivery of a kit')
         # deliver remaining products, check the so's invoice_status and delivered quantities
         self.assertEqual(len(self.so.picking_ids), 2, 'Sale MRP: number of pickings should be 2')
         pick_2 = self.so.picking_ids[0]
         pick_2.force_assign()
         pick_2.pack_operation_product_ids.write({'qty_done': 4})
         pick_2.do_new_transfer()
-
         del_qty = sum(sol.qty_delivered for sol in self.so.order_line)
         self.assertEqual(del_qty, 5.0, 'Sale MRP: delivered quantity should be 5.0 after complete delivery of a kit')
         self.assertEqual(self.so.invoice_status, 'to invoice', 'Sale MRP: so invoice_status should be "to invoice" after complete delivery of a kit')

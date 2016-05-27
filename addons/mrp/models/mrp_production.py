@@ -442,7 +442,6 @@ class MrpProduction(models.Model):
             original_quantity = kw['original_quantity']
         else:
             original_quantity = 1.0
-
         data = {
             'name': self.name,
             'date': self.date_planned,
@@ -480,7 +479,7 @@ class MrpProduction(models.Model):
             if pull and (pull.procure_method == 'make_to_order'):
                 move.procure_method = pull.procure_method
             elif not pull:
-                if mto_route and mto_route in [x.id for x in routes]:
+                if mto_route and mto_route.id in [x.id for x in routes]:
                     move.procure_method = 'make_to_order'
 
     @api.multi
