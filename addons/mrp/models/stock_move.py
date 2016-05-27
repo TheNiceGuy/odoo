@@ -13,7 +13,6 @@ class StockMoveLots(models.Model):
     _description = "Quantities to Process by lots"
 
     move_id = fields.Many2one('stock.move', 'Move')
-    workorder_id = fields.Many2one('mrp.workorder', 'Work Order')
     production_id = fields.Many2one('mrp.production', 'Production Order')
     lot_id = fields.Many2one(
         'stock.production.lot', 'Lot',
@@ -25,7 +24,6 @@ class StockMoveLots(models.Model):
     product_id = fields.Many2one(
         'product.product', 'Product',
         readonly=True, related="move_id.product_id", store=True)
-    done_wo = fields.Boolean('Done for Work Order', default=True)  # TDE FIXME: naming
     done_move = fields.Boolean('Move Done', related='move_id.is_done', store=True)  # TDE FIXME: naming
     plus_visible = fields.Boolean("Plus Visible", compute='_compute_plus')
 
@@ -60,10 +58,6 @@ class StockMove(models.Model):
         'mrp.unbuild', 'Unbuild Order')
     consume_unbuild_id = fields.Many2one(
         'mrp.unbuild', 'Consume Unbuild Order')
-    operation_id = fields.Many2one(
-        'mrp.routing.workcenter', 'Operation To Consume')  # TDE FIXME: naming
-    workorder_id = fields.Many2one(
-        'mrp.workorder', 'Work Order To Consume')
     has_tracking = fields.Selection(related='product_id.tracking', string='Product with Tracking')  # TDE FIXME: naming ...
     # Quantities to process, in normalized UoMs
     quantity_available = fields.Float(
@@ -127,7 +121,7 @@ class StockMove(models.Model):
         lots = self.env['stock.move.lots']
         uom_obj = self.env['product.uom']
         for move in self:
-            unlink_move_lots = move.move_lot_ids.filtered(lambda x : (x.quantity_done == 0) and not x.workorder_id)
+            unlink_move_lots = move.move_lot_ids.filtered(lambda x : (x.quantity_done == 0))
             unlink_move_lots.unlink()
             group_new_quant = {}
             old_move_lot = {}
@@ -152,7 +146,7 @@ class StockMove(models.Model):
                     vals = {
                         'move_id': move.id,
                         'product_id': move.product_id.id,
-                        'workorder_id': move.workorder_id.id,
+                        # 'workorder_id': move.workorder_id.id,
                         'production_id': move.raw_material_production_id.id,
                         'quantity': quantity,
                         'lot_id': key,

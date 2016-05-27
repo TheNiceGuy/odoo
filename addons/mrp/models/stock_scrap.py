@@ -9,8 +9,6 @@ class StockScrap(models.Model):
 
     production_id = fields.Many2one('mrp.production', 'Manufacturing Order', 
                                     states={'done': [('readonly', True)]})
-    workorder_id = fields.Many2one('mrp.workorder', 
-                                   states={'done': [('readonly', True)]}) #Not to restrict/prefer quants, but informative
 
     def _prepare_move(self):
         self.ensure_one()
@@ -52,7 +50,7 @@ class StockScrap(models.Model):
             workorder = self.env['mrp.workorder'].browse(context['active_id'])
             rec.update({
                         'production_id': workorder.production_id.id,
-                        'workorder_id': workorder.id,
+                        # 'workorder_id': workorder.id,
                         'origin': workorder.production_id.name,
                         'location_id': workorder.production_id.location_src_id.id,
                         })
