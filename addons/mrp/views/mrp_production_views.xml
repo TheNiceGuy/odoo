@@ -574,12 +574,26 @@
             </field>
         </record>
 
-        <!-- <menuitem action="mrp.mrp_production_action_planning"
-                id="menu_mrp_production_order_action" name="Order Planning"
-                parent="menu_mrp_planning" sequence="1"/> -->
-
-
-
+        <record id="mrp_production_action_waiting" model="ir.actions.act_window">
+            <field name="name">Waiting Availability MO</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">mrp.production</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form,calendar,pivot,graph</field>
+            <field name="domain">[('availability', 'in', ('waiting', 'partially_available'))]</field>
+            <field name="help" type="html">
+              <p class="oe_view_nocontent_create">
+                Click to start a new manufacturing order.
+              </p><p>
+                A manufacturing order, based on a bill of materials, will
+                consume raw materials and produce finished products.
+              </p><p>
+                Manufacturing orders are usually proposed automatically based
+                on customer requirements or automated rules like the minimum
+                stock rule.
+              </p>
+            </field>
+        </record>
 
     <record model="ir.ui.view" id="mrp_production_workcenter_tree_view_inherit">
         <field name="name">mrp.production.work.order.tree</field>
