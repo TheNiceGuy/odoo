@@ -18,7 +18,6 @@ from odoo.release import version_info
 from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT
 
 FIELD_STATES = [('clear', 'Clear'), ('anonymized', 'Anonymized'), ('not_existing', 'Not Existing'), ('new', 'New')]
-ANONYMIZATION_STATES = FIELD_STATES + [('unstable', 'Unstable')]
 WIZARD_ANONYMIZATION_STATES = [('clear', 'Clear'), ('anonymized', 'Anonymized'), ('unstable', 'Unstable')]
 ANONYMIZATION_HISTORY_STATE = [('started', 'Started'), ('done', 'Done'), ('in_exception', 'Exception occured')]
 ANONYMIZATION_DIRECTION = [('clear -> anonymized', 'clear -> anonymized'), ('anonymized -> clear', 'anonymized -> clear')]
@@ -456,16 +455,6 @@ class IrModelFieldsAnonymizeWizard(models.TransientModel):
                 'context': {'step': 'just_desanonymized'},
                 'target': 'new'
             }
-
-    def _id_get(self, cr, uid, model, id_str, mod):
-        if '.' in id_str:
-            mod, id_str = id_str.split('.')
-        try:
-            idn = self.pool.get('ir.model.data')._get_id(cr, uid, mod, id_str)
-            res = int(self.pool.get('ir.model.data').read(cr, uid, [idn], ['res_id'])[0]['res_id'])
-        except:
-            res = None
-        return res
 
 
 class IrModelFieldsAnonymizationMigrationFix(models.Model):
