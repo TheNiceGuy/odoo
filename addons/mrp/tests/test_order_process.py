@@ -79,7 +79,8 @@ class TestOrderProcess(common.TransactionCase):
         scrap_location_id = scrap_location_ids[0]
         for move in self.mrp_production_test1.move_raw_ids:
             if move.product_id.id == self.env.ref("product.product_product_6").id:
-                move.action_scrap(5.0, scrap_location_id)
+                scrap = self.env['stock.scrap'].create({'product_id': move.product_id.id, 'scrap_qty': 5.0, 'product_uom_id': move.product_uom.id, 'location_id': move.location_dest_id.id, 'scrap_location_id': scrap_location_id.id})
+                scrap.do_scrap()
 
         # I check procurements have been generated for every consume line
 
