@@ -44,4 +44,5 @@ class TestMrpCommon(common2.TestStockCommon):
             'product_id': cls.product_1.id,
             'product_qty': 1.0,
             'bom_id': cls.bom_1.id,
+            'product_uom_id': cls.product_1.uom_id.id,
         })

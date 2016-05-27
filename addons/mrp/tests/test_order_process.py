@@ -36,6 +36,7 @@ class TestOrderProcess(common.TransactionCase):
         self.mrp_production_test1 = self.env['mrp.production'].sudo(self.res_users_mrp_user.id).create({
             'product_id': self.env.ref('product.product_product_3').id,
             'product_qty': 5.0,
+            'product_uom_id': self.env.ref('product.product_product_3').uom_id.id, 
             'location_src_id': self.env.ref('stock.stock_location_14').id,
             'location_dest_id': self.env.ref('stock.stock_location_output').id,
             'bom_id': self.env.ref('mrp.mrp_bom_kit').id,
@@ -74,7 +75,7 @@ class TestOrderProcess(common.TransactionCase):
         date_planned = self.mrp_production_test1.date_planned
         for move_line in self.mrp_production_test1.move_raw_ids:
                 self.assertEqual(move_line.date, date_planned, "Planned date does not correspond in 'To consume line'.")
-    # I consume raw materials and put one material in scrap location due to waste it.
+        # I consume raw materials and put one material in scrap location due to waste it.
         for move in self.mrp_production_test1.move_raw_ids:
             if move.product_id.id == self.env.ref("product.product_product_6").id:
                 self.env['stock.scrap'].with_context(active_model='mrp.production', active_id=self.mrp_production_test1.id).create({'product_id': move.product_id.id, 'scrap_qty': 5.0, 'product_uom_id': move.product_uom.id})
