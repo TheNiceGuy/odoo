@@ -64,14 +64,14 @@ class HrTimesheetSheet(models.Model):
             new_user_id = self.env['hr.employee'].browse(vals['employee_id']).user_id.id
             if not new_user_id:
                 raise UserError(_('In order to create a timesheet for this employee, you must link him/her to a user.'))
-            if not self._sheet_date(forced_user_id=new_user_id):
-                raise UserError(_('You cannot have 2 timesheets that overlap!\nYou should use the menu \'My Timesheet\' to avoid this problem.'))
+            self._check_sheet_date(forced_user_id=new_user_id)
             # ??? I don't see a product_id field defined to hr.employee anywhere. (and why would it be used for?)
             # if not self.env['hr.employee'].browse(vals['employee_id']).product_id:
             #     raise UserError(_('In order to create a timesheet for this employee, you must link the employee to a product.'))
             #   No more need to sort.
         return super(HrTimesheetSheet, self).write(vals)
 
+    @api.multi
     def button_confirm(self):
         for sheet in self:
             if sheet.employee_id and sheet.employee_id.parent_id and sheet.employee_id.parent_id.user_id:
@@ -161,16 +161,16 @@ class HrTimesheetSheet(models.Model):
     # attendance_count = fields.Integer(compute='_count_attendances', string="Attendances")
 
     @api.constrains('date_to', 'date_from', 'employee_id')
-    def _sheet_date(self):
+    def _check_sheet_date(self, forced_user_id=False):
         for sheet in self:
-            new_user_id = sheet.user_id and sheet.user_id.id
+            new_user_id = forced_user_id or sheet.user_id and sheet.user_id.id
             if new_user_id:
                 self.env.cr.execute('SELECT id \
                     FROM hr_timesheet_sheet_sheet \
                     WHERE (date_from <= %s and %s <= date_to) \
                         AND user_id=%s \
                         AND id <> %s', (sheet.date_to, sheet.date_from, new_user_id, sheet.id))
-                if not self.env.cr.fetchall():
+                if any(self.env.cr.fetchall()):
                     raise ValidationError('You cannot have 2 timesheets that overlap!\nPlease use the menu \'My Current Timesheet\' to avoid this problem.')
 
     @api.multi
@@ -205,8 +205,6 @@ class HrTimesheetSheet(models.Model):
     @api.multi
     @api.onchange('employee_id')
     def onchange_employee_id(self, employee_id):
-        print "  ok %d" %employee_id + "\n" 
-        print self
         employee = self.env['hr.employee'].browse(employee_id)
         for sheet in self:
             if employee_id:
@@ -232,7 +230,7 @@ class HrTimesheetSheet(models.Model):
         empids = self.env['hr.employee'].search([('parent_id.user_id', '=', self.env.uid)])
         if not empids:
             return False
-        return ['&', ('state', '=', 'confirm'), ('employee_id', 'in', empids)]
+        return ['&', ('state', '=', 'confirm'), ('employee_id', 'in', empids.ids)]
 
 # hr_timesheet_sheet_sheet_day Won't be needed as dependancy towards hr_attendance will be removed
 

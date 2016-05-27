@@ -141,22 +141,22 @@ class hr_employee(models.Model):
         for employee in self:
             if employee.barcode:
                 if len(employee.barcode) != 13:
-                    raise exceptions.ValidationError(_("The Badge ID must be a sequence of 13 cyphers."))
+                    raise exceptions.ValidationError(_("The Badge ID must be a sequence of 13 digits."))
                 try:
                     int(employee.barcode)
                 except ValueError:
-                    raise exceptions.ValidationError(_("The Badge ID must be a sequence of 13 cyphers."))
+                    raise exceptions.ValidationError(_("The Badge ID must be a sequence of 13 digits."))
 
     @api.constrains('pin')
     def _verify_pin(self):
         for employee in self:
             if employee.pin:
                 if len(employee.pin) != 4:
-                    raise exceptions.ValidationError(_("The PIN must be a sequence of 4 cyphers."))
+                    raise exceptions.ValidationError(_("The PIN must be a sequence of 4 digits."))
                 try:
                     int(employee.pin)
                 except ValueError:
-                    raise exceptions.ValidationError(_("The PIN must be a sequence of 4 cyphers."))
+                    raise exceptions.ValidationError(_("The PIN must be a sequence of 4 digits."))
 
     @api.depends('attendance_ids.check_in', 'attendance_ids.check_out')
     def _get_last_check(self):
