@@ -140,10 +140,10 @@ class MrpUnbuild(models.Model):
         #Search quants that passed production order
         consume_move = self.consume_line_ids[0]
         domain = [('qty', '>', 0)]
+        qty = self.product_qty # Convert to qty on product UoM
         if self.mo_id:
             main_finished_moves = self.mo_id.move_finished_ids.filtered(lambda x: x.product_id.id == self.mo_id.product_id.id)
             domain = [('qty', '>', 0), ('history_ids', 'in', [x.id for x in main_finished_moves])]
-            qty = self.product_qty # Convert to qty on product UoM
             quants = self.env['stock.quant'].quants_get_preferred_domain(qty, consume_move, domain=domain, 
                                                                          preferred_domain_list=[], lot_id=self.lot_id.id)
         else:
