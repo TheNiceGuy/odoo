@@ -1017,7 +1017,7 @@ class Picking(models.Model):
         }
 
     @api.multi
-    def action_see_move_scrap(self):
+    def button_view_scraps(self):
         self.ensure_one()
         action = self.env.ref('stock.action_stock_scrap').read()[0]
         scraps = self.env['stock.scrap'].search([('picking_id', '=', self.id)])

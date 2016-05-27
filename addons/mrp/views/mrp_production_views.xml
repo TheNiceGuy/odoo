@@ -307,7 +307,7 @@
                             </div>
                         </button>
                         <button name="%(action_mrp_production_moves)d" type="action" string="Inventory Moves" class="oe_stat_button" icon="fa-arrows-v" attrs="{'invisible': [('state', 'not in', ('progress', 'done'))]}"/>
-                        <button class="oe_stat_button" name="action_see_move_scrap" string="Scraps" type="object" icon="fa-arrows-v" attrs="{'invisible': [('has_scrap_move', '=', False)]}"/>
+                        <button class="oe_stat_button" name="button_view_scraps" string="Scraps" type="object" icon="fa-arrows-v" attrs="{'invisible': [('has_scrap_move', '=', False)]}"/>
                         <field name="workorder_ids" invisible="1"/>
                     </div>
                     <div class="oe_title">
@@ -342,7 +342,6 @@
                             <field name="user_id" attrs="{'readonly': [('has_moves', '=', True)]}"/>
                             <field name="origin" attrs="{'readonly': [('has_moves', '=', True)]}"/>
                             <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}" attrs="{'readonly': [('has_moves', '=', True)]}"/>
-                            <field name="move_prod_id" attrs="{'readonly': [('has_moves', '=', True)]}"/>
                         </group>
                     </group>
                     <notebook>
