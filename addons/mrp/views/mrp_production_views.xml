@@ -122,7 +122,7 @@
                     <field name="oee_target"/>
                     <templates>
                         <t t-name="kanban-box">
-                            <div t-attf-class="#{kanban_color(record.color.raw_value)}" style="min-width: 400px;">
+                            <div t-attf-class="#{kanban_color(record.color.raw_value)}">
                                 <div class="o_kanban_card_header">
                                     <div class="o_kanban_card_header_title">
                                         <div class="o_primary"><field name="name"/></div>
