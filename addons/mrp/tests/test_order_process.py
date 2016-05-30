@@ -115,7 +115,6 @@ class TestOrderProcess(common.TransactionCase):
         self.env['procurement.order'].run_scheduler()
 
         # The production order is Waiting Goods, will force production which should set consume lines as available
-        self.mrp_production_test1.button_plan()
         # I check that production order in ready state after forcing production.
 
         #self.assertEqual(self.mrp_production_test1.availability, 'assigned', 'Production order availability should be set as available')
