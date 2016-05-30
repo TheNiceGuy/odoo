@@ -76,13 +76,13 @@ class MrpProduction(models.Model):
     location_src_id = fields.Many2one(
         'stock.location', 'Raw Materials Location',
         default=_get_default_location_src_id,
-        readonly=True,  required=True,  # TDE FIXME: not required anymore ?
+        readonly=True,  required=True,
         states={'confirmed': [('readonly', False)]},
         help="Location where the system will look for components.")
     location_dest_id = fields.Many2one(
         'stock.location', 'Finished Products Location',
         default=_get_default_location_dest_id,
-        readonly=True,  required=True,  # TDE FIXME: not required anymore ?
+        readonly=True,  required=True,
         states={'confirmed': [('readonly', False)]},
         help="Location where the system will stock the finished products.")
     date_planned = fields.Datetime(
@@ -124,14 +124,14 @@ class MrpProduction(models.Model):
         ('progress', 'In Progress'),
         ('done', 'Done'),
         ('cancel', 'Cancelled')], string='State',
-        copy=False, default='confirmed')  # TDE FIXME: no more track visibility ?
+        copy=False, default='confirmed',
+        track_visibility='onchange')  # TDE FIXME: no more track visibility ?
     availability = fields.Selection([
         ('assigned', 'Available'),
         ('partially_available', 'Partially Available'),
         ('none', 'None'),
         ('waiting', 'Waiting')], string='Availability',
-        compute='_compute_availability', store=True,
-        default="none")  # TDE FIXME: default + store ? weird
+        compute='_compute_availability', store=True,)
 
     post_visible = fields.Boolean(
         'Inventory Post Visible', compute='_compute_post_visible',
@@ -140,7 +140,8 @@ class MrpProduction(models.Model):
     user_id = fields.Many2one('res.users', 'Responsible', default=lambda self: self._uid)
     company_id = fields.Many2one(
         'res.company', 'Company',
-        default=lambda self: self.env['res.company']._company_default_get('mrp.production'))  # TDE FIXME: no more required ?
+        default=lambda self: self.env['res.company']._company_default_get('mrp.production'),
+        required=True)
 
     check_to_done = fields.Boolean(compute="_get_produced_qty", string="Check Produced Qty")
     qty_produced = fields.Float(compute="_get_produced_qty", string="Quantity Produced")
@@ -233,11 +234,10 @@ class MrpProduction(models.Model):
     @api.onchange('product_id', 'picking_type_id', 'company_id')
     def onchange_product_id(self):
         """ Finds UoM of changed product. """
-        # TDE FIXME: check for company_id
         if not self.product_id:
             self.bom_id = False
         else:
-            bom = self.env['mrp.bom']._bom_find(product=self.product_id, picking_type=self.picking_type_id)
+            bom = self.env['mrp.bom']._bom_find(product=self.product_id, picking_type=self.picking_type_id, company_id=self.company_id.id)
             self.bom_id = bom.id
             self.product_uom_id = self.product_id.uom_id.id
             return {'domain': {'product_uom_id': [('category_id', '=', self.product_id.uom_id.category_id.id)]}}
