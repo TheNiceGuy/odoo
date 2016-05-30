@@ -33,7 +33,6 @@ class Production(models.Model):
                     'product_uom': sub_product.product_uom_id.id,
                     'location_id': source,
                     'location_dest_id': production.location_dest_id.id,
-                    'move_dest_id': production.move_prod_id.id,
                     'production_id': production.id,
                     'origin': production.name,
                     'unit_factor': qty1 / production.product_qty,

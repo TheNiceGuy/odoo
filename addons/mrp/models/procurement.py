@@ -79,7 +79,6 @@ class ProcurementOrder(models.Model):
             'procurement_group_id': self.group_id.id,
             'propagate': self.rule_id.propagate,
             'picking_type_id': self.rule_id.picking_type_id.id or self.warehouse_id.manu_type_id.id,
-            'move_prod_id': self.move_dest_id.id,
             'company_id': self.company_id.id,
         }
 
