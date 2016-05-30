@@ -160,7 +160,7 @@ class TestWorkOrderProcess(common.TransactionCase):
         # Check finished quants with consumed quant.
         # ------------------------------------------
 
-        self.assertEqual(finished_quant.consumed_quant_ids.ids, consume_quants.ids, "Wrong consume quants on produce quants")
+        self.assertEqual(set(finished_quant.consumed_quant_ids.ids), set(consume_quants.ids), "Wrong consume quants on produce quants")
 
     def test_01_without_workorder(self):
         """ Testing consume quants and produced quants without workorder """
