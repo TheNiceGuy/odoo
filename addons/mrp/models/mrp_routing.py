@@ -75,6 +75,10 @@ class MrpRoutingWorkcenter(models.Model):
         default='no', required=True)
     batch_size = fields.Float('Quantity to Process', default=1.0)
 
+    _sql_constraints = [
+        ('name_routing_uniq', 'unique (name, routing_id, workcenter_id)', 'Operation on routing must be unique by workcenter.'),
+    ]
+
     @api.multi
     def _get_time_cycle(self):
         # TDE CLEANME
