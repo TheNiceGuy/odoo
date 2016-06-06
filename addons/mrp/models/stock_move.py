@@ -165,6 +165,14 @@ class StockMove(models.Model):
         return True
 
     @api.multi
+    def action_done(self):
+        if self.mapped('raw_material_production_id') or self.mapped('production_id'):
+            res = self.move_validate()
+        else:
+            res = super(StockMove, self).action_done()
+        return res
+
+    @api.multi
     def move_validate(self):
         ''' Validate moves based on a production order. '''
         moves = self._filter_closed_moves()
