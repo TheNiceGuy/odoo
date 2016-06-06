@@ -361,7 +361,7 @@ class AccountMoveLine(models.Model):
     move_id = fields.Many2one('account.move', string='Journal Entry', ondelete="cascade",
         help="The move of this entry line.", index=True, required=True, auto_join=True)
     narration = fields.Text(related='move_id.narration', string='Internal Note')
-    ref = fields.Char(related='move_id.ref', string='Partner Reference', store=True, copy=False)
+    ref = fields.Char(related='move_id.ref', string='Partner Reference', store=True, copy=False, inverse_on_create=False)
     payment_id = fields.Many2one('account.payment', string="Originator Payment", help="Payment that created this entry")
     statement_id = fields.Many2one('account.bank.statement', string='Statement',
         help="The bank statement used for bank reconciliation", index=True, copy=False)
@@ -371,12 +371,13 @@ class AccountMoveLine(models.Model):
     matched_credit_ids = fields.One2many('account.partial.reconcile', 'debit_move_id', String='Matched Credits',
         help='Credit journal items that are matched with this journal item.')
     journal_id = fields.Many2one('account.journal', related='move_id.journal_id', string='Journal',
-        default=_get_journal, required=True, index=True, store=True, copy=False)
+        default=_get_journal, required=True, index=True, store=True, copy=False, inverse_on_create=False)
     blocked = fields.Boolean(string='No Follow-up', default=False,
         help="You can check this box to mark this journal item as a litigation with the associated partner")
     date_maturity = fields.Date(string='Due date', index=True, required=True,
         help="This field is used for payable and receivable journal entries. You can put the limit date for the payment of this line.")
-    date = fields.Date(related='move_id.date', string='Date', required=True, index=True, default=fields.Date.context_today, store=True, copy=False)
+    date = fields.Date(related='move_id.date', string='Date', required=True, index=True,
+        default=fields.Date.context_today, store=True, copy=False, inverse_on_create=False)
     analytic_line_ids = fields.One2many('account.analytic.line', 'move_id', string='Analytic lines', oldname="analytic_lines")
     tax_ids = fields.Many2many('account.tax', string='Taxes')
     tax_line_id = fields.Many2one('account.tax', string='Originator tax', ondelete='restrict')

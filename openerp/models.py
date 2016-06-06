@@ -4139,7 +4139,7 @@ class BaseModel(object):
             if field:
                 if field.column or field.inherited:
                     old_vals[key] = val
-                if field.inverse and not field.inherited:
+                if field.inverse and not field.inherited and getattr(field, 'inverse_on_create', True):
                     new_vals[key] = val
             else:
                 unknown.append(key)
