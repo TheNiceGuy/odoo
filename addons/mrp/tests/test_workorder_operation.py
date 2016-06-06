@@ -6,41 +6,8 @@ class TestWorkOrderProcess(common.TransactionCase):
 
     def setUp(self):
         super(TestWorkOrderProcess, self).setUp()
-        self.MrpProductProduce = self.env['mrp.product.produce']
-        self.Product = self.env['product.product']
-        self.Lot = self.env['stock.production.lot']
-        self.StockMoveLot = self.env['stock.move.lots']
-        self.MrpBom = self.env['mrp.bom']
-        self.MrpBomLine = self.env['mrp.bom.line']
-        self.Inventory = self.env['stock.inventory']
-        self.InventoryLine = self.env['stock.inventory.line']
         self.source_location_id = self.ref('stock.stock_location_14')
         self.warehouse = self.env.ref('stock.warehouse0')
-
-    def create_product(self, name, uom_id, route_ids=None):
-        return self.Product.create({
-            'name': name,
-            'type': 'product',
-            'tracking': 'lot',
-            'uom_id': uom_id,
-            'uom_po_id': uom_id,
-            'route_ids': route_ids})
-
-    def create_bom_lines(self, bom_id, product_id, qty, uom_id):
-        self.MrpBomLine.create({
-            'product_id': product_id,
-            'product_qty': qty,
-            'bom_id': bom_id,
-            'product_uom_id': uom_id})
-
-    def create_inventory_line(self, inventory, product, qty, lot_id=False):
-        self.InventoryLine.create({
-            'inventory_id': inventory.id,
-            'product_id': product.id,
-            'product_uom_id': product.uom_id.id,
-            'product_qty': qty,
-            'prod_lot_id': lot_id,
-            'location_id': self.source_location_id})
 
     def test_00_workorder_process(self):
         """ Testing consume quants and produced quants with workorder """
@@ -53,7 +20,8 @@ class TestWorkOrderProcess(common.TransactionCase):
             'product_id': dining_table.id,
             'product_qty': 1.0,
             'product_uom_id': dining_table.uom_id.id,
-            'bom_id': self.ref("mrp.mrp_bom_desk")})
+            'bom_id': self.ref("mrp.mrp_bom_desk")
+        })
 
         # Set tracking lot on finish and consume products.
         dining_table.tracking = 'lot'
@@ -62,20 +30,35 @@ class TestWorkOrderProcess(common.TransactionCase):
         product_bolt.tracking = "lot"
 
         # Initial inventory of product sheet, lags and bolt
-        lot_sheet = self.Lot.create({'product_id': product_table_sheet.id})
-        lot_leg = self.Lot.create({'product_id': product_table_leg.id})
-        lot_bolt = self.Lot.create({'product_id': product_bolt.id})
+        lot_sheet = self.env['stock.production.lot'].create({'product_id': product_table_sheet.id})
+        lot_leg = self.env['stock.production.lot'].create({'product_id': product_table_leg.id})
+        lot_bolt = self.env['stock.production.lot'].create({'product_id': product_bolt.id})
 
         # Initialize inventory
         # --------------------
-        inventory = self.Inventory.create({
+        inventory = self.env['stock.inventory'].create({
             'name': 'Inventory Product Table',
-            'filter': 'partial'})
-        inventory.prepare_inventory()
-        self.assertFalse(inventory.line_ids, "Inventory line should not created.")
-        self.create_inventory_line(inventory, product_table_sheet, 20, lot_sheet.id)
-        self.create_inventory_line(inventory, product_table_leg, 20, lot_leg.id)
-        self.create_inventory_line(inventory, product_bolt, 20, lot_bolt.id)
+            'filter': 'partial',
+            'line_ids': [(0, 0, {
+                'product_id': product_table_sheet.id,
+                'product_uom_id': product_table_sheet.uom_id.id,
+                'product_qty': 20,
+                'prod_lot_id': lot_sheet.id,
+                'location_id': self.source_location_id
+            }), (0, 0, {
+                'product_id': product_table_leg.id,
+                'product_uom_id': product_table_leg.uom_id.id,
+                'product_qty': 20,
+                'prod_lot_id': lot_leg.id,
+                'location_id': self.source_location_id
+            }), (0, 0, {
+                'product_id': product_bolt.id,
+                'product_uom_id': product_bolt.uom_id.id,
+                'product_qty': 20,
+                'prod_lot_id': lot_bolt.id,
+                'location_id': self.source_location_id
+            })]
+        })
         inventory.action_done()
 
         # Create work order
@@ -170,17 +153,35 @@ class TestWorkOrderProcess(common.TransactionCase):
 
         # Create new product charger and keybord
         # --------------------------------------
-        product_charger = self.create_product('Charger', unit)
-        product_keybord = self.create_product('Usb Keybord', unit)
+        product_charger = self.env['product.product'].create({
+            'name': 'Charger',
+            'type': 'product',
+            'tracking': 'lot',
+            'uom_id': unit,
+            'uom_po_id': unit})
+        product_keybord = self.env['product.product'].create({
+            'name': 'Usb Keybord',
+            'type': 'product',
+            'tracking': 'lot',
+            'uom_id': unit,
+            'uom_po_id': unit})
 
         # Create bill of material for customized laptop.
 
-        bom_custom_laptop = self.MrpBom.create({
-                'product_tmpl_id': custom_laptop.product_tmpl_id.id,
-                'product_qty': 10,
-                'product_uom_id': unit})
-        self.create_bom_lines(bom_custom_laptop.id, product_charger.id, 20, unit)
-        self.create_bom_lines(bom_custom_laptop.id, product_keybord.id, 20, unit)
+        bom_custom_laptop = self.env['mrp.bom'].create({
+            'product_tmpl_id': custom_laptop.product_tmpl_id.id,
+            'product_qty': 10,
+            'product_uom_id': unit,
+            'bom_line_ids': [(0, 0, {
+                'product_id': product_charger.id,
+                'product_qty': 20,
+                'product_uom_id': unit
+            }), (0, 0, {
+                'product_id': product_keybord.id,
+                'product_qty': 20,
+                'product_uom_id': unit
+            })]
+        })
 
         # Create production order for customize laptop.
 
@@ -195,24 +196,35 @@ class TestWorkOrderProcess(common.TransactionCase):
 
         # Check production order status of availablity
 
-        self.assertEqual(mo_custom_laptop.availability, 'waiting', "Production order should be in waiting state.")
+        self.assertEqual(mo_custom_laptop.availability, 'waiting')
 
         # --------------------------------------------------
         # Set inventory for rawmaterial charger and keybord
         # --------------------------------------------------
 
-        lot_charger = self.Lot.create({'product_id': product_charger.id})
-        lot_keybord = self.Lot.create({'product_id': product_keybord.id})
+        lot_charger = self.env['stock.production.lot'].create({'product_id': product_charger.id})
+        lot_keybord = self.env['stock.production.lot'].create({'product_id': product_keybord.id})
 
         # Initialize Inventory
         # --------------------
-        inventory = self.Inventory.create({
+        inventory = self.env['stock.inventory'].create({
             'name': 'Inventory Product Table',
-            'filter': 'partial'})
-        inventory.prepare_inventory()
-        self.assertFalse(inventory.line_ids, "Inventory line should not created.")
-        self.create_inventory_line(inventory, product_charger, 20, lot_charger.id)
-        self.create_inventory_line(inventory, product_keybord, 20, lot_keybord.id)
+            'filter': 'partial',
+            'line_ids': [(0, 0, {
+                'product_id': product_charger.id,
+                'product_uom_id': product_charger.uom_id.id,
+                'product_qty': 20,
+                'prod_lot_id': lot_charger.id,
+                'location_id': self.source_location_id
+            }), (0, 0, {
+                'product_id': product_keybord.id,
+                'product_uom_id': product_keybord.uom_id.id,
+                'product_qty': 20,
+                'prod_lot_id': lot_keybord.id,
+                'location_id': self.source_location_id
+            })]
+        })
+        # inventory.prepare_inventory()
         inventory.action_done()
 
         # Check consumed move status
@@ -231,8 +243,8 @@ class TestWorkOrderProcess(common.TransactionCase):
         # Produce 6 Unit of custom laptop will consume ( 12 Unit of keybord and 12 Unit of charger)
 
         context = {"active_ids": [mo_custom_laptop.id], "active_id": mo_custom_laptop.id}
-        product_consume = self.MrpProductProduce.with_context(context).create({'product_qty': 6.00})
-        laptop_lot_001 = self.Lot.create({'product_id': custom_laptop.id})
+        product_consume = self.env['mrp.product.produce'].with_context(context).create({'product_qty': 6.00})
+        laptop_lot_001 = self.env['stock.production.lot'].create({'product_id': custom_laptop.id})
         product_consume.lot_id = laptop_lot_001.id
         product_consume.consume_line_ids.write({'quantity_done': 12})
         product_consume.do_produce()
@@ -256,8 +268,8 @@ class TestWorkOrderProcess(common.TransactionCase):
 
         # Produce 4 Unit of custom laptop will consume ( 8 Unit of keybord and 8 Unit of charger).
         context = {"active_ids": [mo_custom_laptop.id], "active_id": mo_custom_laptop.id}
-        product_consume = self.MrpProductProduce.with_context(context).create({'product_qty': 4.00})
-        laptop_lot_002 = self.Lot.create({'product_id': custom_laptop.id})
+        product_consume = self.env['mrp.product.produce'].with_context(context).create({'product_qty': 4.00})
+        laptop_lot_002 = self.env['stock.production.lot'].create({'product_id': custom_laptop.id})
         product_consume.lot_id = laptop_lot_002.id
         self.assertEquals(len(product_consume.consume_line_ids), 2, "Wrong lots linked with move.")
         product_consume.consume_line_ids.write({'quantity_done': 8})
@@ -321,9 +333,25 @@ class TestWorkOrderProcess(common.TransactionCase):
         kg = self.ref("product.product_uom_kgm")
         gm = self.ref("product.product_uom_gram")
         # Create Product A, B, C
-        product_A =  self.create_product('Product A', dozen, [(6, 0, [route_manufacture, route_mto])])
-        product_B =  self.create_product('Product B', dozen)
-        product_C =  self.create_product('Product C', kg)
+        product_A =  self.env['product.product'].create({
+            'name': 'Product A',
+            'type': 'product',
+            'tracking': 'lot',
+            'uom_id': dozen,
+            'uom_po_id': dozen,
+            'route_ids': [(6, 0, [route_manufacture, route_mto])]})
+        product_B =  self.env['product.product'].create({
+            'name': 'Product B',
+            'type': 'product',
+            'tracking': 'lot',
+            'uom_id': dozen,
+            'uom_po_id': dozen})
+        product_C =  self.env['product.product'].create({
+            'name': 'Product C',
+            'type': 'product',
+            'tracking': 'lot',
+            'uom_id': kg,
+            'uom_po_id': kg})
 
         # Bill of materials
         # -----------------
@@ -334,13 +362,20 @@ class TestWorkOrderProcess(common.TransactionCase):
         #     Product C 600 gram
         # -----------------------------------
 
-        bom_a = self.MrpBom.create({
-                'product_tmpl_id': product_A.product_tmpl_id.id,
-                'product_qty': 2,
-                'product_uom_id': unit})
-        self.create_bom_lines(bom_a.id, product_B.id, 4, unit)
-        self.create_bom_lines(bom_a.id, product_C.id, 600, gm)
-        #create_bom_lines(bom_a.id, product_d.id, 4, self.uom_unit.id, 'make_to_order')
+        bom_a = self.env['mrp.bom'].create({
+            'product_tmpl_id': product_A.product_tmpl_id.id,
+            'product_qty': 2,
+            'product_uom_id': unit,
+            'bom_line_ids': [(0, 0, {
+                'product_id': product_B.id,
+                'product_qty': 4,
+                'product_uom_id': unit
+            }), (0, 0, {
+                'product_id': product_C.id,
+                'product_qty': 600,
+                'product_uom_id': gm
+            })]
+        })
 
         # Create production order with product A 10 Unit.
         # -----------------------------------------------
@@ -362,19 +397,30 @@ class TestWorkOrderProcess(common.TransactionCase):
 
         # Lot create for product B and product C
         # ---------------------------------------
-        lot_a = self.Lot.create({'product_id': product_A.id})
-        lot_b = self.Lot.create({'product_id': product_B.id})
-        lot_c = self.Lot.create({'product_id': product_C.id})
+        lot_a = self.env['stock.production.lot'].create({'product_id': product_A.id})
+        lot_b = self.env['stock.production.lot'].create({'product_id': product_B.id})
+        lot_c = self.env['stock.production.lot'].create({'product_id': product_C.id})
 
         # Inventory Update
         # ----------------
-        inventory = self.Inventory.create({
+        inventory = self.env['stock.inventory'].create({
             'name': 'Inventory Product B and C',
-            'filter': 'partial'})
-        inventory.prepare_inventory()
-        self.assertFalse(inventory.line_ids, "Inventory line should not created.")
-        self.create_inventory_line(inventory, product_B, 3, lot_b.id)
-        self.create_inventory_line(inventory, product_C, 3, lot_c.id)
+            'filter': 'partial',
+            'line_ids': [(0, 0, {
+                'product_id': product_B.id,
+                'product_uom_id': product_B.uom_id.id,
+                'product_qty': 3,
+                'prod_lot_id': lot_b.id,
+                'location_id': self.source_location_id
+            }), (0, 0, {
+                'product_id': product_C.id,
+                'product_uom_id': product_C.uom_id.id,
+                'product_qty': 3,
+                'prod_lot_id': lot_c.id,
+                'location_id': self.source_location_id
+            })]
+        })
+        # inventory.prepare_inventory()
         inventory.action_done()
 
         # Start Production ...
@@ -382,8 +428,8 @@ class TestWorkOrderProcess(common.TransactionCase):
 
         mo_custom_product.action_assign()
         context = {"active_ids": [mo_custom_product.id], "active_id": mo_custom_product.id}
-        product_consume = self.MrpProductProduce.with_context(context).create({'product_qty': 10})
-        # laptop_lot_002 = self.Lot.create({'product_id': custom_laptop.id})
+        product_consume = self.env['mrp.product.produce'].with_context(context).create({'product_qty': 10})
+        # laptop_lot_002 = self.env['stock.production.lot'].create({'product_id': custom_laptop.id})
         product_consume.lot_id = lot_a.id
         self.assertEquals(len(product_consume.consume_line_ids), 2, "Wrong move lot linked to produce wizard.")
         product_consume.consume_line_ids.filtered(lambda x : x.product_id == product_C).write({'quantity_done': 3000})
