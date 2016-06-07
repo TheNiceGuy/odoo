@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="hr_attendance_pin_pad_view_form" model="ir.ui.view">
+        <field name="name">hr_attendance.pin_pad.form</field>
+        <field name="model">hr_attendance.pin_pad</field>
+        <field name="arch" type="xml">
+            <form string="Enter PIN">
+                <div class="o_form_view o_pin_pad_padding">
+                    <table class="o_group o_inner_group o_label_nowrap">
+                        <tr>
+                            <td class="o_td_label"> Enter PIN </td>
+                            <td width="100%"><field string="PIN" name="entered_pin" autofocus="autofocus" widget="enter_pin"/></td> <!-- add maxlength == 4 / type password (for asterisks) / simulate click on "ok" if enter key pressed? -->
+                        </tr>
+                    </table>
+                </div>
+            </form>
+            <footer>
+                <button icon="fa-check" string="Ok" type="object" class="oe_highlight" name="verify_pin_change_attendance"/>
+                <button icon="fa-times" string="Cancel" special="cancel" class="btn-default"/>
+            </footer>
+        </field>
+    </record>
+</odoo>
