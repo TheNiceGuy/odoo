@@ -5,17 +5,22 @@ var Widget = require('web.Widget');
 
 return Widget.extend({
     template: "Tip",
+    events: {
+        mouseenter: "_to_info_mode",
+        mouseleave: "_to_bubble_mode",
+    },
     init: function(parent, $anchor, info) {
         this._super(parent);
         this.$anchor = $anchor;
         this.info = _.defaults(info, {
-            position: 'right',
+            position: "right",
         });
         this.consumed = false;
     },
     start: function() {
-        this.$breathing = this.$('.o_breathing');
-        this.$breathing.on('mouseenter', this._to_info_mode.bind(this));
+        this.init_width = this.$el.innerWidth();
+        this.init_height = this.$el.innerHeight();
+        this.$tooltip_content = this.$(".o_tooltip_content");
         this._bind_anchor_events();
         this._reposition();
     },
@@ -28,11 +33,14 @@ return Widget.extend({
         this._reposition();
     },
     _reposition: function() {
-        this.$breathing.position({
-            my: this._invert_position(this.info.position),
+        if (this.tip_opened) {
+            return;
+        }
+        this.$el.position({
+            my: this._get_spaced_inverted_position(this.info.position),
             at: this.info.position,
             of: this.$anchor,
-            collision: 'fit',
+            collision: "fit",
         });
     },
     _bind_anchor_events: function () {
@@ -45,33 +53,53 @@ return Widget.extend({
             self.trigger('tip_consumed');
         });
     },
-    _invert_position: function (position) {
-        if (position === "right") return "left";
-        if (position === "left") return "right";
-        if (position === "bottom") return "top";
-        return "bottom";
+    _get_spaced_inverted_position: function (position) {
+        if (position === "right") return "left+10";
+        if (position === "left") return "right-10";
+        if (position === "bottom") return "top+10";
+        return "bottom-10";
     },
     _to_info_mode: function() {
-        this.$breathing.fadeOut(300);
-        this.$popover = this.$popover || this.$anchor.popover({
-            content: this.info.content + (this.info.extra_content || ''),
-            html: true,
-            animation: false,
-            container: this.$el,
-            placement: this.info.position,
-        });
-        this.$popover.popover('show');
-        this.$('.popover').on('mouseleave.to_bubble_mode', this._to_bubble_mode.bind(this));
-        this.$('.popover').on('click', this.trigger.bind(this, 'popover_clicked'));
+        if (this.timerOut !== undefined) {
+            clearTimeout(this.timerOut);
+            this.timerOut = undefined;
+            return;
+        }
+
+        this.timerIn = setTimeout((function () {
+            this.timerIn = undefined;
+
+            var content_width = this.$tooltip_content.outerWidth();
+            var content_height = this.$tooltip_content.outerHeight();
+
+            this.tip_opened = true;
+            this.$el.addClass("active");
+            this.$el.css({
+                width: content_width,
+                height: content_height,
+                "margin-left": (this.info.position === "left" ? -(content_width - this.init_width) : 0),
+                "margin-top": (this.info.position === "top" ? -(content_height - this.init_height) : 0),
+            });
+        }).bind(this), 200);
     },
     _to_bubble_mode: function () {
-        this.$breathing.fadeIn(300);
-        if (this.$popover) {
-            this.$popover.popover('hide');
-            this.$('.popover').off('mouseleave.to_bubble_mode');
-            this.$('.popover').off('click');
+        if (this.timerIn !== undefined) {
+            clearTimeout(this.timerIn);
+            this.timerIn = undefined;
+            return;
         }
+
+        this.timerOut = setTimeout((function () {
+            this.timerOut = undefined;
+
+            this.tip_opened = false;
+            this.$el.removeClass("active");
+            this.$el.css({
+                width: this.init_width,
+                height: this.init_height,
+                margin: 0,
+            });
+        }).bind(this), 200);
     },
 });
-
 });
