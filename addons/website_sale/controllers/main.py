@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 from werkzeug.exceptions import Forbidden
+import json
 
 from odoo import http, tools, _
 from odoo.http import request
+from odoo.addons.base.ir.ir_qweb import nl2br
 from odoo.addons.website.models.website import slug
 from odoo.addons.website.controllers.main import QueryURL
+from odoo.exceptions import ValidationError
+from odoo.addons.website_form.controllers.main import WebsiteForm
 
 
 PPG = 20  # Products Per Page
@@ -81,6 +85,42 @@ class TableCompute(object):
         return rows
 
         # TODO keep with input type hidden
+
+
+class WebsiteSaleForm(WebsiteForm):
+
+    @http.route('/website_form/shop.sale.order', type='http', auth="public", methods=['POST'], website=True)
+    def website_form_saleorder(self, **kwargs):
+        model_record = request.env['ir.model'].search([('model', '=', 'sale.order')])
+        if not model_record:
+            return json.dumps(False)
+
+        try:
+            data = self.extract_data(model_record, ** kwargs)
+        # If we encounter an issue while extracting data
+        except ValidationError, e:
+            # I couldn't find a cleaner way to pass data to an exception
+            return json.dumps({'error_fields': e.args[0]})
+
+        order = request.website.sale_get_order()
+        if data['record']:
+            print "order updated"
+            order.write(data['record'])
+
+        if data['custom']:
+            values = {
+                'body': nl2br(data['custom']),
+                'model': 'sale.order',
+                'message_type': 'comment',
+                'no_auto_thread': False,
+                'res_id': order.id,
+            }
+            request.env['mail.message'].sudo().create(values)
+
+        if data['attachments']:
+            self.insert_attachment(model_record, order.id, data['attachments'])
+
+        return json.dumps({'id': order.id})
 
 
 class WebsiteSale(http.Controller):
@@ -529,22 +569,6 @@ class WebsiteSale(http.Controller):
             new_values['type'] = 'delivery'
 
         return new_values, errors, error_msg
-
-    @http.route('/website_form/<string:model_name>', type='http', auth="public", methods=['POST'], website=True)
-    def website_form(self, model_name, **kwargs):
-        response = super(ContactController, self).website_form(model_name, **kwargs)
-        if model_name != 'crm.lead':
-            return response
-
-        # the cookie is written here because the response is not available in the create_lead function
-        response_data = json.loads(response.data)  # controller is json now
-        if 'id' in response_data:  # a new lead has been created
-            lead_model = request.env['crm.lead']
-            # sign the lead_id
-            sign = lead_model.encode(response_data['id'])
-            response.set_cookie('lead_id', sign, domain=lead_model.get_score_domain_cookies())
-        return response
-
 
     @http.route(['/shop/address'], type='http', methods=['GET', 'POST'], auth="public", website=True)
     def address(self, **kw):

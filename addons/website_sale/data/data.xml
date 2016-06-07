@@ -45,19 +45,13 @@
     </data>
     <data>
         <record id="sale.model_sale_order" model="ir.model">
-            <!-- <field name="website_form_default_field_id" ref="sale.field_crm_lead_description" /> -->
-            <field name="website_form_access">True</field>
-            <field name="website_form_label">Order</field>
-        </record>
+            <field name="website_form_access" eval="True"/>
+            <field name="website_form_label">Sale Order</field>
+        </record> 
         <function model="ir.model.fields" name="formbuilder_whitelist">
             <value>sale.order</value>
             <value eval="[
-                'origin',
-                'campaign_id',
                 'client_order_ref',
-                'note',
-                'partner_name',
-                'partner_street'
             ]"/>
         </function>
 

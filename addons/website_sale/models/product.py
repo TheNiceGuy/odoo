@@ -173,6 +173,10 @@ class ProductAttributeValue(models.Model):
                              "specific HTML color index (e.g. #ff0000) to display the color on the website if the "
                              "attibute type is 'Color'.")
 
+
+
+
+# TEST FOR WEBSITE FORM
 class SaleOrder(models.Model):
     _inherit = 'sale.order'
 
