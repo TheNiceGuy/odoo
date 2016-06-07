@@ -5,7 +5,7 @@
         <field name="model">hr_attendance.pin_pad</field>
         <field name="arch" type="xml">
             <form string="Enter PIN">
-                <div class="o_form_view o_pin_pad_padding">
+                <div class="o_form_view">
                     <table class="o_group o_inner_group o_label_nowrap">
                         <tr>
                             <td class="o_td_label"> Enter PIN </td>
@@ -13,11 +13,11 @@
                         </tr>
                     </table>
                 </div>
+                <footer>
+                    <button icon="fa-check" string="Ok" type="object" class="oe_highlight" name="verify_pin_change_attendance"/>
+                    <button icon="fa-times" string="Cancel" special="cancel" class="btn-default"/>
+                </footer>
             </form>
-            <footer>
-                <button icon="fa-check" string="Ok" type="object" class="oe_highlight" name="verify_pin_change_attendance"/>
-                <button icon="fa-times" string="Cancel" special="cancel" class="btn-default"/>
-            </footer>
         </field>
     </record>
 </odoo>
