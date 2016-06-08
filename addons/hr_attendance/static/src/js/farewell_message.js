@@ -34,23 +34,29 @@ var FarewellMessage = Widget.extend({
             if(employees[0]){
                 self.$('.o_hr_attendance_validation').append(_t("Check out validated"));
                 self.$('.o_hr_attendance_message_time').append(current_time);
-                if(now.getHours()<10){
-                    self.$('.o_hr_attendance_message_message').append(_t("Leaving already? Hope to see you soon again"));
-                } else if(now.getHours()<14){
-                    self.$('.o_hr_attendance_message_message').append(_t("Have a good lunch ") + employees[0].name);
-                } else if(now.getHours()<17){
-                    self.$('.o_hr_attendance_message_message').append(_t("Good afternoon ") + employees[0].name);
-                } else if(now.getHours()){
-                    self.$('.o_hr_attendance_message_message').append(_t("Have a good evening ") + employees[0].name);
-                } 
                 if(employees[0].last_check){
-                    var last_check_date = new Date(employees[0].last_check);
-                    if(now.valueOf() - last_check_date.valueOf() > 1000*60*60*8){
-                        self.$('.o_hr_attendance_random_message').append(_t("<br/>Another good day of work! See you soon!"));
+                    var last_check_date = new Date(employees[0].last_check);  // or should the traduction hold employee name as well?
+                    if(last_check_date.getDate() != now.getDate()){
+                        self.$('.o_hr_attendance_warning_message').append(_t("<h2>Warning! Last check in wasn't today.<br/>If this isn't right, please contact Human Resources.</h2>"));
+                    } else if(now.valueOf() - last_check_date.valueOf() > 1000*60*60*12){
+                        self.$('.o_hr_attendance_warning_message').append(_t("<h2>Warning! Last check in was over 12 hours ago.<br/>If this isn't right, please contact Human Resources.</h2>"));
+                    } else if(now.valueOf() - last_check_date.valueOf() > 1000*60*60*8){
+                        self.$('.o_hr_attendance_random_message').append(_t("<h3>Another good day's work! See you soon!</h3>"));
                     // } else {
                     //     self.$('.o_hr_attendance_random_message').append("add random quote ? (based on various conditions or do not do unnecessary computations?)");
                     }
                 }
+
+                self.$('.o_hr_attendance_message_message').append(_t("Goodbye ") + employees[0].name + ".");
+                if(now.getHours()<12){
+                    self.$('.o_hr_attendance_message_message').append(_t("<br/>Have a good day!"));
+                } else if(now.getHours()<14){
+                    self.$('.o_hr_attendance_message_message').append(_t("<br/>Have a nice lunch!"));
+                } else if(now.getHours()<17){
+                    self.$('.o_hr_attendance_message_message').append(_t("<br/>Have a good afternoon."));
+                } else if(now.getHours()){
+                    self.$('.o_hr_attendance_message_message').append(_t("<br/>Have a good evening."));
+                } 
             } else {
                 self.$('.o_hr_attendance_message_time').append(_t("Invalid request, please return to the main menu."));
             }

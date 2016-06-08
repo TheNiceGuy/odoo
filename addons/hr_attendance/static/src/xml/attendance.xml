@@ -21,7 +21,7 @@
                 <h3>To check in scan your badge</h3>
                 <h5>or click on Employees and enter your PIN.</h5>
                 <button class="button_employees btn btn-primary btn-sm">Employees</button>
-                <button class="button_inventory btn btn-primary btn-sm">Visitor</button>
+                <!-- <button class="button_visitors btn btn-primary btn-sm">Visitor</button> -->
                 <div class="o_hr_attendance_clock"></div>
             </div>
         </div>
@@ -33,7 +33,8 @@
                 <h3 class="o_hr_attendance_validation"></h3>
                 <h2 class="o_hr_attendance_message_message"></h2>
                 <div class="o_hr_attendance_message_time"></div>
-                <h3 class="o_hr_attendance_random_message"></h3>
+                <div class="o_hr_attendance_random_message"></div>
+                <div class="o_hr_attendance_warning_message"></div>
                 <button class="button_dismiss btn btn-primary btn-sm">ok</button>
             </div>
         </div>

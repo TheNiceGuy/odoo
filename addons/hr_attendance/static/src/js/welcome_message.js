@@ -34,19 +34,20 @@ var WelcomeMessage = Widget.extend({
             if(employees[0]){
                 self.$('.o_hr_attendance_validation').append(_t("Check in validated"));
                 self.$('.o_hr_attendance_message_time').append(current_time);
+                self.$('.o_hr_attendance_message_message').append(_t("Welcome ") + employees[0].name + "!");
                 if(now.getHours()<8){
-                    self.$('.o_hr_attendance_message_message').append(_t("The early bird catches the worm."));
+                    self.$('.o_hr_attendance_message_message').append(_t("<br/>The early bird catches the worm."));
                 } else if(now.getHours()<12){
-                    self.$('.o_hr_attendance_message_message').append(_t("Good morning ") + employees[0].name);
+                    self.$('.o_hr_attendance_message_message').append(_t("<br/>Good morning."));
                 } else if(now.getHours()<17){
-                    self.$('.o_hr_attendance_message_message').append(_t("Good afternoon ") + employees[0].name);
+                    self.$('.o_hr_attendance_message_message').append(_t("<br/>Good afternoon."));
                 } else if(now.getHours()){
-                    self.$('.o_hr_attendance_message_message').append(_t("Good evening ") + employees[0].name);
+                    self.$('.o_hr_attendance_message_message').append(_t("<br/>Good evening."));
                 } 
                 if(employees[0].last_check){
                     var last_check_date = new Date(employees[0].last_check);
                     if(now.valueOf() - last_check_date.valueOf() > 1000*60*60*24*7){
-                        self.$('.o_hr_attendance_random_message').append(_t("<br/>Glad to have you back, it's been a while!"));
+                        self.$('.o_hr_attendance_random_message').append(_t("<h3>Glad to have you back, it's been a while!</h3>"));
                     // } else {
                     //     self.$('.o_hr_attendance_random_message').append("add random quote ? (based on various conditions or do not do unnecessary computations?)");
                     }
