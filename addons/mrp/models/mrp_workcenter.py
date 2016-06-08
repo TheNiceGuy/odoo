@@ -196,4 +196,9 @@ class MrpWorkcenterProductivity(models.Model):
             self.workcenter_id.order_ids.end_all()
         elif self.workorder_id:
             self.workorder_id.workcenter_id.order_ids.end_all()
+        self.date_end = False # Should not stop myself, otherwise I am not blocked
         return {'type': 'ir.actions.client', 'tag': 'reload'}
+
+    @api.onchange('workorder_id')
+    def onchange_workorder(self):
+        self.workcenter_id = self.workorder_id.workcenter_id.id

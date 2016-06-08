@@ -185,14 +185,16 @@
                                         <div class="col-xs-6 o_kanban_primary_left" style="position:absolute; bottom:0;" name="wc_stages">
                                             <a name="%(act_mrp_block_workcenter)d" type="action" class="oe_kanban_status"
                                                 title="No workorder currently in progress. Click to mark work center as blocked."
-                                                attrs="{'invisible': [('working_state','in',('blocked','done'))]}"/>
+                                                attrs="{'invisible': [('working_state','in',('blocked','done'))]}"
+                                                context="{'default_workcenter_id': id}"/>
                                             <a name="unblock" type="object" class=" oe_kanban_status oe_kanban_status_red"
                                                 title="Workcenter blocked, click to unblock."
                                                 attrs="{'invisible': [('working_state','in',('normal','done'))]}"/>
                                             <a name="%(act_mrp_block_workcenter)d" type="action" class="oe_kanban_status oe_kanban_status_green"
                                                 title="Work orders in progress. Click to block work center."
-                                                attrs="{'invisible': [('working_state','in',('normal','blocked'))]}"/>
-                                        </div> 
+                                                attrs="{'invisible': [('working_state','in',('normal','blocked'))]}"
+                                                context="{'default_workcenter_id': id}"/>
+                                        </div>
                                     </div>
                                 </div><div class="container o_kanban_card_manage_pane o_invisible">
                                     <div class="row">
