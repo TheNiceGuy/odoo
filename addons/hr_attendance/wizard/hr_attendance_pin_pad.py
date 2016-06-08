@@ -16,27 +16,23 @@ class HrAttendancePinPad(models.TransientModel):
 
     @api.multi
     def verify_pin_change_attendance(self):
-        if self.entered_pin == self.employee_id.pin:
-            employee_check = self.employee_id.attendance_action_change()
+        employee = self.employee_id
+        if self.entered_pin == employee.pin:
+            self.unlink()
+            employee_check = employee.attendance_action_change()
+            action = {
+                'name': 'Attendance',
+                'type': 'ir.actions.client',
+                'res_id': employee.id,
+                'options': {
+                    'clear_breadcrumbs': True,
+                }
+            }
             if employee_check == "checked in":
-                return {
-                    'name': 'Attendance',
-                    'type': 'ir.actions.client',
-                    'tag': 'hr_attendance_welcome_message',
-                    'res_id': self.employee_id.id,
-                    'options': {
-                        'clear_breadcrumbs': True,
-                    }
-                }
+                action['tag'] = 'hr_attendance_welcome_message'
+                return action
             elif employee_check == "checked out":
-                return {
-                    'name': 'Attendance',
-                    'type': 'ir.actions.client',
-                    'tag': 'hr_attendance_farewell_message',
-                    'res_id': self.employee_id.id,
-                    'options': {
-                        'clear_breadcrumbs': True,
-                    }
-                }
+                action['tag'] = 'hr_attendance_farewell_message'
+                return action
         else:
             raise UserError(_('Wrong PIN.')) # should we implement a limited number of tries (in a certain amount of time) ?
