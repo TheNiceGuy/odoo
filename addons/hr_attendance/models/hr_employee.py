@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-import random
+from random import choice
+from string import digits
 
 from odoo import models, fields, api, exceptions, _
 
@@ -11,13 +12,16 @@ class HrEmployee(models.Model):
     _description = "Employee"
 
     def _default_random_pin(self):
-        pin = 0
-        for i in range(4):
-            pin = pin + random.randint(0, 9) * 10**i
-        return str(pin)
+        return ("".join(choice(digits) for i in range(4)))
 
-    state = fields.Selection(string="Attendance", compute='_get_state', selection=[('absent', "Absent"), ('present', "Present")], copy=False)
-    barcode = fields.Char(string="Badge ID", help="ID used for employee identification.", copy=False)
+    def _default_random_barcode(self):
+        barcode = None
+        while not barcode or any(self.env['hr.employee'].search([('barcode', '=', barcode), ('id', '!=', self.id)])):
+            barcode = "".join(choice(digits) for i in range(13))
+        return barcode
+
+    state = fields.Selection(string="Attendance", compute='_get_state', selection=[('absent', "Absent"), ('present', "Present")])
+    barcode = fields.Char(string="Badge ID", help="ID used for employee identification.", default=_default_random_barcode, copy=False)
     pin = fields.Char(string="PIN", default=_default_random_pin, help="PIN used for Check In/Out in Attendance.", copy=False)
     last_check = fields.Datetime(string="Last Check In/Out", compute='_compute_last_check', copy=False)
     attendance_ids = fields.One2many('hr.attendance', 'employee_id', help='list of attendances for the employee')
