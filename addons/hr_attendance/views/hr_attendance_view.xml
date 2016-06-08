@@ -23,6 +23,19 @@
 
     <!-- views -->
 
+
+    <record id="view_attendance_tree" model="ir.ui.view">
+        <field name="name">hr.attendance.tree</field>
+        <field name="model">hr.attendance</field>
+        <field name="arch" type="xml">
+            <tree string="Employee attendances">
+                <field name="employee_id"/>
+                <field name="check_in"/>
+                <field name="check_out"/>
+            </tree>
+        </field>
+    </record>
+
     <record id="hr_attendance_view_form" model="ir.ui.view">
         <field name="name">hr.attendance.form</field>
         <field name="model">hr.attendance</field>
