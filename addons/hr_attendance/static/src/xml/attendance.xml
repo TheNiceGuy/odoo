@@ -18,7 +18,7 @@
             <div class="o_hr_attendance_main_menu">
                 <h1>Welcome To <div class="o_hr_attendance_my_company"></div></h1>
                 <div class="o_hr_attendance_company_logo"></div>
-                <h3>To check in scan your badge</h3>
+                <h2>Scan your badge to check in</h2>
                 <h5>or click on Employees and enter your PIN.</h5>
                 <button class="button_employees btn btn-primary btn-sm">Employees</button>
                 <!-- <button class="button_visitors btn btn-primary btn-sm">Visitor</button> -->

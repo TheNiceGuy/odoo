@@ -65,12 +65,12 @@ class HrAttendance(models.Model):
                     # we can't have another record without check out time if one already exist for that employee
                     if not same_employee_record.check_out:
                         raise exceptions.ValidationError(_("Cannot create new attendance record for {0}, the employee hasn't checked out since {1}").format(
-                            self.env['hr.employee'].search([('user_id', '=', attendance.employee_id.id)]).name_related,
+                            self.env['hr.employee'].search([('user_id', '=', attendance.employee_id.user_id.id)]).name_related,
                             same_employee_record.check_in))
                     # check if A_check_in is contained in SER
                     if same_employee_record.check_in < attendance.check_in and attendance.check_in < same_employee_record.check_out:
                         raise exceptions.ValidationError(_("Cannot create new attendance record for {0}, the employee was already present on {1}").format(
-                            self.env['hr.employee'].search([('user_id', '=', attendance.employee_id.id)]).name_related,
+                            self.env['hr.employee'].search([('user_id', '=', attendance.employee_id.user_id.id)]).name_related,
                             fields.Datetime.to_string(fields.Datetime.context_timestamp(self, fields.Datetime.from_string(attendance.check_in)))))
             else:
                 if attendance.check_out < attendance.check_in:
@@ -81,21 +81,21 @@ class HrAttendance(models.Model):
                     #check if SER_check_in is contained in A
                     if attendance.check_in < same_employee_record.check_in and same_employee_record.check_in < attendance.check_out:
                         raise exceptions.ValidationError(_("Cannot create new attendance record for {0}, the employee was already present on {1}").format(
-                            self.env['hr.employee'].search([('user_id', '=', attendance.employee_id.id)]).name_related,
+                            self.env['hr.employee'].search([('user_id', '=', attendance.employee_id.user_id.id)]).name_related,
                             fields.Datetime.to_string(fields.Datetime.context_timestamp(self, fields.Datetime.from_string(same_employee_record.check_in)))))
                     if same_employee_record.check_out:
                         #check if A_check_in is contained in SER
                         if same_employee_record.check_in < attendance.check_in and attendance.check_in < same_employee_record.check_out:
                             raise exceptions.ValidationError(_("Cannot create new attendance record for {0}, the employee was already present on {1}").format(
-                                self.env['hr.employee'].search([('user_id', '=', attendance.employee_id.id)]).name_related,
+                                self.env['hr.employee'].search([('user_id', '=', attendance.employee_id.user_id.id)]).name_related,
                                 fields.Datetime.to_string(fields.Datetime.context_timestamp(self, fields.Datetime.from_string(attendance.check_in)))))
                         #check if SER_check_out is contained in A
                         if attendance.check_in < same_employee_record.check_out and same_employee_record.check_out < attendance.check_out:
                             raise exceptions.ValidationError(_("Cannot create new attendance record for {0}, the employee was already present on {1}").format(
-                                self.env['hr.employee'].search([('user_id', '=', attendance.employee_id.id)]).name_related,
+                                self.env['hr.employee'].search([('user_id', '=', attendance.employee_id.user_id.id)]).name_related,
                                 fields.Datetime.to_string(fields.Datetime.context_timestamp(self, fields.Datetime.from_string(same_employee_record.check_out)))))
                         #check if A_check_out is contained in SER
                         if same_employee_record.check_in < attendance.check_out and attendance.check_out < same_employee_record.check_out:
                             raise exceptions.ValidationError(_("Cannot create new attendance record for {0}, the employee was already present on {1}").format(
-                                self.env['hr.employee'].search([('user_id', '=', attendance.employee_id.id)]).name_related,
+                                self.env['hr.employee'].search([('user_id', '=', attendance.employee_id.user_id.id)]).name_related,
                                 fields.Datetime.to_string(fields.Datetime.context_timestamp(self, fields.Datetime.from_string(attendance.check_out)))))

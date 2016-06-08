@@ -5,6 +5,10 @@
         <record id="base.group_hr_manager" model="res.groups">
             <field name="implied_ids" eval="[(4, ref('base.group_hr_attendance'))]"/>
         </record>
+        <record id="base.group_hr_user" model="res.groups">
+            <field name="implied_ids" eval="[(4, ref('base.group_hr_attendance'))]"/>
+        </record>
+
         <record id="base.group_hr_attendances_manual" model="res.groups">
             <field name="name">Manual Attendances</field>
             <field name="comment">the user will be able to check in and out manually (button in the top right menu).</field>
