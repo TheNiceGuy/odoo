@@ -55,7 +55,7 @@ class HrEmployee(models.Model):
     def _compute_attendance_access(self):
         """ this function field is used to hide attendance button to singin/singout from menu
         """
-        self.attendance_access = self.env['res.users'].has_group("base.group_hr_attendance")
+        self.attendance_access = self.env['res.users'].has_group("base.group_hr_attendances_manual")
 
     @api.constrains('barcode')
     def _verify_barcode(self):
