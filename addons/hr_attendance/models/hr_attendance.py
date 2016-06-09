@@ -17,6 +17,7 @@ class HrAttendance(models.Model):
 
     @api.multi
     def write(self, vals):
+        # import ipdb; ipdb.set_trace()
         return super(HrAttendance, self).write(vals)
 
     employee_id = fields.Many2one('hr.employee', string="Employee", default=_default_employee, required=True, ondelete='cascade', index=True)

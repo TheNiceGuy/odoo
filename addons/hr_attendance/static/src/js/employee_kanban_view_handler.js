@@ -13,7 +13,6 @@ KanbanRecord.include({
                 res_model: 'hr_attendance.pin_pad',
                 src_model: 'hr.employee',
                 view_mode: 'form',
-                view_id: 'wizard_form_view',
                 views: [[false, 'form']],
                 target: 'new',
                 // options: {'dialogClass': 'modal-sm'},

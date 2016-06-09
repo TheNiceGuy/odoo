@@ -8,13 +8,13 @@
         <field name="arch" type="xml">
             <field name="category_ids" position="after">
                 <group>
-                    <field name="last_check" groups="base.group_hr_user"/>
                     <field name="state"/>
                 </group>
             </field>
             <field name="user_id" position="after">
                 <field name="barcode" groups="base.group_hr_user"/>
                 <field name="pin" groups="base.group_hr_user"/>
+                <field name="last_check" groups="base.group_hr_user"/>
             </field>
         </field>
     </record>

@@ -19,7 +19,10 @@ class HrAttendancePinPad(models.TransientModel):
         employee = self.employee_id
         if self.entered_pin == employee.pin:
             self.unlink()
-            employee_check = employee.attendance_action_change()
+            if employee.user_id:
+                employee_check = employee.sudo(employee.user_id.id).attendance_action_change()
+            else:
+                employee_check = employee.sudo().attendance_action_change()
             action = {
                 'name': 'Attendance',
                 'type': 'ir.actions.client',

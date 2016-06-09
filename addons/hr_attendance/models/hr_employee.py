@@ -123,11 +123,7 @@ class HrEmployee(models.Model):
 
         if action == 'sign_in':
             vals = {'employee_id': self.id}
-            department_id = self.department_id
-            if department_id:
-                vals['department_id'] = department_id
-            if action_date:
-                vals['check_in'] = action_date
+            vals['check_in'] = action_date
             self.env['hr.attendance'].create(vals)
             return "checked in"
         else:
@@ -135,7 +131,7 @@ class HrEmployee(models.Model):
             if attendance_report:
                 attendance_report.check_out = action_date
             else:
-                raise exceptions.UserError(_('Cannot perform check out on %s, could not find corresponding check in.'))
+                raise exceptions.UserError(_('Cannot perform check out on %s, could not find corresponding check in.') % (self.name, ))
             return "checked out"
 
     @api.model
