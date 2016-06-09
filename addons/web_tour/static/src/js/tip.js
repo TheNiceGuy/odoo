@@ -14,6 +14,7 @@ return Widget.extend({
         this.$anchor = $anchor;
         this.info = _.defaults(info, {
             position: "right",
+            width: 270,
         });
         this.consumed = false;
     },
@@ -80,7 +81,7 @@ return Widget.extend({
                 "margin-left": (this.info.position === "left" ? -(content_width - this.init_width) : 0),
                 "margin-top": (this.info.position === "top" ? -(content_height - this.init_height) : 0),
             });
-        }).bind(this), 200);
+        }).bind(this), 100);
     },
     _to_bubble_mode: function () {
         if (this.timerIn !== undefined) {
@@ -99,7 +100,7 @@ return Widget.extend({
                 height: this.init_height,
                 margin: 0,
             });
-        }).bind(this), 200);
+        }).bind(this), 100);
     },
 });
 });

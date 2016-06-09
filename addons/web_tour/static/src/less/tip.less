@@ -3,41 +3,39 @@
     @o-tip-background-color: #875a7b;
     @o-tip-size: 26px;
     @o-tip-border-width: 2px;
+    @o-content-safe-area: 50px;
 
     @o-arrow-length: floor(@o-tip-size * 0.5);
     @o-arrow-width: floor(@o-tip-size * 0.8);
     @o-arrow-integration: floor(@o-tip-size * 0.1);
 
-    @o-content-safe-area: 50px;
-    @o-content-max-width: 200px;
-
-    @o-anim-duration-in: 400ms;
-    @o-size-anim-duration-in: @o-anim-duration-in * 3 / 4;
-    @o-size-anim-delay-in: @o-anim-duration-in / 4;
-    @o-radius-anim-duration-in: @o-anim-duration-in / 2;
-    @o-radius-anim-delay-in: @o-anim-duration-in * 0;
-    @o-bg-color-duration-in: @o-anim-duration-in * 1;
-    @o-bg-color-delay-in: @o-anim-duration-in * 0;
-    @o-arrow-duration-in: @o-anim-duration-in / 2;
-    @o-arrow-delay-in: @o-anim-duration-in * 0;
-    @o-content-opacity-duration-in: @o-anim-duration-in / 3;
-    @o-content-opacity-delay-in: @o-anim-duration-in * 2 / 3;
-    @o-content-visibility-delay-in: @o-anim-duration-in * 0;
-    @o-arrow-white-duration-in: @o-anim-duration-in * 1;
-    @o-arrow-white-delay-in: @o-anim-duration-in * 0;
+    @o-anim-duration-in: 300ms;
+    @o-size-anim-duration-in: floor(@o-anim-duration-in * 3 / 4);
+    @o-size-anim-delay-in: floor(@o-anim-duration-in / 4);
+    @o-radius-anim-duration-in: floor(@o-anim-duration-in / 2);
+    @o-radius-anim-delay-in: floor(@o-anim-duration-in * 0);
+    @o-bg-color-duration-in: floor(@o-anim-duration-in * 1);
+    @o-bg-color-delay-in: floor(@o-anim-duration-in * 0);
+    @o-arrow-duration-in: floor(@o-anim-duration-in / 2);
+    @o-arrow-delay-in: floor(@o-anim-duration-in * 0);
+    @o-content-opacity-duration-in: floor(@o-anim-duration-in / 3);
+    @o-content-opacity-delay-in: floor(@o-anim-duration-in * 2 / 3);
+    @o-content-visibility-delay-in: floor(@o-anim-duration-in * 0);
+    @o-arrow-white-duration-in: floor(@o-anim-duration-in * 1);
+    @o-arrow-white-delay-in: floor(@o-anim-duration-in * 0);
 
     @o-anim-duration-out: 200ms;
-    @o-size-anim-duration-out: @o-anim-duration-out * 2 / 3;
-    @o-size-anim-delay-out: @o-anim-duration-out * 0;
-    @o-radius-anim-duration-out: @o-anim-duration-out * 2 / 3;
-    @o-radius-anim-delay-out: @o-anim-duration-out / 3;
-    @o-bg-color-duration-out: @o-anim-duration-out * 1;
-    @o-bg-color-delay-out: @o-anim-duration-out * 0;
-    @o-arrow-duration-out: @o-anim-duration-out / 2;
-    @o-arrow-delay-out: @o-anim-duration-out / 2;
-    @o-content-opacity-duration-out: @o-anim-duration-out / 3;
-    @o-content-opacity-delay-out: @o-anim-duration-out * 0;
-    @o-content-visibility-delay-out: @o-anim-duration-out / 2;
+    @o-size-anim-duration-out: floor(@o-anim-duration-out * 2 / 3);
+    @o-size-anim-delay-out: floor(@o-anim-duration-out * 0);
+    @o-radius-anim-duration-out: floor(@o-anim-duration-out * 2 / 3);
+    @o-radius-anim-delay-out: floor(@o-anim-duration-out / 3);
+    @o-bg-color-duration-out: floor(@o-anim-duration-out * 1);
+    @o-bg-color-delay-out: floor(@o-anim-duration-out * 0);
+    @o-arrow-duration-out: floor(@o-anim-duration-out / 2);
+    @o-arrow-delay-out: floor(@o-anim-duration-out / 2);
+    @o-content-opacity-duration-out: floor(@o-anim-duration-out / 3);
+    @o-content-opacity-delay-out: floor(@o-anim-duration-out * 0);
+    @o-content-visibility-delay-out: floor(@o-anim-duration-out / 2);
 
     box-sizing: content-box;
     position: absolute;
@@ -97,14 +95,12 @@
     }
 
     > .o_tooltip_content {
-        width: @o-content-max-width; // TODO maybe set in tour ?
         padding: 8px 15px;
         opacity: 0;
         visibility: hidden;
         transition: opacity @o-content-opacity-duration-out ease @o-content-opacity-delay-out, visibility 0s ease @o-content-visibility-delay-out;
-
         color: black;
-        text-align: justify;
+
         .o_skip_tour {
             display: inline-block;
             margin-top: 5px;
