@@ -1,28 +1,13 @@
-#-*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-import time
-import datetime
-from openerp.report import report_sxw
-from openerp.osv import osv
+from datetime import date
 
-class employees_yearly_salary_report(report_sxw.rml_parse):
+from odoo import api, models
 
-    def __init__(self, cr, uid, name, context):
-        super(employees_yearly_salary_report, self).__init__(cr, uid, name, context)
 
-        self.localcontext.update({
-            'time': time,
-            'get_employee': self.get_employee,
-            'get_employee_detail': self.get_employee_detail,
-            'cal_monthly_amt': self.cal_monthly_amt,
-            'get_periods': self.get_periods,
-            'get_total': self.get_total,
-            'get_allow': self.get_allow,
-            'get_deduct': self.get_deduct,
-        })
-
-        self.context = context
+class EmployeesYearlySalaryReport(models.AbstractModel):
+    _name = 'report.l10n_in_hr_payroll.report_hryearlysalary'
 
     def get_periods(self, form):
         self.mnths = []
@@ -39,7 +24,7 @@ class employees_yearly_salary_report(report_sxw.rml_parse):
 #       Get name of the months from integer
         mnth_name = []
         for count in range(0, no_months):
-            m = datetime.date(current_year, current_month, 1).strftime('%b')
+            m = date(current_year, current_month, 1).strftime('%b')
             mnth_name.append(m)
             self.mnths.append(str(current_month) + '-' + str(current_year))
             if current_month == 12:
@@ -52,7 +37,7 @@ class employees_yearly_salary_report(report_sxw.rml_parse):
         return [mnth_name]
 
     def get_employee(self, form):
-        return self.pool.get('hr.employee').browse(self.cr,self.uid, form.get('employee_ids', []), context=self.context)
+        return self.env['hr.employee'].browse(form.get('employee_ids', []))
 
     def get_employee_detail(self, form, obj):
         self.allow_list = []
@@ -81,11 +66,10 @@ class employees_yearly_salary_report(report_sxw.rml_parse):
         return None
 
     def cal_monthly_amt(self, form, emp_id):
-        category_obj = self.pool.get('hr.salary.rule.category')
         result = []
         res = []
         salaries = {}
-        self.cr.execute('''SELECT rc.code, pl.name, sum(pl.total), \
+        self.env.cr.execute('''SELECT rc.code, pl.name, sum(pl.total), \
                 to_char(date_to,'mm-yyyy') as to_date  FROM hr_payslip_line as pl \
                 LEFT JOIN hr_salary_rule_category AS rc on (pl.category_id = rc.id) \
                 LEFT JOIN hr_payslip as p on pl.slip_id = p.id \
@@ -93,7 +77,7 @@ class employees_yearly_salary_report(report_sxw.rml_parse):
                 WHERE p.employee_id = %s \
                 GROUP BY rc.parent_id, pl.sequence, pl.id, pl.category_id,pl.name,p.date_to,rc.code \
                 ORDER BY pl.sequence, rc.parent_id''',(emp_id,))
-        salary = self.cr.fetchall()
+        salary = self.env.cr.fetchall()
         for category in salary:
             if category[0] not in salaries:
                 salaries.setdefault(category[0], {})
@@ -103,10 +87,9 @@ class employees_yearly_salary_report(report_sxw.rml_parse):
                 salaries[category[0]][category[1]].update({category[3]: category[2]})
             else:
                 salaries[category[0]][category[1]].update({category[3]: category[2]})
-        
-        category_ids = category_obj.search(self.cr,self.uid, [], context=self.context)
-        categories = category_obj.read(self.cr, self.uid, category_ids, ['code'], context=self.context)
-        for code in map(lambda x: x['code'], categories):
+
+        categories = self.env['hr.salary.rule.category'].search([]).mapped('code')
+        for code in categories:
             if code in salaries:
                 res = self.salary_list(salaries[code])
             result.append(res)
@@ -119,7 +102,7 @@ class employees_yearly_salary_report(report_sxw.rml_parse):
             total = 0.0
             cat_salary.append(category_name)
             for mnth in self.mnths:
-                if mnth <> 'None':
+                if mnth != 'None':
                     if len(mnth) != 7:
                         mnth = '0' + str(mnth)
                     if mnth in amount and amount[mnth]:
@@ -142,8 +125,21 @@ class employees_yearly_salary_report(report_sxw.rml_parse):
     def get_total(self):
         return self.total
 
-class wrapped_report_payslip(osv.AbstractModel):
-    _name = 'report.l10n_in_hr_payroll.report_hryearlysalary'
-    _inherit = 'report.abstract_report'
-    _template = 'l10n_in_hr_payroll.report_hryearlysalary'
-    _wrapped_report_class = employees_yearly_salary_report
+    @api.multi
+    def render_html(self, data):
+        model = self.env.context.get('active_model')
+        docs = self.env[model].browse(self.env.context.get('active_id'))
+        docargs = {
+            'doc_ids': self.ids,
+            'doc_model': model,
+            'data': data,
+            'docs': docs,
+            'get_employee': self.get_employee,
+            'get_employee_detail': self.get_employee_detail,
+            'cal_monthly_amt': self.cal_monthly_amt,
+            'get_periods': self.get_periods,
+            'get_total': self.get_total,
+            'get_allow': self.get_allow,
+            'get_deduct': self.get_deduct,
+        }
+        return self.env['report'].render('l10n_in_hr_payroll.report_hryearlysalary', docargs)
