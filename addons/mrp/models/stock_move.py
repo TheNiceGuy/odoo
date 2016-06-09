@@ -171,12 +171,11 @@ class StockMove(models.Model):
         '''
             Functions as an action_done (better to put this logic in action_done itself later on)
         '''
+        moves = self.filtered(lambda move: move.state not in ('done', 'cancel'))
         quant_obj = self.env['stock.quant']
         moves_todo = self.env['stock.move']
         uom_obj = self.env['product.uom']
-        for move in self:
-            if move.state in ('done', 'cancel'):
-                continue
+        for move in moves:
             rounding = move.product_uom.rounding
             if float_compare(move.quantity_done, 0.0, precision_rounding=rounding) <= 0:
                 continue
@@ -214,6 +213,12 @@ class StockMove(models.Model):
             if move.move_dest_id:
                 move.move_dest_id.action_assign()
         return moves_todo
+
+    @api.multi
+    def action_done(self):
+        production_moves = self.filtered(lambda move: move.production_id or move.raw_material_production_id)
+        production_moves.move_validate()
+        return super(StockMove, self-production_moves).action_done()
 
     @api.multi
     def split_move_lot(self):
