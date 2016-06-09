@@ -41,11 +41,14 @@
     box-shadow: 0 0 2px 0 @odoo-brand-lightsecondary;
     cursor: pointer;
 
-    .o-animation(move-bottom-top, 500ms, ease-in, 0ms, infinite, alternate);
-    &.right, &.left {
-        .animation-name(move-left-right);
-    }
     transition: width @o-size-anim-duration-out ease @o-size-anim-delay-out, height @o-size-anim-duration-out ease @o-size-anim-delay-out, margin @o-size-anim-duration-out ease @o-size-anim-delay-out, border-radius @o-radius-anim-duration-out ease @o-radius-anim-delay-out, background-color @o-bg-color-duration-out ease @o-bg-color-delay-out;
+
+    &.o_animated {
+        .o-animation(move-bottom-top, 500ms, ease-in, 0ms, infinite, alternate);
+        &.right, &.left {
+            .animation-name(move-left-right);
+        }
+    }
 
     &::before {
         content: "";
@@ -90,6 +93,7 @@
     > .o_tooltip_overlay {
         display: none;
         .o-position-absolute(0, 0, 0, 0);
+        margin: -@o-tip-border-width;
         z-index: -1;
     }
     > .o_tooltip_content {
@@ -110,7 +114,6 @@
     }
 
     &.active {
-        animation-play-state: paused;
         border-radius: 0;
         background-color: white;
 

@@ -51,6 +51,7 @@ return Widget.extend({
     },
     _reposition: function() {
         if (this.tip_opened) return;
+        this.$el.removeClass("o_animated");
         this.$el.position({
             my: this._get_spaced_inverted_position(this.info.position),
             at: this.info.position,
@@ -63,6 +64,7 @@ return Widget.extend({
             bottom: -(this.info.position === "top" ? this.info.space : this.info.overlay.y),
             left: -(this.info.position === "right" ? this.info.space : this.info.overlay.x),
         });
+        this.$el.addClass("o_animated");
     },
     _bind_anchor_events: function () {
         var consume_event = this.$anchor.is('input,textarea') ? 'change' : 'mousedown';
@@ -116,7 +118,7 @@ return Widget.extend({
             }
 
             this.$el.toggleClass("inverse", overflow);
-            this.$el.addClass("active");
+            this.$el.removeClass("o_animated").addClass("active");
             this.$el.css({
                 width: content_width,
                 height: content_height,
@@ -144,7 +146,7 @@ return Widget.extend({
 
             this.tip_opened = false;
 
-            this.$el.removeClass("active");
+            this.$el.removeClass("active").addClass("o_animated");
             this.$el.css({
                 width: this.init_width,
                 height: this.init_height,
