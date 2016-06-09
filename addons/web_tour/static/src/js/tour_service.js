@@ -10,7 +10,7 @@ var QWeb = core.qweb;
 return $.when($.get('/web_tour/static/src/xml/tip.xml'), session.is_bound).then(function (template) {
     QWeb.add_template(template[0]);
     var tour = new TourManager(session.web_tours);
-    var untracked_classnames = ["o_tooltip", "o_tooltip_content"];
+    var untracked_classnames = ["o_tooltip", "o_tooltip_content", "o_tooltip_overlay"];
 
     $(function () {
         var check_tooltip = _.throttle(function (records) {
