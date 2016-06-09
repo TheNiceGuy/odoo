@@ -220,8 +220,7 @@ WebClient.include({
     },
     //Override the show_application of addons/web/static/src/js/chrome.js       
     show_application: function() {
-        this._super();
-        this.check_notifications();
+        return this._super.apply(this, arguments).then(this.check_notifications.bind(this));
     },
     //Override addons/web/static/src/js/chrome.js       
     on_logout: function() {
