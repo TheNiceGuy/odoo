@@ -74,12 +74,31 @@ return Widget.extend({
             var content_height = this.$tooltip_content.outerHeight();
 
             this.tip_opened = true;
+
+            var offset = this.$el.offset();
+            var mbLeft = 0;
+            var mbTop = 0;
+            var overflow = false;
+            var posVertical = (this.info.position === "top" || this.info.position === "bottom");
+            if (posVertical) {
+                overflow = (offset.left + content_width > $(window).width());
+            } else {
+                overflow = (offset.top + content_height > $(window).height());
+            }
+            if (posVertical && overflow || this.info.position === "left") {
+                mbLeft -= (content_width - this.init_width);
+            }
+            if (!posVertical && overflow || this.info.position === "top") {
+                mbTop -= (content_height - this.init_height);
+            }
+
+            this.$el.toggleClass("inverse", overflow);
             this.$el.addClass("active");
             this.$el.css({
                 width: content_width,
                 height: content_height,
-                "margin-left": (this.info.position === "left" ? -(content_width - this.init_width) : 0),
-                "margin-top": (this.info.position === "top" ? -(content_height - this.init_height) : 0),
+                "margin-left": mbLeft,
+                "margin-top": mbTop,
             });
         }).bind(this), 100);
     },
@@ -94,6 +113,7 @@ return Widget.extend({
             this.timerOut = undefined;
 
             this.tip_opened = false;
+
             this.$el.removeClass("active");
             this.$el.css({
                 width: this.init_width,

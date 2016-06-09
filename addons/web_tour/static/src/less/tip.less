@@ -185,4 +185,19 @@
             }
         }
     }
+
+    &.inverse {
+        &.left, &.right {
+            &::before, &.active::after {
+                top: auto;
+                bottom: (@o-tip-size - @o-arrow-width) / 2;
+            }
+        }
+        &.top, &.bottom {
+            &::before, &.active::after {
+                left: auto;
+                right: (@o-tip-size - @o-arrow-width) / 2;
+            }
+        }
+    }
 }
