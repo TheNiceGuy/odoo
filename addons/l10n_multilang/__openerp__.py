@@ -13,8 +13,4 @@
           templates to target objects.
     """,
     'depends' : ['account'],
-    'data': [],
-    'demo': [],
-    'installable': True,
-    'auto_install': False,
 }
