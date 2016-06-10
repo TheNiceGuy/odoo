@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
+
 {
     'name': 'United States - Accounting',
     'version': '1.1',
@@ -12,8 +13,4 @@ United States - Chart of accounts.
     'data': [
         'data/res_company_data.xml',
     ],
-    'demo': [],
-    'test': [],
-    'installable': True,
-    'auto_install': False,
 }
