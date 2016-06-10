@@ -25,7 +25,7 @@
             {
                 title:     _t("Click on New version"),
                 popover:   { fixed: true },
-                element:   'a[data-action="duplicate_version"]:first',
+                element:   'a[data-action="duplicate_version"]',
             },
             {
                 title:     _t("Give a version name"),
