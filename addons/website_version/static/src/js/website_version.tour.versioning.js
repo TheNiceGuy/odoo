@@ -32,13 +32,13 @@
                 content:   _t("Give a clever name to retrieve it easily."),
                 popover:   { fixed: true },
                 waitFor:   '.modal button.btn-primary',
-                element:   '.modal input[type="text"]',
+                element:   '.modal input.o_version_name[type="text"]',
                 sampleText: 'Test',
             },
             {
                 title:     _t("Validate the version name"),
                 popover:   { fixed: true },
-                element:   '.modal button.btn-primary',
+                element:   '.modal button.btn-primary.o_create',
             },
             {
                 title:     _t("Confirm"),
