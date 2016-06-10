@@ -2209,15 +2209,14 @@ class BaseModel(object):
 
         aggregated_fields = [
             f for f in fields
-            if f not in ('id', 'sequence')
+            if f != 'sequence'
             if f not in groupby_fields
-            if f in self._fields
-            if self._fields[f].type in ('integer', 'float', 'monetary')
+            if self._fields.get(f, missing_field).group_operator
             if getattr(self._fields[f].base_field.column, '_classic_write', False)
         ]
 
         field_formatter = lambda f: (
-            self._fields[f].group_operator or 'sum',
+            self._fields[f].group_operator,
             self._inherits_join_calc(cr, uid, self._table, f, query, context=context),
             f,
         )
@@ -6454,4 +6453,4 @@ def _normalize_ids(arg, atoms=set(IdType)):
 
 # keep those imports here to avoid dependency cycle errors
 from .osv import expression
-from .fields import Field, SpecialValue, FailedValue
+from .fields import Field, SpecialValue, FailedValue, missing_field
