@@ -2,6 +2,7 @@ odoo.define('hr_attendance.main_menu', function (require) {
 "use strict";
 
 var core = require('web.core');
+var data = require('web.data');
 var Model = require('web.Model');
 var Widget = require('web.Widget');
 var Dialog = require('web.Dialog');
@@ -19,7 +20,7 @@ var MainMenu = Widget.extend(BarcodeHandlerMixin, {
         // "click .button_visitors": function(){ do visitor stuff },
     },
 
-    init: function(parent, action) {
+    init: function (parent, action) {
         // Note: BarcodeHandlerMixin.init calls this._super.init, so there's no need to do it here.
         // Yet, "_super" must be present in a function for the class mechanism to replace it with the actual parent method.
         this._super;
@@ -27,15 +28,65 @@ var MainMenu = Widget.extend(BarcodeHandlerMixin, {
         var self = this;
     },
 
-    start: function() {
+    start: function () {
         var self = this;
-        var model = new Model("hr.employee");
-        model.call("get_company_name").then(function(result) {
-            self.$('.o_hr_attendance_my_company').append(result['company_name']);
-            self.$('.o_hr_attendance_company_logo').append('<img src="data:image/png;base64,' + result['company_logo'] + '" alt="Company Logo"/>');
+        self.hide_navbar_if_required();
 
-        });
+        var hr_employee = new Model('hr.employee');
+        hr_employee.query(['company_id'])
+            .filter([['user_id', '=', self.session.uid]])
+            .all()
+            .then(function (employees) {
+                var res_company = new Model('res.company');
+                res_company.query(['name', 'logo'])
+                   .filter([['id', '=', employees[0].company_id[0]]])
+                   .all()
+                   .then(function (companies){
+                        self.$('.o_hr_attendance_my_company').append(companies[0].name);
+                        self.$('.o_hr_attendance_company_logo').append('<img src="data:image/png;base64,' + companies[0].logo + '" alt="Company Logo"/>');
+                    });
+            });
+
         self.start_clock();
+        self._super();
+    },
+
+    hide_navbar_if_required: function (force) {
+        if(force){
+            $(document).find('.o_main_navbar').fadeOut();
+            return;
+        }
+        // hide the navbar if the user has no other menu access in hr_attendance
+        self = this;
+        self.hide_navbar = true;
+        
+        var ir_module_category = new Model('ir.module.category');
+        ir_module_category.query(['id'])
+            .filter([['name', '=', 'Human Resources']])
+            .all()
+            .then(function (module_categories) {
+                var res_groups = new Model('res.groups');
+                res_groups.query(['users'])
+                    .filter([
+                        ['name', 'in', ['Manual Attendances', 'Manager', 'Officer', 'Attendances']],
+                        ['category_id.id', '=', module_categories[0].id]
+                    ]).all()
+                    .then( function (groups) {
+                        groups.forEach( function (group) {
+                            if (self.session.uid in group.users) {
+                                self.hide_navbar = false;
+                                // console.log("shouldn't hide");
+                            }
+                        });
+                        if(self.hide_navbar){
+                            $(document).find('.o_main_navbar').fadeOut();
+                        }
+                    });
+            });
+    },
+
+    show_navbar: function () {
+        $(document).find('.o_main_navbar').fadeIn();
     },
 
     start_clock: function() {
@@ -51,7 +102,7 @@ var MainMenu = Widget.extend(BarcodeHandlerMixin, {
         var m = now.getMinutes();
         var s = now.getSeconds();
         m = (m > 9 ? m : "0"+m);
-        s = (s > 9 ? s : "0"+s); 
+        s = (s > 9 ? s : "0"+s);
         this.$(".o_hr_attendance_clock").text(h + ":" + m + ":" + s);
     },
 

@@ -133,11 +133,3 @@ class HrEmployee(models.Model):
             else:
                 raise exceptions.UserError(_('Cannot perform check out on %s, could not find corresponding check in.') % (self.name, ))
             return "checked out"
-
-    @api.model
-    def get_company_name(self):
-        """ called from js to get company name (to get rif of and implement in js properly)
-        """
-        company = self.env['res.users'].browse([self._uid]).company_id
-        return {"company_name": company.name,
-                "company_logo": company.logo}
