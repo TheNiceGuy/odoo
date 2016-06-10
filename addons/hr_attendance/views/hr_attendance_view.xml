@@ -1,28 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-
-    <!-- Main menu and welcome/farewell messages actions-->
-
-    <record id="hr_attendance_action_main_menu" model="ir.actions.client">
-        <field name="name">Attendance</field>
-        <field name="tag">hr_attendance_main_menu</field>
-    </record>
-
-    <record id="hr_attendance_action_welcome_message" model="ir.actions.client">
-        <field name="name">Welcome</field>
-        <field name="tag">hr_attendance_welcome_message</field>
-    </record>
-
-    <record id="hr_attendance_action_farewell_message" model="ir.actions.client">
-        <field name="name">Farewell</field>
-        <field name="tag">hr_attendance_farewell_message</field>
-    </record>
-
-    <menuitem id="menu_hr_attendance_root" name="Attendances" sequence="90" groups="base.group_hr_attendance" web_icon="hr_attendance,static/img/icon.png" action="hr_attendance_action_main_menu"/>
-
     <!-- views -->
-
 
     <record id="view_attendance_tree" model="ir.ui.view">
         <field name="name">hr.attendance.tree</field>
@@ -42,11 +21,11 @@
         <field name="arch" type="xml">
             <form string="Employee attendances">
                 <sheet>
-                <group>
-                    <field name="employee_id"/>
-                    <field name="check_in"/>
-                    <field name="check_out"/>
-                </group>
+                    <group>
+                        <field name="employee_id"/>
+                        <field name="check_in"/>
+                        <field name="check_out"/>
+                    </group>
                 </sheet>
             </form>
         </field>
@@ -57,14 +36,12 @@
         <field name="model">hr.attendance</field>
         <field name="arch" type="xml">
             <search string="Hr Attendance Search">
-                <field name="check_in" string="Attendance"/>
-                <field name="check_out"/>
+                <field name="employee_id"/>
                 <field name="department_id"/>
-                <filter name="today" string="Today" domain="[('check_in','&gt;=',datetime.datetime.now().replace(hour=0, minute=0, second=0)),('check_in','&lt;=',datetime.datetime.now().replace(hour=23, minute=59, second=59))]" />
+                <filter string="Today" domain="[('check_in','&gt;=',datetime.datetime.now().replace(hour=0, minute=0, second=0)),('check_in','&lt;=',datetime.datetime.now().replace(hour=23, minute=59, second=59))]" />
                 <filter string="Current Month" domain="[('check_in','&gt;=', datetime.datetime.now().strftime('%Y-%m-01'))]" />
                 <separator/>
-                <filter string="My Attendance" domain="[('employee_id.user_id.id', '=', uid)]" />
-                <field name="employee_id"/>
+                <filter name="my_attendances" string="My Attendances" domain="[('employee_id.user_id.id', '=', uid)]" />
                 <group expand="0" string="Group By">
                     <filter name="employee" string="Employee" context="{'group_by':'employee_id'}"/>
                     <separator/>
@@ -98,12 +75,14 @@
         </field>
     </record>
 
+    <!-- actions -->
+
     <record id="hr_attendance_action" model="ir.actions.act_window">
         <field name="name">Attendances</field>
         <field name="res_model">hr.attendance</field>
         <field name="view_type">form</field>
         <field name="view_mode">tree,form</field>
-        <field name="context">{"search_default_today":1}</field>
+        <field name="context">{"search_default_my_attendances":1}</field>
         <field name="search_view_id" ref="hr_attendance_view_filter" />
         <field name="help">The Time Tracking functionality aims to manage employee attendances from Check in/Check out actions. You can also link this feature to an attendance device using Odoo's web service features.</field>
     </record>
@@ -127,8 +106,29 @@
         </field>
         <field name="view_id"></field>  <!-- force empty -->
     </record>
-    
-    <menuitem id="menu_open_view_attendance" name="Attendances" parent="menu_hr_attendance_root" sequence="20" groups="base.group_hr_attendance" action="hr_attendance_action"/>
 
-    <menuitem name="Reports" parent="menu_hr_attendance_root" sequence="99" id="menu_hr_attendance_report" groups="base.group_hr_user" action="hr_attendance_action_graph"/>
+    <record id="hr_attendance_action_main_menu" model="ir.actions.client">
+        <field name="name">Attendance</field>
+        <field name="tag">hr_attendance_main_menu</field>
+    </record>
+
+    <record id="hr_attendance_action_welcome_message" model="ir.actions.client">
+        <field name="name">Welcome</field>
+        <field name="tag">hr_attendance_welcome_message</field>
+    </record>
+
+    <record id="hr_attendance_action_farewell_message" model="ir.actions.client">
+        <field name="name">Farewell</field>
+        <field name="tag">hr_attendance_farewell_message</field>
+    </record>    
+
+    <!-- Menus -->
+
+    <menuitem id="menu_hr_attendance_root" name="Attendances" sequence="90" groups="base.group_hr_attendance" web_icon="hr_attendance,static/img/icon.png"/>
+    
+    <menuitem id="menu_open_view_attendance" name="Attendances" parent="menu_hr_attendance_root" sequence="10" groups="base.group_hr_attendance" action="hr_attendance_action"/>
+
+    <menuitem id="menu_hr_attendance_report" name="Reports" parent="menu_hr_attendance_root" sequence="20" groups="base.group_hr_user" action="hr_attendance_action_graph"/>
+
+    <menuitem id="menu_hr_attendance_welcome_screen" name="Welcome Screen" parent="menu_hr_attendance_root" sequence="30" groups="base.group_hr_user" action="hr_attendance_action_main_menu"/>
 </odoo>
