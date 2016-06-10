@@ -507,7 +507,7 @@ class product_template(osv.osv):
         'list_price': fields.float('Sale Price', digits_compute=dp.get_precision('Product Price'), help="Base price to compute the customer price. Sometimes called the catalog price."),
         'lst_price' : fields.related('list_price', type="float", string='Public Price', digits_compute=dp.get_precision('Product Price')),
         'standard_price': fields.function(_compute_product_template_field, fnct_inv=_set_product_template_field, fnct_search=_search_by_standard_price, multi='_compute_product_template_field', type='float', string='Cost', digits_compute=dp.get_precision('Product Price'),
-                                          help="Cost of the product, in the default unit of measure of the product.", groups="base.group_user"),
+                                          help="The cost price is used for valuate stocks or to assess the price of manufacturing a product. The purchase orders are fetching the vendor prices.", groups="base.group_user"),
         'volume': fields.function(_compute_product_template_field, fnct_inv=_set_product_template_field, multi='_compute_product_template_field', type='float', string='Volume', help="The volume in m3.", store={
             _name: (lambda s,c,u,i,t: i, ['product_variant_ids'], 10),
             'product.product': (_get_template_id_from_product, ['product_tmpl_id', 'volume'], 10),
