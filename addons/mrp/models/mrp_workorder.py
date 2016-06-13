@@ -110,7 +110,7 @@ class MrpProductionWorkcenterLine(models.Model):
 
     time_ids = fields.One2many(
         'mrp.workcenter.productivity', 'workorder_id')
-    show_state = fields.Boolean(compute='_get_current_state')  # TDE: check use, probably to rename like in_production
+    user_state = fields.Boolean(compute='_get_current_state')  # TDE: check use, probably to rename like in_production
     production_messages = fields.Html('Workorder Message', compute='_compute_production_messages')
     next_work_order_id = fields.Many2one('mrp.workorder', "Next Work Order")
 
@@ -133,9 +133,9 @@ class MrpProductionWorkcenterLine(models.Model):
         # TDE FIXME: weird
         for order in self:
             if order.time_ids.filtered(lambda x : (x.user_id.id == self.env.user.id) and (not x.date_end) and (x.loss_type in ('productive', 'performance'))):
-                order.show_state = True
+                order.user_state = True
             else:
-                order.show_state = False
+                order.user_state = False
 
     @api.depends('production_id', 'workcenter_id', 'production_id.bom_id')
     def _compute_production_messages(self):
