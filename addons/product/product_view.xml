@@ -275,6 +275,8 @@
                                 </group>
                             </group>
                         </group>
+                        <separator string="Vendors"/>
+                        <field name="seller_ids" context="{'default_product_tmpl_id': context.get('product_tmpl_id', active_id)}"/>
                     </sheet>
                 </form>
             </field>
