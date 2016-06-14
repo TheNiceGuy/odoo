@@ -97,9 +97,7 @@
                 % endif
 
                 % if ctx.get('button_access') or ctx.get('button_follow') or ctx.get('button_unfollow'):
-                % if ctx.get('actions'):
                    |
-                % endif
                 <a href="${ctx['button_access']['url']}" style="text-decoration:none; color: #a24689;"><strong>${ctx['button_access']['title']}</strong></a>
                 % endif
                 </p>
