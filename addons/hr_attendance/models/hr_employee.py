@@ -21,46 +21,22 @@ class HrEmployee(models.Model):
             barcode = "".join(choice(digits) for i in range(13))
         return barcode
 
-    def _default_use_pin(self):
-        return safe_eval(self.env['ir.config_parameter'].get_param('attendance_use_employee_pin'))
-
-    def _init_column(self, cr, column_name, context=None):
-        """ Initialize the value of the given column for existing rows. """
-        # get the default value; ideally, we should use default_get(), but it
-        # fails due to ir.values not being ready
-        if column_name not in ["barcode", "pin"]:
-            super(HrEmployee, self)._init_column(cr, column_name, context=context)
-        else:
-            default = self._defaults.get(column_name)
-            column = self._columns[column_name]
-            ss = column._symbol_set
-
-            query = 'SELECT id FROM "%s" WHERE "%s" is NULL' % (
-                self._table, column_name)
-            cr.execute(query)
-            employee_ids = cr.fetchall()
-
-            for employee_id in employee_ids:
-                if callable(default):
-                    default_value = default(self, cr, SUPERUSER_ID, context)
-
-                db_default = ss[1](default_value)
-
-                query = 'UPDATE "%s" SET "%s"=%s WHERE id = %s' % (
-                    self._table, column_name, ss[0], employee_id[0])
-                cr.execute(query, (db_default,))
-                cr.commit()
-
     state = fields.Selection(string="Attendance", compute='_get_state', selection=[('absent', "Absent"), ('present', "Present")])
     barcode = fields.Char(string="Badge ID", help="ID used for employee identification.", default=_default_random_barcode, copy=False)
     pin = fields.Char(string="PIN", default=_default_random_pin, help="PIN used for Check In/Out in Attendance.", copy=False)
-    use_pin = fields.Boolean(default=_default_use_pin, readonly=True)
-    last_check = fields.Datetime(string="Last Check In/Out", compute='_compute_last_check', copy=False)
+    use_pin = fields.Boolean(compute='_compute_use_pin')
+    last_check = fields.Datetime(string="Last Check In/Out", compute='_compute_last_check')
     attendance_ids = fields.One2many('hr.attendance', 'employee_id', help='list of attendances for the employee')
 
     attendance_access = fields.Boolean(string='Attendance Access', compute='_compute_attendance_access', help='Used to hide or reveal the Check In/Out button from menu(top right).')
 
     _sql_constraints = [('barcode_uniq', 'unique (barcode)', "The Badge ID must be unique, this one is already assigned to another employee.")]
+
+    @api.multi
+    def _compute_use_pin(self):
+        use_pin = safe_eval(self.env['ir.config_parameter'].get_param('attendance_use_employee_pin'))
+        for employee in self:
+            employee.use_pin = use_pin
 
     @api.depends('attendance_ids.check_in', 'attendance_ids.check_out', 'attendance_ids')
     def _compute_last_check(self):
@@ -138,3 +114,30 @@ class HrEmployee(models.Model):
             else:
                 raise exceptions.UserError(_('Cannot perform check out on %s, could not find corresponding check in.') % (self.name, ))
             return "checked out"
+
+    def _init_column(self, cr, column_name, context=None):
+        """ Initialize the value of the given column for existing rows. """
+        # get the default value; ideally, we should use default_get(), but it
+        # fails due to ir.values not being ready
+        if column_name not in ["barcode", "pin"]:
+            super(HrEmployee, self)._init_column(cr, column_name, context=context)
+        else:
+            default = self._defaults.get(column_name)
+            column = self._columns[column_name]
+            ss = column._symbol_set
+
+            query = 'SELECT id FROM "%s" WHERE "%s" is NULL' % (
+                self._table, column_name)
+            cr.execute(query)
+            employee_ids = cr.fetchall()
+
+            for employee_id in employee_ids:
+                if callable(default):
+                    default_value = default(self, cr, SUPERUSER_ID, context)
+
+                db_default = ss[1](default_value)
+
+                query = 'UPDATE "%s" SET "%s"=%s WHERE id = %s' % (
+                    self._table, column_name, ss[0], employee_id[0])
+                cr.execute(query, (db_default,))
+                cr.commit()
