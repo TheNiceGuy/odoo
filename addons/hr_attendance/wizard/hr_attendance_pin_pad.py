@@ -2,7 +2,9 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from odoo import api, fields, models, _
+
 from odoo.exceptions import UserError
+from odoo.tools.safe_eval import safe_eval
 
 
 class HrAttendancePinPad(models.TransientModel):
@@ -11,13 +13,26 @@ class HrAttendancePinPad(models.TransientModel):
     def _default_employee(self):
         return self.env['hr.employee'].browse(self._context.get('employee_id'))
 
-    employee_id = fields.Many2one('hr.employee', string="Employee", required=True, default=_default_employee)
-    entered_pin = fields.Char(string="PIN", help="PIN used for checking in and out, contact HR if forgotten.")
+    def _default_employee_name(self):
+        # import ipdb;ipdb.set_trace()
+        return self._default_employee().name
+
+    def _default_use_pin(self):
+        return safe_eval(self.env['ir.config_parameter'].get_param('attendance_use_employee_pin'))
+
+    def _default_employee_present(self):
+        return self._default_employee().state == 'present'
+
+    employee_id = fields.Many2one('hr.employee', string="Employee", required=True, default=_default_employee, readonly=True)
+    employee_name = fields.Char(default=_default_employee_name, string="Employee name", readonly=True)
+    employee_present = fields.Boolean(default=_default_employee_present, readonly=True)
+    use_pin = fields.Boolean(default=_default_use_pin, readonly=True)
+    entered_pin = fields.Char(string="PIN")
 
     @api.multi
     def verify_pin_change_attendance(self):
         employee = self.employee_id
-        if self.entered_pin == employee.pin:
+        if self.entered_pin == employee.pin or not self.use_pin:
             self.unlink()
             if employee.user_id:
                 employee_check = employee.sudo(employee.user_id.id).attendance_action_change()
@@ -27,6 +42,7 @@ class HrAttendancePinPad(models.TransientModel):
                 'name': 'Attendance',
                 'type': 'ir.actions.client',
                 'res_id': employee.id,
+                'next_action': 'hr_attendance.hr_attendance_action_main_menu',
                 'options': {
                     'clear_breadcrumbs': True,
                 }

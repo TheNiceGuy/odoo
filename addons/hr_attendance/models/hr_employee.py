@@ -5,6 +5,7 @@ from random import choice
 from string import digits
 
 from odoo import models, fields, api, exceptions, _, SUPERUSER_ID
+from odoo.tools.safe_eval import safe_eval
 
 
 class HrEmployee(models.Model):
@@ -19,6 +20,9 @@ class HrEmployee(models.Model):
         while not barcode or any(self.env['hr.employee'].search([('barcode', '=', barcode)])):
             barcode = "".join(choice(digits) for i in range(13))
         return barcode
+
+    def _default_use_pin(self):
+        return safe_eval(self.env['ir.config_parameter'].get_param('attendance_use_employee_pin'))
 
     def _init_column(self, cr, column_name, context=None):
         """ Initialize the value of the given column for existing rows. """
@@ -50,6 +54,7 @@ class HrEmployee(models.Model):
     state = fields.Selection(string="Attendance", compute='_get_state', selection=[('absent', "Absent"), ('present', "Present")])
     barcode = fields.Char(string="Badge ID", help="ID used for employee identification.", default=_default_random_barcode, copy=False)
     pin = fields.Char(string="PIN", default=_default_random_pin, help="PIN used for Check In/Out in Attendance.", copy=False)
+    use_pin = fields.Boolean(default=_default_use_pin, readonly=True)
     last_check = fields.Datetime(string="Last Check In/Out", compute='_compute_last_check', copy=False)
     attendance_ids = fields.One2many('hr.attendance', 'employee_id', help='list of attendances for the employee')
 

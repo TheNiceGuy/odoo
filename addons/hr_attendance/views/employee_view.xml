@@ -8,12 +8,13 @@
         <field name="arch" type="xml">
             <field name="category_ids" position="after">
                 <group>
-                    <field name="state"/>
+                    <field name="state" string="Presence"/>
                 </group>
             </field>
             <field name="user_id" position="after">
                 <field name="barcode" groups="base.group_hr_user"/>
-                <field name="pin" groups="base.group_hr_user"/>
+                <field name="use_pin" invisible="1"/>
+                <field name="pin" groups="base.group_hr_user" attrs="{'invisible': [('use_pin', '=', False)]}"/>
                 <field name="last_check" groups="base.group_hr_user"/>
             </field>
         </field>
@@ -33,10 +34,18 @@
                             <img t-att-src="kanban_image('hr.employee', 'image_medium', record.id.value)"/>
                         </div>
                         <div class="oe_kanban_details">
-                            <field name="state" widget='presence_indicator'/>
-                            <strong>
-                                <field name="name"/>
-                            </strong>
+                            <div id="textbox">
+                                <table><tr>
+                                    <td width="97%">
+                                        <strong>
+                                            <field name="name"/>
+                                        </strong>
+                                    </td>
+                                    <td width="3%">
+                                        <field name="state" widget="presence_indicator"/>
+                                    </td>
+                                </tr></table>
+                            </div>
                             <ul>
                                 <li t-if="record.job_id.raw_value"><field name="job_id"/></li>
                                 <li t-if="record.work_location.raw_value"><field name="work_location"/></li>
@@ -48,6 +57,28 @@
             </kanban>
         </field>
     </record>
+
+    <!-- If we want to add the presence indicator widget to the regular kanban view
+    <record id="view_employee_kanban_inherit_hr_attendance" model="ir.ui.view">
+        <field name="name">hr.employee</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.hr_kanban_view_employees"/>
+        <field name="priority">10</field>
+        <field name="arch" type="xml">
+            <field name="name" position="replace">
+                <table><tr>
+                    <td width="97%">
+                        <strong>
+                            <field name="name"/>
+                        </strong>
+                    </td>
+                    <td width="3%">
+                        <field name="state" widget='presence_indicator'/>
+                    </td>
+                </tr></table>
+            </field>
+        </field>
+    </record> -->
 
     <record id="hr_employee_attendance_action_kanban" model="ir.actions.act_window">
         <field name="name">Employees</field>

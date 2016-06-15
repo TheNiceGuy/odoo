@@ -6,15 +6,28 @@
         <field name="arch" type="xml">
             <form string="Enter PIN">
                 <div class="o_form_view">
+                    <field name="use_pin" invisible="1"/>
+                    <field name="employee_present" invisible="1"/>
                     <table class="o_group o_inner_group o_label_nowrap">
                         <tr>
-                            <td class="o_td_label"> Enter PIN </td>
-                            <td width="100%"><field string="PIN" name="entered_pin" autofocus="autofocus" widget="enter_pin"/></td> <!-- add maxlength == 4 / type password (for asterisks) / simulate click on "ok" if enter key pressed? -->
+                            <strong align="center">
+                                <field name="employee_name"/>
+                                <span attrs="{'invisible': [('employee_present', '=', False)]}"> : Check in</span>
+                                <span attrs="{'invisible': [('employee_present', '=', True)]}"> : Check out</span>
+                            </strong>
+                        </tr>
+                        <tr attrs="{'invisible': [('use_pin', '=', False)]}">
+                            <!-- <td class="o_td_label" width="25%"> Please enter your PIN </td> -->
+                            <!-- <td width="75%"><field string="PIN" name="entered_pin" autofocus="autofocus" widget="enter_pin"/></td> -->
+                             <!-- add maxlength == 4 / type password (for asterisks) / simulate click on "ok" if enter key pressed? -->
+                        </tr>
+                        <tr>
+                            <field string="PIN" name="entered_pin" widget="hr_attendance_pin_pad"/>
                         </tr>
                     </table>
                 </div>
                 <footer>
-                    <button icon="fa-check" string="Ok" type="object" class="oe_highlight" name="verify_pin_change_attendance"/>
+                    <button icon="fa-check" string="Ok" type="object" class="oe_highlight random_class_for_me" name="verify_pin_change_attendance"/>
                     <button icon="fa-times" string="Cancel" special="cancel" class="btn-default"/>
                 </footer>
             </form>

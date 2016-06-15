@@ -14,7 +14,7 @@ Keeps account of the attendances of the employees on the basis of the
 actions(Sign in/Sign out) performed by them.
        """,
     'website': 'https://www.odoo.com/page/employees',
-    'depends': ['hr', 'report', 'barcodes'],
+    'depends': ['hr', 'report', 'barcodes'], # web?
     'data': [
         'security/hr_attendance_security.xml',
         'security/ir.model.access.csv',
@@ -23,9 +23,11 @@ actions(Sign in/Sign out) performed by them.
         # 'report/hr_attendance_report.xml',
         # 'wizard/hr_attendance_error_view.xml',
         'wizard/hr_attendance_pin_pad_view.xml',
+        'wizard/hr_employee_badge.xml',
         # 'report/report_attendance_errors.xml',
         'views/hr_dashboard.xml',
         'views/employee_view.xml',
+        'views/res_config_view.xml',
     ],
     'demo': [
         'data/hr_attendance_demo.xml'
