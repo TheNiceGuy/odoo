@@ -85,7 +85,7 @@ class SaleOrder(models.Model):
         # Create the sale order line
         values = {
             'order_id': self.id,
-            'name': carrier.name,
+            'name': carrier.product_id.display_name + (carrier.product_id.description_sale and '\n' + carrier.product_id.description_sale or ''),
             'product_uom_qty': 1,
             'product_uom': carrier.product_id.uom_id.id,
             'product_id': carrier.product_id.id,
