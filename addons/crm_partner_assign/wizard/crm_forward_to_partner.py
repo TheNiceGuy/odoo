@@ -70,7 +70,7 @@ class crm_lead_forward_to_partner(osv.TransientModel):
         try:
             portal_id = self.pool.get('ir.model.data').get_object_reference(cr, uid, 'base', 'group_portal')[1]
         except ValueError:
-            raise UserError(_('The Portal group cannot be found'))
+            pass
 
         local_context = context.copy()
         if not (record.forward_type == 'single'):
@@ -99,9 +99,10 @@ class crm_lead_forward_to_partner(osv.TransientModel):
 
         for partner_id, partner_leads in partners_leads.items():
             in_portal = False
-            for contact in (partner.child_ids or [partner]):
-                if contact.user_ids:
-                    in_portal = portal_id in [g.id for g in contact.user_ids[0].groups_id]
+            if portal_id:
+                for contact in (partner.child_ids or [partner]):
+                    if contact.user_ids:
+                        in_portal = portal_id in [g.id for g in contact.user_ids[0].groups_id]
 
             local_context['partner_id'] = partner_leads['partner']
             local_context['partner_leads'] = partner_leads['leads']

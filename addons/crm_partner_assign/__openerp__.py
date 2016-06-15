@@ -15,7 +15,7 @@ This modules lets you geolocate Leads, Opportunities and Partners based on their
 Once the coordinates of the Lead/Opportunity is known, they can be automatically assigned
 to an appropriate local partner, based on the distance and the weight that was assigned to the partner.
     """,
-    'depends': ['base_geolocalize', 'crm', 'account', 'portal'],
+    'depends': ['base_geolocalize', 'crm', 'account'],
     'data': [
         'security/ir.model.access.csv',
         'res_partner_view.xml',
