@@ -11,6 +11,7 @@ Publish and Assign Partner
     'depends': ['crm_partner_assign','website_partner', 'website_google_map'],
     'data': [
         'data/portal_data.xml',
+        'security/ir.model.access.csv',
         'views/partner_grade.xml',
         'views/website_crm_partner_assign.xml',
         'views/crm_portal_view.xml',
