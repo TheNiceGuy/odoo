@@ -17,4 +17,4 @@ class TestAssetsBundleController(Controller):
     @route('/test_assetsbundle/xml', type='http', auth='user')
     def bundle_xml(self, debug=None):
         cr, uid, registry, context = request.cr, SUPERUSER_ID, request.registry, request.context
-        return registry['ir.ui.view'].render(cr, uid, 'test_assetsbundle.template2', context=context)
+        return registry['ir.qweb'].render(cr, uid, 'test_assetsbundle.template2', context=context)

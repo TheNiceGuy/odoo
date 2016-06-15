@@ -5,6 +5,7 @@ import hashlib
 import itertools
 import json
 import textwrap
+import operator
 import uuid
 from datetime import datetime
 from subprocess import Popen, PIPE
@@ -14,6 +15,7 @@ from odoo.modules.module import get_resource_path
 import psycopg2
 import werkzeug
 from openerp.tools import func, misc
+from openerp.tools.translate import xml_translate
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -229,10 +231,10 @@ class AssetsBundle(object):
         if modules is None:
             modules = module_obj.search([('state', '=', 'installed')]).mapped('name')
 
-        lang = res_lang_obj.search([("code", "=", lang)], limit=1)
+        lang_rec = res_lang_obj.search([("code", "=", lang)], limit=1)
         lang_params = None
-        if lang:
-            lang_params = lang.read(["name", "direction", "date_format", "time_format", "grouping", "decimal_point", "thousands_sep"])
+        if lang_rec:
+            lang_params = lang_rec.read(["name", "direction", "date_format", "time_format", "grouping", "decimal_point", "thousands_sep"])
 
         # Regional languages (ll_CC) must inherit/override their parent lang (ll), but this is
         # done server-side when the language is loaded, so we only need to load the user's lang.
@@ -253,7 +255,7 @@ class AssetsBundle(object):
         }
 
     def xml(self, minify=True):
-        lang = self.context.get('lang', 'en_US')
+        lang = self.env.context.get('lang', 'en_US')
         inc = lang
         attachments = self.get_attachments('xml.js', inc=inc)
         if not attachments:
@@ -261,7 +263,7 @@ class AssetsBundle(object):
             modules = list(set([asset.url.split("/", 2)[1] for asset in (self.templates + self.javascripts) if asset.url]))
             if modules:
                 js = [
-                    'odoo.define("base.ir.translation.%s", function (require) {' % self.xmlid,
+                    'odoo.define("base.ir.translation.%s", function (require) {' % self.name,
                     '"use strict"',
                     'var translation = require("web.translation");',
                     '/* lang: %s, modules: %s */' % (lang, ','.join(modules)),
@@ -555,12 +557,13 @@ class XMLsheetAsset(WebAsset):
     def _fetch_content(self):
         """ Fetch content from file or database"""
         datas = super(XMLsheetAsset, self)._fetch_content()
+        env = self.bundle.env
 
-        if not self.context.get('lang'):
+        if not env.context.get('lang'):
             return datas
 
-        trans = {t['src']: t['value'] for t in self.en['ir.translation'].sudo().search_read(
-            [('type', '=', 'code'), ('name', 'like', self.url), ('lang', '=', self.context.get('lang'))],
+        trans = {t['src']: t['value'] for t in env['ir.translation'].sudo().search_read(
+            [('type', '=', 'code'), ('name', 'like', self.url), ('lang', '=', env.context.get('lang'))],
             ['src', 'value'])}
 
         return xml_translate(lambda term: trans.get(term) or term, datas)
@@ -573,7 +576,7 @@ class XMLsheetAsset(WebAsset):
         return xml
 
     def to_js(self):
-        name = "%s[%s]" % (self.bundle.xmlid, self.url)
+        name = "%s[%s]" % (self.bundle.name, self.url)
         content = self.cleaned_content()
         js = [
             'odoo.define("base.ir.qweb.%s", function (require) {' % name,
