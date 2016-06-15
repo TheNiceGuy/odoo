@@ -59,9 +59,9 @@ class calendar_contacts(osv.osv):
     _name = 'calendar.contacts'
 
     _columns = {
-        'user_id': fields.many2one('res.users', 'Me'),
-        'partner_id': fields.many2one('res.partner', 'Employee', required=True, domain=[]),
-        'active': fields.boolean('active'),
+        'user_id': openerp.osv.fields.many2one('res.users', 'Me'),
+        'partner_id': openerp.osv.fields.many2one('res.partner', 'Employee', required=True, domain=[]),
+        'active': openerp.osv.fields.boolean('active'),
     }
 
     _defaults = {
@@ -108,13 +108,13 @@ class calendar_attendee(osv.Model):
     ]
 
     _columns = {
-        'state': fields.selection(STATE_SELECTION, 'Status', readonly=True, help="Status of the attendee's participation"),
-        'cn': fields.function(_compute_data, string='Common name', type="char", multi='cn', store=True),
-        'partner_id': fields.many2one('res.partner', 'Contact', readonly="True"),
-        'email': fields.char('Email', help="Email of Invited Person"),
-        'availability': fields.selection([('free', 'Free'), ('busy', 'Busy')], 'Free/Busy', readonly="True"),
-        'access_token': fields.char('Invitation Token'),
-        'event_id': fields.many2one('calendar.event', 'Meeting linked', ondelete='cascade'),
+        'state': openerp.osv.fields.selection(STATE_SELECTION, 'Status', readonly=True, help="Status of the attendee's participation"),
+        'cn': openerp.osv.fields.function(_compute_data, string='Common name', type="char", multi='cn', store=True),
+        'partner_id': openerp.osv.fields.many2one('res.partner', 'Contact', readonly="True"),
+        'email': openerp.osv.fields.char('Email', help="Email of Invited Person"),
+        'availability': openerp.osv.fields.selection([('free', 'Free'), ('busy', 'Busy')], 'Free/Busy', readonly="True"),
+        'access_token': openerp.osv.fields.char('Invitation Token'),
+        'event_id': openerp.osv.fields.many2one('calendar.event', 'Meeting linked', ondelete='cascade'),
     }
     _defaults = {
         'state': 'needsAction',
@@ -559,11 +559,11 @@ class calendar_alarm(osv.Model):
 
     _interval_selection = {'minutes': 'Minute(s)', 'hours': 'Hour(s)', 'days': 'Day(s)'}
     _columns = {
-        'name': fields.char('Name', required=True),
-        'type': fields.selection([('notification', 'Notification'), ('email', 'Email')], 'Type', required=True),
-        'duration': fields.integer('Amount', required=True),
-        'interval': fields.selection(list(_interval_selection.iteritems()), 'Unit', required=True),
-        'duration_minutes': fields.function(_get_duration, type='integer', string='Duration in minutes', store=True, help="Duration in minutes"),
+        'name': openerp.osv.fields.char('Name', required=True),
+        'type': openerp.osv.fields.selection([('notification', 'Notification'), ('email', 'Email')], 'Type', required=True),
+        'duration': openerp.osv.fields.integer('Amount', required=True),
+        'interval': openerp.osv.fields.selection(list(_interval_selection.iteritems()), 'Unit', required=True),
+        'duration_minutes': openerp.osv.fields.function(_get_duration, type='integer', string='Duration in minutes', store=True, help="Duration in minutes"),
     }
 
     _defaults = {
@@ -610,7 +610,7 @@ class calendar_event_type(osv.Model):
     _name = 'calendar.event.type'
     _description = 'Meeting Type'
     _columns = {
-        'name': fields.char('Name', required=True),
+        'name': openerp.osv.fields.char('Name', required=True),
     }
     _sql_constraints = [
             ('name_uniq', 'unique (name)', "Tag name already exists !"),
@@ -723,8 +723,8 @@ class calendar_event(osv.Model):
         tz = tools.ustr(tz).encode('utf-8') # make safe for str{p,f}time()
 
         format_date, format_time = self.get_date_formats(cr, uid, context=context)
-        date = fields.datetime.context_timestamp(cr, uid, datetime.strptime(start, tools.DEFAULT_SERVER_DATETIME_FORMAT), context=context)
-        date_deadline = fields.datetime.context_timestamp(cr, uid, datetime.strptime(stop, tools.DEFAULT_SERVER_DATETIME_FORMAT), context=context)
+        date = openerp.osv.fields.datetime.context_timestamp(cr, uid, datetime.strptime(start, tools.DEFAULT_SERVER_DATETIME_FORMAT), context=context)
+        date_deadline = openerp.osv.fields.datetime.context_timestamp(cr, uid, datetime.strptime(stop, tools.DEFAULT_SERVER_DATETIME_FORMAT), context=context)
         event_date = date.strftime(format_date)
         display_time = date.strftime(format_time)
 
@@ -846,55 +846,55 @@ class calendar_event(osv.Model):
                 values['duration'] = round(duration, 2)
 
     _columns = {
-        'id': fields.integer('ID', readonly=True),
-        'state': fields.selection([('draft', 'Unconfirmed'), ('open', 'Confirmed')], string='Status', readonly=True, track_visibility='onchange'),
-        'name': fields.char('Meeting Subject', required=True, states={'done': [('readonly', True)]}),
-        'is_attendee': fields.function(_compute, string='Attendee', type="boolean", multi='attendee'),
-        'attendee_status': fields.function(_compute, string='Attendee Status', type="selection", selection=calendar_attendee.STATE_SELECTION, multi='attendee'),
-        'display_time': fields.function(_compute, string='Event Time', type="char", multi='attendee'),
-        'display_start': fields.function(_compute, string='Date', type="char", multi='attendee', store=True),
-        'allday': fields.boolean('All Day', states={'done': [('readonly', True)]}),
-        'start': fields.function(_compute, fnct_inv=lambda *args: None, string='Start', type="datetime", multi='attendee', store=True, required=True, help="Start date of an event, without time for full days events"),
-        'stop': fields.function(_compute, string='Stop', type="datetime", multi='attendee', store=True, required=True, help="Stop date of an event, without time for full days events"),
-        'start_date': fields.date('Start Date', states={'done': [('readonly', True)]}, track_visibility='onchange'),
-        'start_datetime': fields.datetime('Start DateTime', states={'done': [('readonly', True)]}, track_visibility='onchange'),
-        'stop_date': fields.date('End Date', states={'done': [('readonly', True)]}, track_visibility='onchange'),
-        'stop_datetime': fields.datetime('End Datetime', states={'done': [('readonly', True)]}, track_visibility='onchange'),  # old date_deadline
-        'duration': fields.float('Duration', states={'done': [('readonly', True)]}),
-        'description': fields.text('Description', states={'done': [('readonly', True)]}),
-        'class': fields.selection([('public', 'Everyone'), ('private', 'Only me'), ('confidential', 'Only internal users')], 'Privacy', states={'done': [('readonly', True)]}),
-        'location': fields.char('Location', help="Location of Event", track_visibility='onchange', states={'done': [('readonly', True)]}),
-        'show_as': fields.selection([('free', 'Free'), ('busy', 'Busy')], 'Show Time as', states={'done': [('readonly', True)]}),
+        'id': openerp.osv.fields.integer('ID', readonly=True),
+        'state': openerp.osv.fields.selection([('draft', 'Unconfirmed'), ('open', 'Confirmed')], string='Status', readonly=True, track_visibility='onchange'),
+        'name': openerp.osv.fields.char('Meeting Subject', required=True, states={'done': [('readonly', True)]}),
+        'is_attendee': openerp.osv.fields.function(_compute, string='Attendee', type="boolean", multi='attendee'),
+        'attendee_status': openerp.osv.fields.function(_compute, string='Attendee Status', type="selection", selection=calendar_attendee.STATE_SELECTION, multi='attendee'),
+        'display_time': openerp.osv.fields.function(_compute, string='Event Time', type="char", multi='attendee'),
+        'display_start': openerp.osv.fields.function(_compute, string='Date', type="char", multi='attendee', store=True),
+        'allday': openerp.osv.fields.boolean('All Day', states={'done': [('readonly', True)]}),
+        'start': openerp.osv.fields.function(_compute, fnct_inv=lambda *args: None, string='Start', type="datetime", multi='attendee', store=True, required=True, help="Start date of an event, without time for full days events"),
+        'stop': openerp.osv.fields.function(_compute, string='Stop', type="datetime", multi='attendee', store=True, required=True, help="Stop date of an event, without time for full days events"),
+        'start_date': openerp.osv.fields.date('Start Date', states={'done': [('readonly', True)]}, track_visibility='onchange'),
+        'start_datetime': openerp.osv.fields.datetime('Start DateTime', states={'done': [('readonly', True)]}, track_visibility='onchange'),
+        'stop_date': openerp.osv.fields.date('End Date', states={'done': [('readonly', True)]}, track_visibility='onchange'),
+        'stop_datetime': openerp.osv.fields.datetime('End Datetime', states={'done': [('readonly', True)]}, track_visibility='onchange'),  # old date_deadline
+        'duration': openerp.osv.fields.float('Duration', states={'done': [('readonly', True)]}),
+        'description': openerp.osv.fields.text('Description', states={'done': [('readonly', True)]}),
+        'class': openerp.osv.fields.selection([('public', 'Everyone'), ('private', 'Only me'), ('confidential', 'Only internal users')], 'Privacy', states={'done': [('readonly', True)]}),
+        'location': openerp.osv.fields.char('Location', help="Location of Event", track_visibility='onchange', states={'done': [('readonly', True)]}),
+        'show_as': openerp.osv.fields.selection([('free', 'Free'), ('busy', 'Busy')], 'Show Time as', states={'done': [('readonly', True)]}),
 
         # RECURRENCE FIELD
-        'rrule': fields.function(_get_rulestring, type='char', fnct_inv=_set_rulestring, store=True, string='Recurrent Rule'),
-        'rrule_type': fields.selection([('daily', 'Day(s)'), ('weekly', 'Week(s)'), ('monthly', 'Month(s)'), ('yearly', 'Year(s)')], 'Recurrency', states={'done': [('readonly', True)]}, help="Let the event automatically repeat at that interval"),
-        'recurrency': fields.boolean('Recurrent', help="Recurrent Meeting"),
-        'recurrent_id': fields.integer('Recurrent ID'),
-        'recurrent_id_date': fields.datetime('Recurrent ID date'),
-        'end_type': fields.selection([('count', 'Number of repetitions'), ('end_date', 'End date')], 'Recurrence Termination'),
-        'interval': fields.integer('Repeat Every', help="Repeat every (Days/Week/Month/Year)"),
-        'count': fields.integer('Repeat', help="Repeat x times"),
-        'mo': fields.boolean('Mon'),
-        'tu': fields.boolean('Tue'),
-        'we': fields.boolean('Wed'),
-        'th': fields.boolean('Thu'),
-        'fr': fields.boolean('Fri'),
-        'sa': fields.boolean('Sat'),
-        'su': fields.boolean('Sun'),
-        'month_by': fields.selection([('date', 'Date of month'), ('day', 'Day of month')], 'Option', oldname='select1'),
-        'day': fields.integer('Date of month'),
-        'week_list': fields.selection([('MO', 'Monday'), ('TU', 'Tuesday'), ('WE', 'Wednesday'), ('TH', 'Thursday'), ('FR', 'Friday'), ('SA', 'Saturday'), ('SU', 'Sunday')], 'Weekday'),
-        'byday': fields.selection([('1', 'First'), ('2', 'Second'), ('3', 'Third'), ('4', 'Fourth'), ('5', 'Fifth'), ('-1', 'Last')], 'By day'),
-        'final_date': fields.date('Repeat Until'),  # The last event of a recurrence
+        'rrule': openerp.osv.fields.function(_get_rulestring, type='char', fnct_inv=_set_rulestring, store=True, string='Recurrent Rule'),
+        'rrule_type': openerp.osv.fields.selection([('daily', 'Day(s)'), ('weekly', 'Week(s)'), ('monthly', 'Month(s)'), ('yearly', 'Year(s)')], 'Recurrency', states={'done': [('readonly', True)]}, help="Let the event automatically repeat at that interval"),
+        'recurrency': openerp.osv.fields.boolean('Recurrent', help="Recurrent Meeting"),
+        'recurrent_id': openerp.osv.fields.integer('Recurrent ID'),
+        'recurrent_id_date': openerp.osv.fields.datetime('Recurrent ID date'),
+        'end_type': openerp.osv.fields.selection([('count', 'Number of repetitions'), ('end_date', 'End date')], 'Recurrence Termination'),
+        'interval': openerp.osv.fields.integer('Repeat Every', help="Repeat every (Days/Week/Month/Year)"),
+        'count': openerp.osv.fields.integer('Repeat', help="Repeat x times"),
+        'mo': openerp.osv.fields.boolean('Mon'),
+        'tu': openerp.osv.fields.boolean('Tue'),
+        'we': openerp.osv.fields.boolean('Wed'),
+        'th': openerp.osv.fields.boolean('Thu'),
+        'fr': openerp.osv.fields.boolean('Fri'),
+        'sa': openerp.osv.fields.boolean('Sat'),
+        'su': openerp.osv.fields.boolean('Sun'),
+        'month_by': openerp.osv.fields.selection([('date', 'Date of month'), ('day', 'Day of month')], 'Option', oldname='select1'),
+        'day': openerp.osv.fields.integer('Date of month'),
+        'week_list': openerp.osv.fields.selection([('MO', 'Monday'), ('TU', 'Tuesday'), ('WE', 'Wednesday'), ('TH', 'Thursday'), ('FR', 'Friday'), ('SA', 'Saturday'), ('SU', 'Sunday')], 'Weekday'),
+        'byday': openerp.osv.fields.selection([('1', 'First'), ('2', 'Second'), ('3', 'Third'), ('4', 'Fourth'), ('5', 'Fifth'), ('-1', 'Last')], 'By day'),
+        'final_date': openerp.osv.fields.date('Repeat Until'),  # The last event of a recurrence
 
-        'user_id': fields.many2one('res.users', 'Responsible', states={'done': [('readonly', True)]}),
-        'color_partner_id': fields.related('user_id', 'partner_id', 'id', type="integer", string="Color index of creator", store=False),  # Color of creator
-        'active': fields.boolean('Active', help="If the active field is set to false, it will allow you to hide the event alarm information without removing it."),
-        'categ_ids': fields.many2many('calendar.event.type', 'meeting_category_rel', 'event_id', 'type_id', 'Tags'),
-        'attendee_ids': fields.one2many('calendar.attendee', 'event_id', 'Participant', ondelete='cascade'),
-        'partner_ids': fields.many2many('res.partner', 'calendar_event_res_partner_rel', string='Attendees', states={'done': [('readonly', True)]}),
-        'alarm_ids': fields.many2many('calendar.alarm', 'calendar_alarm_calendar_event_rel', string='Reminders', ondelete="restrict", copy=False),
+        'user_id': openerp.osv.fields.many2one('res.users', 'Responsible', states={'done': [('readonly', True)]}),
+        'color_partner_id': openerp.osv.fields.related('user_id', 'partner_id', 'id', type="integer", string="Color index of creator", store=False),  # Color of creator
+        'active': openerp.osv.fields.boolean('Active', help="If the active field is set to false, it will allow you to hide the event alarm information without removing it."),
+        'categ_ids': openerp.osv.fields.many2many('calendar.event.type', 'meeting_category_rel', 'event_id', 'type_id', 'Tags'),
+        'attendee_ids': openerp.osv.fields.one2many('calendar.attendee', 'event_id', 'Participant', ondelete='cascade'),
+        'partner_ids': openerp.osv.fields.many2many('res.partner', 'calendar_event_res_partner_rel', string='Attendees', states={'done': [('readonly', True)]}),
+        'alarm_ids': openerp.osv.fields.many2many('calendar.alarm', 'calendar_alarm_calendar_event_rel', string='Reminders', ondelete="restrict", copy=False),
     }
 
     def _get_default_partners(self, cr, uid, ctx=None):
