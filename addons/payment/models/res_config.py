@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from openerp.osv import fields, osv
+from openerp import models, fields as Fields
 
 
 class AccountPaymentConfig(osv.TransientModel):
@@ -24,9 +25,15 @@ class AccountPaymentConfig(osv.TransientModel):
             help='-It installs the module payment_buckaroo.'),
         'module_payment_authorize': fields.dummy(
             'Authorize.Net',
-            help='-It installs the module payment_authorize.'),
+            help='-It installs the module payment_authorize.')
     }
 
     _defaults = {
         'module_payment_transfer': True
     }
+
+class AccountPaymentConfigNew(models.TransientModel):
+    _inherit = 'account.config.settings'
+
+    module_payment_sips = Fields.Boolean('Worldline SIPS', store=False,
+                                         help='-It installs the module payment_sips.')
