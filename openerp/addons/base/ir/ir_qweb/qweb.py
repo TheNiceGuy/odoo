@@ -38,27 +38,39 @@ class Contextifier(ast.NodeTransformer):
     # remain as-is. Because we're transforming an AST, the structure should
     # be lexical, so just store a set of "safe" parameter names and recurse
     # through the lambda using a new NodeTransformer
-    def __init__(self, params=()):
+    def __init__(self, params=(), strict=False):
         super(Contextifier, self).__init__()
         self._safe_names = tuple(params)
+        self.strict = strict
 
     def visit_Name(self, node):
         if node.id in self._safe_names:
             return node
 
-        return ast.copy_location(
-            # values.get(name)
-            ast.Call(
-                func=ast.Attribute(
+        if self.strict:
+            return ast.copy_location(
+                # values[name]
+                ast.Subscript(
                     value=ast.Name(id='values', ctx=ast.Load()),
-                    attr='get',
+                    slice=ast.Index(ast.Str(node.id)),
                     ctx=ast.Load()
                 ),
-                args=[ast.Str(node.id)], keywords=[],
-                starargs=None, kwargs=None
-            ),
-            node
-        )
+                node
+            )
+        else:
+            return ast.copy_location(
+                # values.get(name)
+                ast.Call(
+                    func=ast.Attribute(
+                        value=ast.Name(id='values', ctx=ast.Load()),
+                        attr='get',
+                        ctx=ast.Load()
+                    ),
+                    args=[ast.Str(node.id)], keywords=[],
+                    starargs=None, kwargs=None
+                ),
+                node
+            )
 
     def visit_Lambda(self, node):
         args = node.args
@@ -89,7 +101,7 @@ class Contextifier(ast.NodeTransformer):
             for node in ast.walk(gen.target)
             if isinstance(node, ast.Name)
         )
-        transformer = Contextifier(self._safe_names + names)
+        transformer = Contextifier(self._safe_names + names, self.strict)
         # copy node
         newnode = ast.copy_location(type(node)(), node)
         # then visit the comp ignoring those names, transformation is
@@ -1113,7 +1125,7 @@ class QWeb(object):
                         ast.Str(field_name),
                         ast.Str(expression),
                         ast.Str(node_name),
-                        field_options and self._compile_expr(field_options) or ast.Dict(keys=[], values=[]),
+                        field_options and self._compile_expr(field_options, strict=True) or ast.Dict(keys=[], values=[]),
                         ast.Name(id='options', ctx=ast.Load()),
                         ast.Name(id='values', ctx=ast.Load()),
                     ],
@@ -1397,7 +1409,7 @@ class QWeb(object):
             right=it
         ), elts)
 
-    def _compile_expr(self, expr):
+    def _compile_expr(self, expr, strict=False):
         """ Compiles a purported Python expression to ast, and alter its
         variable references to access values data instead. Can be overridden to
         use a safe eval method.
@@ -1406,4 +1418,4 @@ class QWeb(object):
         # formatting purpose are going to break parse/compile
         st = ast.parse(expr.strip(), mode='eval')
         # ast.Expression().body -> expr
-        return Contextifier().visit(st).body
+        return Contextifier(strict=strict).visit(st).body

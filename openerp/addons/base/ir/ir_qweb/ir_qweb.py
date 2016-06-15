@@ -256,7 +256,7 @@ class IrQWeb(models.AbstractModel, QWeb):
 
     # compile expression add safe_eval
 
-    def _compile_expr(self, expr):
+    def _compile_expr(self, expr, strict=False):
         """ Compiles a purported Python expression to ast, verifies that it's safe
         (according to safe_eval's semantics) and alter its variable references to
         access values data instead
@@ -271,7 +271,7 @@ class IrQWeb(models.AbstractModel, QWeb):
         )
 
         # ast.Expression().body -> expr
-        return Contextifier().visit(st).body
+        return Contextifier(strict=strict).visit(st).body
 
     def _get_attr_bool(self, attr, default=False):
         if attr:
