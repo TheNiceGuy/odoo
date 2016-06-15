@@ -23,8 +23,6 @@ to an appropriate local partner, based on the distance and the weight that was a
         'wizard/crm_channel_interested_view.xml',
         'crm_lead_view.xml',
         'crm_partner_assign_data.xml',
-        'crm_portal_view.xml',
-        'portal_data.xml',
         'report/crm_lead_report_view.xml',
         'report/crm_partner_report_view.xml',
     ],
