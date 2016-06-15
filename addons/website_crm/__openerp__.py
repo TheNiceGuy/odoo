@@ -13,6 +13,7 @@ Odoo Contact Form
     'data': [
         'data/website_crm_data.xml',
         'views/website_crm.xml',
+        'views/res_config_views.xml',
     ],
     'qweb': ['static/src/xml/*.xml'],
     'installable': True,

@@ -9,4 +9,6 @@ class Lead(models.Model):
                 self.default_get(['medium_id']).get('medium_id') or
                 self.sudo().env['ir.model.data'].xmlid_to_res_id('utm.utm_medium_website')
         )
+        values['user_id'] = request.website.crm_user_id.id
+        values['team_id'] = request.website.crm_team_id.id
         return values
