@@ -16,13 +16,14 @@ var WelcomeMessage = Widget.extend({
     events: {
         "click .button_dismiss": function(){ 
             clearTimeout(this.return_to_main_menu);
-            this.do_action('hr_attendance.hr_attendance_action_main_menu', {clear_breadcrumbs: true}); 
+            this.do_action(this.next_action, {clear_breadcrumbs: true}); 
         },
     },
 
     init: function(parent, action) {
         this._super.apply(this, arguments);
         this.res_id = action.res_id;
+        this.next_action = action.next_action || 'hr_attendance.hr_attendance_action_main_menu';
     },
 
     start: function() {
@@ -57,7 +58,7 @@ var WelcomeMessage = Widget.extend({
                 self.$('.o_hr_attendance_message_time').append(_t("Invalid request, please return to the main menu."));
             }
         });
-        this.return_to_main_menu = setTimeout(function(){ self.do_action('hr_attendance.hr_attendance_action_main_menu', {clear_breadcrumbs: true}); }, 5000);
+        this.return_to_main_menu = setTimeout( function() { self.do_action(self.next_action, {clear_breadcrumbs: true}); }, 5000);
     },
 });
 

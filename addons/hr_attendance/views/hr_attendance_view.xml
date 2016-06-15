@@ -108,8 +108,13 @@
     </record>
 
     <record id="hr_attendance_action_main_menu" model="ir.actions.client">
-        <field name="name">Attendance</field>
+        <field name="name">Attendances</field>
         <field name="tag">hr_attendance_main_menu</field>
+    </record>
+
+    <record id="hr_attendance_action_basic_employee_main_menu" model="ir.actions.client">
+        <field name="name">Attendance</field>
+        <field name="tag">hr_attendance_basic_employee_main_menu</field>
     </record>
 
     <record id="hr_attendance_action_welcome_message" model="ir.actions.client">
@@ -124,11 +129,13 @@
 
     <!-- Menus -->
 
-    <menuitem id="menu_hr_attendance_root" name="Attendances" sequence="90" groups="base.group_hr_attendance" web_icon="hr_attendance,static/img/icon.png"/>
+    <menuitem id="menu_hr_attendance_root" name="Attendances" sequence="90" groups="base.group_user" web_icon="hr_attendance,static/img/icon.png"/>
     
-    <menuitem id="menu_open_view_attendance" name="Attendances" parent="menu_hr_attendance_root" sequence="10" groups="base.group_hr_attendance" action="hr_attendance_action"/>
+    <menuitem id="menu_open_view_attendance" name="Attendances" parent="menu_hr_attendance_root" sequence="20" groups="base.group_hr_attendance" action="hr_attendance_action"/>
 
-    <menuitem id="menu_hr_attendance_report" name="Reports" parent="menu_hr_attendance_root" sequence="20" groups="base.group_hr_user" action="hr_attendance_action_graph"/>
+    <menuitem id="menu_hr_attendance_report" name="Reports" parent="menu_hr_attendance_root" sequence="30" groups="base.group_hr_user" action="hr_attendance_action_graph"/>
 
-    <menuitem id="menu_hr_attendance_welcome_screen" name="Welcome Screen" parent="menu_hr_attendance_root" sequence="30" groups="base.group_hr_user" action="hr_attendance_action_main_menu"/>
+    <menuitem id="menu_hr_attendance_welcome_screen" name="Company Welcome Screen" parent="menu_hr_attendance_root" sequence="40" groups="base.group_hr_user" action="hr_attendance_action_main_menu"/>
+
+    <menuitem id="menu_hr_attendance_basic_employee_welcome_screen" name="Welcome Screen" parent="menu_hr_attendance_root" sequence="10" groups="base.group_user" action="hr_attendance_action_basic_employee_main_menu"/>
 </odoo>

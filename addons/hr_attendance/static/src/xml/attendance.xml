@@ -9,7 +9,26 @@
     </t>
 
     <t t-name="FieldPresenceIndicator">
-        <div class="o_attendance_field_presence_indicator">
+        <div class="o_hr_attendance_field_presence_indicator">
+        </div>
+    </t>
+
+    <t t-name="PinPad">
+        <div class="o_hr_attendance_pin_pad_container">
+            <div class="row">
+                <div class="col-sm-4 col-sm-offset-4">
+                    <div class="row" >
+                        <div class="col-xs-4 col-xs-offset-4"><input id='o_hr_attendance_PINbox' class="o_hr_attendance_pinbox"  type="password" disabled="true"/></div>
+                    </div>
+                    <div class="row">
+                        <t t-foreach="['1', '2', '3', '4', '5', '6', '7', '8', '9', 'clear', '0', 'bksp']" t-as="btn_name">
+                            <div class="col-xs-4 o_hr_attendance_pin_pad_border">
+                                <a t-attf-class="btn btn-primary btn-block btn-lg o_btn-round-corners {{ 'o_hr_attendance_pin_pad_button_' + btn_name }}"><t t-esc="btn_name"/></a>
+                            </div>
+                        </t>
+                    </div>
+                </div>
+            </div>
         </div>
     </t>
 
@@ -22,6 +41,23 @@
                 <h5>or click on Employees and enter your PIN.</h5>
                 <button class="button_employees btn btn-primary btn-sm">Employees</button>
                 <!-- <button class="button_visitors btn btn-primary btn-sm">Visitor</button> -->
+                <div class="o_hr_attendance_clock"></div>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="HrAttendanceBasicEmployeeMainMenu">
+        <div class="o_hr_attendance_main_menu_container">
+            <div class="o_hr_attendance_main_menu">
+                <h1 class="o_hr_attendance_employee"> Welcome </h1>
+                <div class="o_hr_attendance_company_logo"></div>
+                <h2 class="o_hr_attendance_check_message"></h2>
+                <div class="oe_attendance_sign_in_out">
+                    <i id="oe_attendance_sign_in_out_icon" class="fa fa-sign-in" style="font-size: 15em"/>
+                </div>
+                <h5>click on Employees to see who's present.</h5>
+                <a class="button_employees btn btn-primary btn-sm">Employees</a>
+                <!-- <button class="button_visitors btn btn-primary btn-sm">Contact HR</button> -->
                 <div class="o_hr_attendance_clock"></div>
             </div>
         </div>

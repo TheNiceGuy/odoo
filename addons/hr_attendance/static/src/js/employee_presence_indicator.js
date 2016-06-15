@@ -2,15 +2,9 @@ odoo.define('hr_attendance.kanban_presence_indicator', function (require) {
 "use strict";
 
 var core = require('web.core');
-var Model = require('web.Model');
-var Widget = require('web.Widget');
-var Dialog = require('web.Dialog');
-var Session = require('web.session');
-var BarcodeHandlerMixin = require('barcodes.BarcodeHandlerMixin');
-var QWeb = core.qweb;
-
 var kanban_widgets = require('web_kanban.widgets');
 
+var QWeb = core.qweb;
 var _t = core._t;
 
 var FieldPresenceIndicator = kanban_widgets.AbstractField.extend({
@@ -24,9 +18,9 @@ var FieldPresenceIndicator = kanban_widgets.AbstractField.extend({
     },
     render_value: function() {
         if(this.field.raw_value == 'present'){
-            this.$('.o_attendance_field_presence_indicator').css("background-color", "#00FF00");
+            this.$('.o_hr_attendance_field_presence_indicator').css("background-color", "#00FF00");
         } else {
-            this.$('.o_attendance_field_presence_indicator').css("background-color", "#FF0000");
+            this.$('.o_hr_attendance_field_presence_indicator').css("background-color", "#FF0000");
         }
         
     },
@@ -35,6 +29,6 @@ var FieldPresenceIndicator = kanban_widgets.AbstractField.extend({
     },
 });
 
-kanban_widgets.registry.add('presence_indicator', FieldPresenceIndicator);
+kanban_widgets.registry.add('presence_indicator', FieldPresenceIndicator); // add hr_attendance_
 
 });

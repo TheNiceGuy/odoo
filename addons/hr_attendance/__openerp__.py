@@ -23,7 +23,7 @@ actions(Sign in/Sign out) performed by them.
         # 'report/hr_attendance_report.xml',
         # 'wizard/hr_attendance_error_view.xml',
         'wizard/hr_attendance_pin_pad_view.xml',
-        'wizard/hr_employee_badge.xml',
+        # 'wizard/hr_employee_badge.xml',
         # 'report/report_attendance_errors.xml',
         'views/hr_dashboard.xml',
         'views/employee_view.xml',

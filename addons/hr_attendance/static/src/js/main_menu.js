@@ -2,15 +2,13 @@ odoo.define('hr_attendance.main_menu', function (require) {
 "use strict";
 
 var core = require('web.core');
-var data = require('web.data');
 var Model = require('web.Model');
 var Widget = require('web.Widget');
-var Dialog = require('web.Dialog');
 var Session = require('web.session');
 var BarcodeHandlerMixin = require('barcodes.BarcodeHandlerMixin');
 
-
 var _t = core._t;
+
 
 var MainMenu = Widget.extend(BarcodeHandlerMixin, {
     template: 'HrAttendanceMainMenu',
@@ -30,7 +28,8 @@ var MainMenu = Widget.extend(BarcodeHandlerMixin, {
 
     start: function () {
         var self = this;
-        self.hide_navbar_if_required();
+        // self.hide_navbar_if_required();
+        $(document).find('.o_main_navbar').fadeOut();
 
         var hr_employee = new Model('hr.employee');
         hr_employee.query(['company_id'])
