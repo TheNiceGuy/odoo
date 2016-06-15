@@ -10,6 +10,7 @@ class Message(models.Model):
 
     _inherit = "mail.message"
 
+    @api.model
     def search(self, args, offset=0, limit=0, order=None, count=False):
         """ Convert the search on real ids in the case it was asked on virtual ids, then call super() """
         args = list(args)
