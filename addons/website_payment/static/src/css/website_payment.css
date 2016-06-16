@@ -44,3 +44,7 @@ ul.payment_method_list img.img-rounded {
   max-width: 100px;
   max-height: 40px;
 }
+
+.payment-link {
+  cursor: pointer;
+}
