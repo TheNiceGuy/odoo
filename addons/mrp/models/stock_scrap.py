@@ -47,3 +47,6 @@ class StockScrap(models.Model):
                 preferred_domain2 = [('history_ids', 'not in', self.production_id.move_finished_ids.ids)]
                 return [preferred_domain, preferred_domain2]
         return super(StockScrap, self)._get_preferred_domain()
+
+    def _get_origin_moves(self):
+        return super(StockScrap, self)._get_origin_moves() or self.production_id and self.production_id.move_raw_ids

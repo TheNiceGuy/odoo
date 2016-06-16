@@ -66,9 +66,13 @@ class StockScrap(models.Model):
         scrap.do_scrap()
         return scrap
 
+    def _get_origin_moves(self):
+        return self.picking_id and self.picking_id.move_lines
+
     @api.multi
     def do_scrap(self):
         for scrap in self:
+            moves = scrap._get_origin_moves() or self.env['stock.move']
             move = self.env['stock.move'].create(scrap._prepare_move_values())
             quants = self.env['stock.quant'].quants_get_preferred_domain(
                 move.product_qty, move,
@@ -82,6 +86,7 @@ class StockScrap(models.Model):
             self.env['stock.quant'].quants_reserve(quants, move)
             move.action_done()
             scrap.write({'move_id': move.id, 'state': 'done'})
+            moves.recalculate_move_state()
         return True
 
     def _prepare_move_values(self):
