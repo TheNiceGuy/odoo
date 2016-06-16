@@ -1,11 +1,91 @@
 # -*- coding: utf-8 -*-
+import datetime
 import werkzeug
-from openerp import SUPERUSER_ID
+
+from collections import OrderedDict
+
+from openerp import fields, SUPERUSER_ID
 from openerp.addons.web import http
 from openerp.addons.web.http import request
 from openerp.addons.website.models.website import slug, unslug
 from openerp.addons.website_partner.controllers.main import WebsitePartnerPage
 from openerp.tools.translate import _
+
+from openerp.addons.website_portal.controllers.main import website_account
+
+
+class WebsiteAccount(website_account):
+
+    @http.route()
+    def account(self):
+        response = super(WebsiteAccount, self).account()
+        lead_count = request.env['crm.lead'].search_count([])
+        response.qcontext.update({'lead_count': lead_count})
+        return response
+
+    @http.route(['/my/leads', '/my/leads/page/<int:page>'], type='http', auth="user", website=True)
+    def portal_my_leads(self, page=1, date_begin=None, date_end=None, lead=None, sortby=None, **kw):
+        values = self._prepare_portal_layout_values()
+        CrmLead = request.env['crm.lead']
+
+        today = fields.Date.today()
+
+        filters = {
+            'all': {'label': _('All'), 'domain': []},
+            'today': {'label': _('Today Activities'), 'domain': [('date_action', '=', today)]},
+            'week': {'label': _('This Week Activities'),
+                     'domain': ['&', ('date_action', '>=', today),
+                                ('date_action', '<=', (fields.Date.from_string(today) + datetime.timedelta(days=7)))]},
+            'overdue': {'label': _('Overdue Activities'), 'domain': [('date_action', '<', today)]},
+            'won': {'label': _('Won'), 'domain': ['&', ('stage_id.probability', '=', 100), ('stage_id.fold', '=', True)]},
+            'lost': {'label': _('Lost'), 'domain': [('active', '=', False)]},
+        }
+
+        sortings = {
+            'date': {'label': _('Newest'), 'order': 'create_date desc'},
+            'name': {'label': _('Name'), 'order': 'name'},
+            'customer': {'label': _('Customer'), 'order': 'partner_id'},
+            'revenue': {'label': _('Expected Revenue'), 'order': 'planned_revenue desc'},
+            'probability': {'label': _('Probability'), 'order': 'probability desc'},
+            'stage': {'label': _('Stage'), 'order': 'stage_id'},
+        }
+
+        domain = filters.get(lead, filters['all'])['domain']
+        order = sortings.get(sortby, sortings['date'])['order']
+
+        # archive groups - Default Group By 'create_date'
+        archive_groups = self._get_archive_groups('crm.lead', domain)
+        if date_begin and date_end:
+            domain += [('create_date', '>', date_begin), ('create_date', '<=', date_end)]
+        # pager
+        lead_count = CrmLead.search_count(domain)
+        pager = request.website.pager(
+            url="/my/leads",
+            url_args={'date_begin': date_begin, 'date_end': date_end, 'sortby': sortby},
+            total=lead_count,
+            page=page,
+            step=self._items_per_page
+        )
+        # content according to pager and archive selected
+        leads = CrmLead.search(domain, order=order, limit=self._items_per_page, offset=pager['offset'])
+
+        values.update({
+            'date': date_begin,
+            'leads': leads,
+            'page_name': 'lead',
+            'filters': OrderedDict(sorted(filters.items())),
+            'lead': lead,
+            'sortings': sortings,
+            'sortby': sortby,
+            'archive_groups': archive_groups,
+            'default_url': '/my/leads',
+            'pager': pager
+        })
+        return request.website.render("website_crm_partner_assign.portal_my_leads", values)
+
+    @http.route(['/my/lead/<model("crm.lead"):lead>'], type='http', auth="user", website=True)
+    def leads_followup(self, lead=None, **kw):
+        return request.website.render("website_crm_partner_assign.leads_followup", {'lead': lead})
 
 
 class WebsiteCrmPartnerAssign(WebsitePartnerPage):

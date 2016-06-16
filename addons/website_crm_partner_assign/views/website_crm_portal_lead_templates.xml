@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="portal_my_home_menu_lead" name="Portal layout : lead menu entry" inherit_id="website_portal.portal_layout" priority="22">
+        <xpath expr="//ul[contains(@class,'o_portal_submenu')]" position="inside">
+            <li t-att-class="page_name == 'lead' and 'active'">
+                 <a href="/my/leads">Leads</a>
+            </li>
+        </xpath>
+    </template>
+
+    <template id="portal_my_home_lead" name="Portal My Home : lead entries" inherit_id="website_portal.portal_my_home" priority="22">
+        <xpath expr="//div[contains(@class,'o_my_home_content')]" position="inside">
+            <h3 class="page-header">
+                <a href="/my/leads">Your Leads
+                    <small class="ml8">
+                        <t t-if="lead_count">
+                            <span class='badge'><t t-esc="lead_count"/></span>
+                        </t>
+                        <t t-if="not lead_count">
+                            There are currently no leads for your account.
+                        </t>
+                    </small>
+                </a>
+            </h3>
+        </xpath>
+    </template>
+
+    <template id="portal_my_leads" name="My Leads">
+        <t t-call="website_portal.portal_layout">
+            <h3 class="page-header">
+                Your Leads
+                <div class="dropdown pull-right mr8">
+                    <button id="sortby" class="btn btn-default" type="button" data-toggle="dropdown">
+                        <span class="fa fa-sort fa-lg" /> <span t-esc="sortings.get(sortby, {}).get('label', 'Newest')"/>
+                        <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="sortby">
+                        <li t-foreach="sortings" t-as="option" t-attf-class="#{sortby == option and 'active'}">
+                            <a t-att-href="default_url + '?' + keep_query('date_begin', 'date_end', 'lead', sortby=option)"><span t-esc="sortings.get(option).get('label')"/></a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="dropdown pull-right mr8">
+                    <button id="filters" class="btn btn-default" type="button" data-toggle="dropdown">
+                        <span class="fa fa-filter fa-lg" /> <span t-esc="filters.get(lead, {}).get('label', 'All')"/>
+                        <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="filters">
+                        <li t-foreach="filters" t-as="option" t-attf-class="#{lead == option and 'active'}">
+                            <a t-att-href="default_url + '?' + keep_query('date_begin', 'date_end', 'sortby', lead=option)"><span t-esc="filters.get(option).get('label')"/></a>
+                        </li>
+                    </ul>
+                </div>
+            </h3>
+            <div class="panel panel-default">
+                <t t-if="not leads">
+                    <div class="alert alert-warning mt8" role="alert">
+                        There are no leads.
+                    </div>
+                </t>
+                <table t-if="leads" class="table table-hover">
+                    <thead>
+                        <tr class="active">
+                            <th class="col-md-5">Opportunity</th>
+                            <th class="col-md-3">Expected Revenue</th>
+                            <th>Customer</th>
+                            <th>Stage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="leads" t-as="lead">
+                            <td>
+                                <a t-attf-href="/my/lead/#{lead.id}?{{ keep_query() }}"><span t-field="lead.name"/></a>
+                            </td>
+                            <td>
+                                <span class="text-nowrap" t-esc="format(lead.planned_revenue, 'monetary', lead.company_currency)"/> at <span t-field="lead.probability" />%
+                            </td>
+                            <td><span t-field="lead.partner_name" /></td>
+                            <td>
+                                <span class="label label-primary" title="Current stage of the lead" t-esc="lead.stage_id.name" />
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div t-if="pager" class="o_portal_pager text-center">
+                <t t-call="website.pager"/>
+            </div>
+        </t>
+    </template>
+
+    <template id="leads_followup" name="My Lead">
+        <t t-call="website.layout">
+            <div id="wrap">
+                <div class="container">
+                    <div class="oe_structure">
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <ol class="breadcrumb mt8">
+                                    <li><a href="/my/home"><i class="fa fa-home"/></a></li>
+                                    <li><a t-attf-href="/my/leads?#{keep_query()}">My Leads</a></li>
+                                    <li><span t-field="lead.name"/></li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="container">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <h4>
+                                            Lead - <span t-field="lead.name"/>
+                                            <span t-field="lead.stage_id.name" class="pull-right label label-primary" title="Current stage of this lead"/>
+                                        </h4>
+                                        <div>
+                                            <strong><span class="text-nowrap" t-esc="format(lead.planned_revenue, 'monetary', lead.company_currency)"/> at <span t-field="lead.probability" />%</strong>
+                                            <span class="pull-right" title="Rating">
+                                                <t t-foreach="range(1, 4)" t-as="i">
+                                                    <span t-attf-class="fa fa-lg fa-star#{'' if i &lt;= int(lead.priority) else '-o'}"/>
+                                                </t>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="col-md-6">
+                                    <div class="row" t-if="lead.partner_name or lead.email_from or lead.partner_id">
+                                        <label class="col-xs-4">Customer</label>
+                                        <address class="col-xs-8">
+                                            <div>
+                                                <span t-if="lead.partner_name" itemprop="name" t-field="lead.partner_name" />
+                                                <span t-if="not lead.partner_name" itemprop="name" t-field="lead.partner_id" />
+                                            </div>
+                                            <div t-if="lead.phone">
+                                                <span class="fa fa-phone" /> <span itemprop="telephone" t-field="lead.phone" />
+                                            </div>
+                                            <div t-if="lead.mobile">
+                                                <span class="fa fa-mobile" /> <span itemprop="telephone" t-field="lead.mobile" />
+                                            </div>
+                                            <div t-if="lead.email_from">
+                                                <span class="fa fa-envelope"/> <span itemprop="email" t-field="lead.email_from" />
+                                            </div>
+                                        </address>
+                                    </div>
+                                    <div class="row" t-if="lead.street or lead.street2 or lead.city or lead.state_id or lead.country_id">
+                                        <label class="col-xs-4">Address</label>
+                                        <address class="col-xs-8">
+                                            <div t-if="lead.street"><span t-field="lead.street"/></div>
+                                            <div t-if="lead.street2"><span t-field="lead.street2"/></div>
+                                            <div t-if="lead.city or lead.zip">
+                                                <span t-field="lead.city"/> <span t-field="lead.zip"/>
+                                            </div>
+                                            <div t-if="lead.state_id or country_id">
+                                                <span t-field="lead.state_id"/> <span t-field="lead.country_id"/>
+                                            </div>
+                                        </address>
+                                    </div>
+                                    <div class="row" t-if="lead.user_id">
+                                        <label class="col-xs-4">Salesperson</label>
+                                        <span class="col-xs-8" t-field="lead.user_id" />
+                                    </div>
+                                    <div class="row" t-if="lead.team_id">
+                                        <label class="col-xs-4">Sales Team</label>
+                                        <span class="col-xs-8" t-field="lead.team_id" />
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="row" t-if="lead.date_deadline">
+                                        <label class="col-xs-4">Expected Closing</label>
+                                        <span class="col-xs-8" t-field="lead.date_deadline" />
+                                    </div>
+                                    <div class="row" groups="!base.group_portal" t-if="lead.tag_ids">
+                                        <label class="col-xs-4">Tags</label>
+                                        <span class="col-xs-8">
+                                            <t t-foreach="lead.tag_ids" t-as="tag">
+                                                <span class="label label-info" t-esc="tag.name" />
+                                            </t>
+                                        </span>
+                                    </div>
+                                    <div class="row mt16" t-if="lead.partner_assigned_id">
+                                        <label class="col-xs-4">Assigned Partner</label>
+                                        <address class="col-xs-8" t-field="lead.partner_assigned_id" t-field-options='{"widget": "contact", "fields": ["name", "email", "phone"], "no_marker": True}'/>
+                                    </div>
+                                    <div class="row mt16" t-if="lead.campaign_id">
+                                        <label class="col-xs-4">Campaign</label>
+                                        <span class="col-xs-8" t-field="lead.campaign_id" />
+                                    </div>
+                                    <div class="row" t-if="lead.medium_id">
+                                        <label class="col-xs-4">Medium</label>
+                                        <span class="col-xs-8" t-field="lead.medium_id" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt32">
+                            <div class="col-md-12">
+                                <h4><strong>Message and communication history</strong></h4>
+                            </div>
+                            <div class="col-md-10 col-md-offset-1 mt16">
+                                <t t-call="website_mail.message_thread">
+                                    <t t-set="object" t-value="lead"/>
+                                    <t t-set="chatter_mode" t-value="'json'"/>
+                                </t>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+</odoo>
