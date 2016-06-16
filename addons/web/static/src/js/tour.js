@@ -107,7 +107,7 @@ var localStorage = window.localStorage;
 
 var Tour = {
     tours: {},
-    defaultDelay: 50,
+    defaultDelay: 150,
     autoRunning: true,
     retryRunningDelay: 1000,
     errorDelay: 10000,
