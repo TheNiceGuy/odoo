@@ -437,7 +437,9 @@ class task(osv.osv):
             default['name'] = _("%s (copy)") % current.name
         if 'remaining_hours' not in default:
             default['remaining_hours'] = current.planned_hours
-
+        if 'child_ids' not in default:
+            new_child_ids = current.child_ids.copy()
+            default['child_ids'] = [(6,0,new_child_ids.ids)]
         return super(task, self).copy_data(cr, uid, id, default, context)
 
     _columns = {
