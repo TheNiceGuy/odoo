@@ -1504,9 +1504,48 @@ class BaseModel(object):
         return view
 
     def _get_default_pivot_view(self, cr, user, context=None):
+        """ Generates a single-field pivot view, based on _rec_name.
+
+        :param cr: database cursor
+        :param int user: user id
+        :param dict context: connection context
+        :returns: a pivot view as an lxml document
+        :rtype: etree._Element
+        """
         view = etree.Element('pivot', string=self._description)
         return view
-        
+
+    def _get_default_kanban_view(self, cr, user, context=None):
+        """ Generates a single-field kanban view, based on _rec_name.
+
+        :param cr: database cursor
+        :param int user: user id
+        :param dict context: connection context
+        :returns: a kanban view as an lxml document
+        :rtype: etree._Element
+        """
+        view = etree.Element('kanban', string=self._description)
+        templates = etree.SubElement(view, 'templates')
+        kanban_box = etree.SubElement(templates, 't', {'t-name': "kanban-box"})
+        div = etree.SubElement(kanban_box, 'div', {'class': "oe_kanban_card"})
+
+        etree.SubElement(div, 'field', name=self._rec_name_fallback(cr, user, context))
+
+        return view
+
+    def _get_default_graph_view(self, cr, user, context=None):
+        """ Generates a single-field graph view, based on _rec_name.
+
+        :param cr: database cursor
+        :param int user: user id
+        :param dict context: connection context
+        :returns: a graph view as an lxml document
+        :rtype: etree._Element
+        """
+        view = etree.Element('graph', string=self._description)
+        etree.SubElement(view, 'field', name=self._rec_name_fallback(cr, user, context))
+        return view
+
     def _get_default_calendar_view(self, cr, user, context=None):
         """ Generates a default calendar view by trying to infer
         calendar fields from a number of pre-set attribute names
@@ -1517,6 +1556,7 @@ class BaseModel(object):
         :returns: a calendar view
         :rtype: etree._Element
         """
+
         def set_first_of(seq, in_, to):
             """Sets the first value of ``seq`` also found in ``in_`` to
             the ``to`` attribute of the view being closed over.
@@ -1542,7 +1582,7 @@ class BaseModel(object):
                     break
 
             if not date_found:
-                raise UserError(_("Insufficient fields for Calendar View!"))
+                raise UserError(_("Insufficient fields to generate a Calendar View for %s, missing a date_start") % self._name)
         view.set('date_start', self._date_name)
 
         set_first_of(["user_id", "partner_id", "x_user_id", "x_partner_id"],
