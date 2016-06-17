@@ -715,31 +715,7 @@ class WebsiteSale(http.Controller):
         values['errors'] = SaleOrder._get_errors(order)
         values.update(SaleOrder._get_website_data(order))
         if not values['errors']:
-            # we have to filter the payment method based on delivery carrier
-            # if the delivery carrier option has ups_cod = True then
-            # the only payment method should be ups cod
-            domain = [('website_published', '=', True), ('company_id', '=', order.company_id.id)]
-            try:
-                if order.carrier_id.ups_cod:
-                    domain = domain + [('is_cod', '=', True)]
-                else:
-                    domain = domain + [('is_cod', '=', False)]
-            except Exception:
-                pass
-            acquirers = request.env['payment.acquirer'].search(domain)
-            values['acquirers'] = list(acquirers)
-            acquirer_buttons = acquirers.with_context(submit_class='btn btn-primary', submit_txt=_('Pay Now')).sudo().render(
-                '/',
-                order.amount_total,
-                order.pricelist_id.currency_id.id,
-                values={
-                    'return_url': '/shop/payment/validate',
-                    'partner_id': shipping_partner_id,
-                    'billing_partner_id': order.partner_invoice_id.id,
-                }
-            )
-            for index, button in enumerate(acquirer_buttons):
-                values['acquirers'][index].button = button
+            values['acquirers'] = request.env['payment.acquirer']._get_acquirer_buttons(order,shipping_partner_id)
 
         return request.website.render("website_sale.payment", values)
 
