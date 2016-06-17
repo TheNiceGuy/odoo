@@ -330,6 +330,19 @@
           <field name="image" type="base64" file="point_of_sale/static/img/partners/eggs-solutions.jpg"/>
         </record>
 
+        <!-- The expense type products shouldn't be present in the point of sale for the demo -->
+        <record id="hr_expense.car_travel" model="product.product">
+            <field name="available_in_pos" eval="False" />
+        </record>
+
+        <record id="hr_expense.air_ticket" model="product.product">
+            <field name="available_in_pos" eval="False" />
+        </record>
+
+        <record id="hr_expense.hotel_rent" model="product.product">
+            <field name="available_in_pos" eval="False" />
+        </record>
+
         <!-- The electronic products shouldn't be present in the point of sale for the demo -->
 
         <record id="product.product_product_1" model="product.product"> <field name="available_in_pos" eval="False"/> </record>
