@@ -1,0 +1,11 @@
+<template>
+    <!-- Buttons of the Control Panel -->
+    <t t-name="report.client_action.ControlButtons">
+        <div>
+            <button type="button" class="btn btn-primary btn-sm o_report_print" title="Print">Print</button>
+            <button type="button" class="btn btn-secondary btn-sm o_report_edit" title="Edit">Edit</button>
+            <button type="button" class="btn btn-secondary btn-sm o_report_save hidden" title="Save">Save</button>
+            <button type="button" class="btn btn-secondary btn-sm o_report_discard hidden" title="Discard">Discard</button>
+        </div>
+    </t>
+</template>

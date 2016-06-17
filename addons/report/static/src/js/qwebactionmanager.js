@@ -26,39 +26,47 @@ var trigger_download = function(session, response, c, action, options) {
 ActionManager.include({
     ir_actions_report_xml: function(action, options) {
         var self = this;
-        framework.blockUI();
         action = _.clone(action);
         _t =  core._t;
 
+        var report_url = '';
+        switch (action.report_type) {
+            case 'qweb-html':
+                report_url = '/report/html/' + action.report_name;
+                break;
+            case 'qweb-pdf':
+                report_url = '/report/pdf/' + action.report_name;
+                break;
+            case 'controller':
+                report_url = action.report_file;
+                break;
+            default:
+                report_url = '/report/html/' + action.report_name;
+                break;
+        }
+
+        // generic report: no query string
+        // particular: query string of action.data.form and context
+        if (!('data' in action) || !(action.data)) {
+            if ('active_ids' in action.context) {
+                report_url += "/" + action.context.active_ids.join(',');
+            }
+        } else {
+            report_url += "&options=" + encodeURIComponent(JSON.stringify(action.data));
+            report_url += "&context=" + encodeURIComponent(JSON.stringify(action.context));
+        }
+
+        if (action.report_type === 'qweb-inline') {
+            action.tag = 'report.client_action';
+            action.report_url = report_url;
+            return this.ir_actions_client(action, options);
+        }
+
+        framework.blockUI();
+
         // QWeb reports
         if ('report_type' in action && (action.report_type == 'qweb-html' || action.report_type == 'qweb-pdf' || action.report_type == 'controller')) {
-            var report_url = '';
-            switch (action.report_type) {
-                case 'qweb-html':
-                    report_url = '/report/html/' + action.report_name;
-                    break;
-                case 'qweb-pdf':
-                    report_url = '/report/pdf/' + action.report_name;
-                    break;
-                case 'controller':
-                    report_url = action.report_file;
-                    break;
-                default:
-                    report_url = '/report/html/' + action.report_name;
-                    break;
-            }
 
-            // generic report: no query string
-            // particular: query string of action.data.form and context
-            if (!('data' in action) || !(action.data)) {
-                if ('active_ids' in action.context) {
-                    report_url += "/" + action.context.active_ids.join(',') + "?enable_editor=1";
-                }
-            } else {
-                report_url += "?enable_editor=1";
-                report_url += "&options=" + encodeURIComponent(JSON.stringify(action.data));
-                report_url += "&context=" + encodeURIComponent(JSON.stringify(action.context));
-            }
 
             var response = new Array();
             response[0] = report_url;

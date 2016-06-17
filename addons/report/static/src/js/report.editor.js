@@ -4,10 +4,10 @@ odoo.define('report.editor', function (require) {
 var editor = require('web_editor.editor');
 var options = require('web_editor.snippets.options');
 
-editor.reload = function () {
-    location.hash = "scrollTop=" + window.document.body.scrollTop;
-    window.location.reload();
-};
+var old_save = editor.save;
+editor.save = function () {
+    old_save.apply(this, arguments);
+}
 
 options.registry.many2one.include({
     select_record: function (li) {
@@ -22,5 +22,7 @@ options.registry.many2one.include({
         }
     }
 });
+
+window.parent.postMessage("teseeeet", "http://127.0.0.1:8069");
 
 });

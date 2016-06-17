@@ -31,7 +31,7 @@ _.each('click,dblclick,keydown,keypress,keyup'.split(','), function(evtype) {
         main_bus.trigger(evtype, ev);
     });
 });
-_.each('resize,scroll'.split(','), function(evtype) {
+_.each('resize,scroll,message'.split(','), function(evtype) {
     $(window).on(evtype, function(ev) {
         main_bus.trigger(evtype, ev);
     });

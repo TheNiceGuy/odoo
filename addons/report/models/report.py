@@ -495,7 +495,7 @@ class Report(osv.Model):
         the field report_name.
         """
         report_obj = self.pool['ir.actions.report.xml']
-        qwebtypes = ['qweb-pdf', 'qweb-html']
+        qwebtypes = ['qweb-pdf', 'qweb-html', 'qweb-inline']
         conditions = [('report_type', 'in', qwebtypes), ('report_name', '=', report_name)]
         context = self.pool['res.users'].context_get(cr, uid)
         idreport = report_obj.search(cr, uid, conditions, context=context)[0]

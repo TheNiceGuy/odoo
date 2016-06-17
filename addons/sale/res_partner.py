@@ -8,6 +8,7 @@ class res_partner(osv.osv):
     _inherit = 'res.partner'
 
     def _sale_order_count(self, cr, uid, ids, field_name, arg, context=None):
+        
         res = dict(map(lambda x: (x,0), ids))
         # The current user may not have access rights for sale orders
         try:
