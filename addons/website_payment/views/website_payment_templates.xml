@@ -34,6 +34,9 @@
                             </ol>
                         </div>
                     </div>
+                    <div t-if="not acquirers">
+                        <h4>There are currently payment acquirer not configure.</h4>
+                    </div>
                     <div class="modal fade" role="dialog" aria-hidden="true" id="newpayment_method">
                         <div class="modal-dialog">
                             <div class="modal-content">
@@ -65,7 +68,7 @@
                         </div>
                     </div>
                     <div t-if="acquirers and not pms">
-                        <h4>Create your First Payment Method.<a class="payment-link" data-toggle="modal" data-target="#newpayment_method">Click here..</a></h4>
+                        <h4>Create your First Payment Method.<a class="payment-link" data-toggle="modal" data-target="#newpayment_method">Click here.</a></h4>
                     </div>
                     <div class="clearfix"></div>
                     <div class="row">
@@ -90,13 +93,12 @@
                                             <t t-foreach="pms" t-as="pm">
                                                 <tr>
                                                     <td>
-                                                        <input name="delete_pm_id" type="radio" t-att-checked="'checked' if pm_first else ''" t-att-value="pm.id"/>
                                                         <span t-esc="pm.name"/>
                                                     </td>
                                                     <td><t t-esc="pm.acquirer_id.name"/></td>
                                                     <td>
                                                         <span class="pull-right">
-                                                            <a t-attf-href="/website_payment/#{pm.id}/delete/">
+                                                            <a class="btn btn-xs btn-primary" t-attf-href="/website_payment/#{pm.id}/delete/">
                                                                 <i class='fa fa-trash'> Delete</i>
                                                             </a>
                                                         </span>
