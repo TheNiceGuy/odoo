@@ -4,3 +4,4 @@ import invoice
 import membership
 import partner
 import product
+import qualification
